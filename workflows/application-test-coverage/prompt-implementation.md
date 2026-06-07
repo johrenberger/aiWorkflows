@@ -199,6 +199,19 @@ SUB-AGENT ORCHESTRATION (multi-module repositories):
   - If more than 50% of test-writer batches fail with repair-loop exhaustion, abandon sub-agents and run remaining files inline.
 - See `workflows/shared/concurrency.md` for the cross-workflow rules (claim/lease protocol, atomic write semantics, branch isolation).
 
+SUB-AGENT TASK TEMPLATE (lessons from BroadleafCommerce run-3, 2026-06-08):
+When spawning a test-writer sub-agent, the task prompt MUST include all 5 of the following sections inline. Do not rely on the sub-agent to re-discover them.
+
+1. **Pre-validated build command.** Copy the exact Maven/Gradle/npm command from the per-run setup artifact, with all flags the pre-flight gates verified. Do not make the sub-agent re-derive the JaCoCo argLine or surefire `failIfNoTests` flags.
+
+2. **Covered-line report for the target file.** Parse the JaCoCo CSV (or pytest-cov JSON) for the target file's uncovered lines, then pass `line N: <description>` list in the task prompt. The sub-agent's job is to write tests for those specific lines.
+
+3. **CSV-row success criterion.** Require the sub-agent to read the post-run CSV directly and report the exact `LINE_MISSED,LINE_COVERED` row. The main agent will verify by re-reading the same CSV. Self-reported % is not trusted.
+
+4. **Stage-your-files step.** After tests pass, the sub-agent must run `git add <files>` and `git diff --cached --stat` to verify only test/ files are staged (no source files). The main agent runs `git status` after each sub-agent finishes to double-check.
+
+5. **Wait-for-event reminder in the main agent's mind.** The main agent must wait for the runtime completion event (via `sessions_yield`) for every spawned sub-agent. Local log evidence (surefire timestamps, file existence) is NOT a completion signal. If 15+ min elapses without an event, use `subagents action=list` to check status — but never declare a sub-agent done based on local evidence alone.
+
 FINAL RESPONSE:
 Summarize:
 - Repository analyzed.
