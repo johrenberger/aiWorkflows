@@ -15,6 +15,8 @@
 - [ ] **TC-VAL-11 [Focused Validation]** Changed-module tests pass or blocker recorded.
 - [ ] **TC-VAL-12 [Full Validation]** Full suite/coverage run where feasible.
 - [ ] **TC-VAL-13 [Ledger Complete]** `TODO_test-coverage.md` includes all required sections.
+- [ ] **TC-VAL-14 [Pre-Flight]** If `ALLOW_DEPENDENCY_INSTALL=false`, the build/test commands used in phases 4-5 are pre-existing in the repo (no new tool installs). If install is required, it is recorded as `TC-BLK-PreFlight`.
+- [ ] **TC-VAL-15 [Testability Classification]** When `ENABLE_TESTABILITY_CLASSIFICATION=true`, each source file has a testability label (testable / integration-only / generated / framework-boilerplate / jsp-view) recorded in the per-file table. Generated and boilerplate files are excluded with rationale.
 
 ## Failure Handling
 
@@ -27,5 +29,7 @@ If validation fails, classify the failure:
 - Production bug exposed.
 - Timeout.
 - Insufficient testability.
+- Pre-flight (build/install prerequisite missing) — TC-BLK-PreFlight.
+- Baseline timeout — TC-BLK-BaselineTimeout.
 
 Record evidence and next action.
