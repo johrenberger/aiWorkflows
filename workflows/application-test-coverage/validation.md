@@ -17,6 +17,7 @@
 - [ ] **TC-VAL-13 [Ledger Complete]** `TODO_test-coverage.md` includes all required sections.
 - [ ] **TC-VAL-14 [Pre-Flight]** If `ALLOW_DEPENDENCY_INSTALL=false`, the build/test commands used in phases 4-5 are pre-existing in the repo (no new tool installs). If install is required, it is recorded as `TC-BLK-PreFlight`.
 - [ ] **TC-VAL-15 [Testability Classification]** When `ENABLE_TESTABILITY_CLASSIFICATION=true`, each source file has a testability label (testable / integration-only / generated / framework-boilerplate / jsp-view) recorded in the per-file table. Generated and boilerplate files are excluded with rationale.
+- [ ] **TC-VAL-16 [Orchestration Boundaries]** If sub-agents were spawned, each one is limited to its declared role (discoverer / test-writer / coverage-manager). No sub-agent wrote directly to the canonical ledger or to files outside its scratch directory. The main agent's SHA-256 of the canonical ledger matches before and after each sub-agent's batch.
 
 ## Failure Handling
 

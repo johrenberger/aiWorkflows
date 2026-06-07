@@ -128,6 +128,17 @@ TEST QUALITY RULES:
 RECOVERY:
 If interrupted, resume from TODO_test-coverage.md checkpoints. Do not rescan or rerun expensive commands unless required for correctness.
 
+SUB-AGENT ORCHESTRATION (multi-module repositories):
+- See `workflows/application-test-coverage/_docs/multi-module-orchestration.md` for the full protocol. The summary:
+  - Inline execution is the default. Spawn sub-agents only on multi-module repos with 4+ modules or 1,000+ eligible files.
+  - The 3 roles: **discoverer** (read-only, owns module map + eligibility), **test-writer** (one per active module, owns test impl), **coverage-manager** (one, owns coverage runs + ledger updates).
+  - The main agent always owns: input validation, the runtime contract, the canonical ledger, the final commit.
+  - Sub-agents write ONLY to scratch directories (e.g. `/tmp/tw-<id>/scratch/`) and return a file manifest with SHA-256 hashes. The main agent promotes scratch files to the canonical tree atomically after verification.
+  - The file-claim protocol uses a per-file row in TODO_test-coverage.md. Claim rows have an agent id and a status. Lease timeout is 30 minutes.
+  - Use `git worktree` to give each test-writer its own worktree on its own branch. The main agent merges per-module branches back when their focused tests pass.
+  - If more than 50% of test-writer batches fail with repair-loop exhaustion, abandon sub-agents and run remaining files inline.
+- See `workflows/shared/concurrency.md` for the cross-workflow rules (claim/lease protocol, atomic write semantics, branch isolation).
+
 FINAL RESPONSE:
 Summarize:
 - Repository analyzed.
@@ -137,4 +148,5 @@ Summarize:
 - Files still below 90% and why.
 - Commands passing/failing.
 - Whether commit was created.
+- Sub-agents spawned (if any), per role, with claim/release counts.
 ```
