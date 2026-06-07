@@ -2,6 +2,40 @@
 
 Use this prompt to run the coverage workflow against a GitHub repository.
 
+## Language Quickref
+
+The workflow handles multiple stacks, but the **build/test commands** and **common gotchas** are stack-specific. Find your stack below and follow the relevant row. The rest of this document is language-agnostic.
+
+| Stack | Detect via | Build / test command | Coverage tool | Test path | Common gotcha |
+|---|---|---|---|---|---|
+| **Java + Maven** | `pom.xml` + `mvnw` or `mvn` on PATH | `mvn -f <module>/pom.xml -am -B -DskipITs=true -DfailIfNoTests=false -Dsurefire.failIfNoSpecifiedTests=false "-Dtest=<Spec>" "-Dsurefire.argLine=-javaagent:<jar>=destfile=\${project.basedir}/target/jacoco.exec --add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED" test-compile surefire:test jacoco:report` | JaCoCo (CSV at `target/site/jacoco/jacoco.csv`) | `src/test/{java,groovy}/` | Multi-module reactor needs `-f <parent>/pom.xml -am`, NOT `-pl <module> -am`. Spockspecs need `test-compile` to pick up Groovy source changes. See `shared/sub-module-reactor.md` and `shared/java-jacoco-patterns.md`. |
+| **Python + pytest** | `pyproject.toml` or `pytest.ini` or `setup.cfg` with `[tool:pytest]` | `pytest --cov=<package> --cov-report=term-missing --cov-report=json:<run-dir>/coverage.json -q <test-path>` | coverage.py (JSON at the path above) | `tests/` or `src/<pkg>/tests/` | Always run from repo root, not from a sub-package. `--cov=<package>` must match the importable name (not the directory name). |
+| **JavaScript / TypeScript** | `package.json` with `jest`/`vitest`/`mocha` in devDependencies | `npm test -- --coverage --coverageReporters=text --coverageReporters=json-summary --testPathPattern=<pattern>` or `npx jest --coverage --testPathPattern=<pattern>` | Istanbul / c8 (json-summary at `coverage/coverage-summary.json`) | `__tests__/` or `src/**/*.test.{js,ts}` or `*.spec.{js,ts}` | Frontend-only repos have no coverage tool pre-installed. Add `c8` or `jest --coverage` before running. Mixed TS+JS projects need `ts-jest` or `babel-jest` config. |
+| **Go** | `go.mod` | `go test -coverprofile=<run-dir>/coverage.out -covermode=atomic ./...` | go test built-in (coverprofile parseable with `go tool cover -func`) | Same dir as source, `_test.go` suffix | Coverage tool is built into the test runner, no separate install. Use `-covermode=atomic` for accurate branch coverage. |
+
+### Per-stack env validation (Phase 0.5 pre-flight)
+
+For each stack, the pre-flight MUST verify:
+
+- **Java + Maven:** `java -version` (target JDK), `mvn -v` (target Maven), JaCoCo agent jar cached at `/data/.m2/repository/org/jacoco/org.jacoco.agent/<ver>/org.jacoco.agent-<ver>-runtime.jar` (download if missing, with approval).
+- **Python + pytest:** `python3 --version` (≥ 3.8), `pytest --version`, `coverage --version` (or `pytest-cov` plugin installed in the venv).
+- **JavaScript / TypeScript:** `node --version` (≥ 18 for modern toolchains), `npm --version`, and the test runner is in `devDependencies` (otherwise fail with `TC-BLK-TestFrameworkMissing`).
+- **Go:** `go version` (≥ 1.20 for atomic coverage), no other tools needed.
+
+### Per-stack testability classification
+
+- **Java + Maven:** see `JSP view / generated / framework-boilerplate / test-infrastructure` rules in this document.
+- **Python + pytest:** `__init__.py`-only modules are excluded (`type declarations only`). Files matching `*_pb2.py` are generated (protobuf). `conftest.py` is test infrastructure, not a test file.
+- **JavaScript / TypeScript:** `*.d.ts` files are type declarations only, excluded. Files matching `*.test.{js,ts}` or `*.spec.{js,ts}` are test files (don't test the tests). Generated files in `dist/` or `build/` are excluded.
+- **Go:** `_test.go` files are test files. Files ending in `_test.go` that are in `testdata/` are test data, not tests.
+
+### Per-stack coverage provenance
+
+- **Java + Maven:** direct = same `src/test/{java,groovy}/` subpath. Transitive = exercised via integration test elsewhere.
+- **Python + pytest:** direct = same package's `tests/`. Transitive = exercised via a test in another module's `tests/`.
+- **JavaScript / TypeScript:** direct = same dir or `__tests__/` mirror. Transitive = E2E test in `cypress/` or `playwright/`.
+- **Go:** direct = same package's `_test.go`. Transitive = exercised via integration test in `tests/` or `e2e/`.
+
 ```text
 You are an expert test engineering workflow executor operating in OpenClaw with MiniMax.
 
