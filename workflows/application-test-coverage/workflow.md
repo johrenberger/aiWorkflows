@@ -13,8 +13,29 @@ MODE=implementation
 COVERAGE_TARGET_PER_FILE=90
 ALLOW_PRODUCTION_FIXES=false
 ALLOW_COMMIT=false
+ALLOW_DEPENDENCY_INSTALL=false
+ALLOW_CI_CHANGES=true
+ALLOW_TEST_CONFIG_CHANGES=true
 MAX_FILES_PER_BATCH=5
+MAX_REPAIR_ATTEMPTS_PER_FAILURE_CLASS=2
+MAX_BASELINE_TEST_MINUTES=20
+ENABLE_TESTABILITY_CLASSIFICATION=true
+MULTI_MODULE_MODE=auto
+MODULE_LIST=<optional comma-separated list>
 ```
+
+## Multi-Module Repositories
+
+For repositories with a multi-module build (Maven `<modules>`, Gradle `include(...)`, npm workspaces, Cargo workspace), `MULTI_MODULE_MODE=auto` is the default. The workflow:
+
+1. **Detects module boundaries** from the build system in Phase 3a.
+2. **Scopes each per-file coverage table** to a module section in `TODO_test-coverage.md`.
+3. **Reports aggregate coverage** in a rollup table at the top of the ledger.
+4. **Does not duplicate** cross-module shared utilities — they appear once, under the module that owns the canonical path.
+
+Use `MULTI_MODULE_MODE=explicit` with `MODULE_LIST=core,common` to restrict the run to a subset of modules. This is the recommended first run on a large repository — it bounds scope and lets you validate the orchestration before expanding.
+
+`MULTI_MODULE_MODE=off` reverts to the single-scope behavior of earlier versions.
 
 ## Phases
 
@@ -47,10 +68,30 @@ Detect from config and files:
 - Test framework.
 - Coverage tooling.
 - CI workflows.
+- Build system module layout (if multi-module).
+
+### Phase 3a — Multi-Module Scope Detection (when MULTI_MODULE_MODE != off)
+
+- Detect module boundaries from the build system.
+- If `MULTI_MODULE_MODE=explicit`, validate that `MODULE_LIST` matches actual modules.
+- Record module list and per-module file count in the ledger.
+- Restrict subsequent phases to the active module scope.
+
+### Phase 3b — Testability Pre-Classification (when ENABLE_TESTABILITY_CLASSIFICATION=true)
+
+For each source file, label it as one of:
+
+- testable
+- integration-only
+- generated
+- framework-boilerplate
+- jsp-view
+
+Record in the per-file table. Generated/boilerplate/jsp-view files are excluded with rationale.
 
 ### Phase 4 — Baseline Test Execution
 
-Run existing tests when feasible.
+Run existing tests when feasible, bounded by `MAX_BASELINE_TEST_MINUTES`.
 
 If baseline tests fail:
 
