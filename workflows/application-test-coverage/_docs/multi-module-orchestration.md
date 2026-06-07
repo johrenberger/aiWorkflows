@@ -33,6 +33,18 @@ Is the repo single-module (one build target)?
     ├── Phase 9-10 (test design + impl) → test-writer sub-agents, one per active module
     ├── Phase 11-12 (focused test + coverage recheck) → coverage-manager sub-agent
     └── Phase 13-16 (repair, validation, ledger, commit) → main agent inline
+
+## Pre-Flight (Phase 0.5)
+
+Before any of the above phases, the workflow runs a pre-flight to verify the runtime environment. See [`workflows/shared/environment-pre-flight.md`](../../shared/environment-pre-flight.md) for the full rules. The pre-flight:
+
+- Detects the language stack (Maven / Gradle / Python / Node / Go).
+- Verifies the required tools (compiler, build tool, test runner) are on PATH at the right version.
+- Checks disk free, network reachability, GitHub auth.
+- Produces a `SETUP.md` report in the artifacts directory.
+- Fails fast with `TC-BLK-PreFlight` if anything is missing.
+
+If the pre-flight fails, **no sub-agents are spawned** and no work begins. The user installs the missing tools, sets `ALLOW_DEPENDENCY_INSTALL=true`, and re-runs from the same checkpoint.
 ```
 
 The main agent always owns:
