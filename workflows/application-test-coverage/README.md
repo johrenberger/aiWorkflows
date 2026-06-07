@@ -33,3 +33,9 @@ The workflow succeeds when:
 9. Coverage improves toward or reaches 90% per file.
 10. Final validation results are recorded.
 11. `TODO_test-coverage.md` is complete and recoverable.
+
+## See also
+
+- [Project notes](../PROJECT.md) — smoke-test history, layout convention
+- [Reusable test patterns](../_docs/) — wrapped-commit, etc.
+  - [Wrapped-commit pattern](../_docs/test-pattern-wrapped-commit.md) — for testing DB exception handlers
