@@ -15,3 +15,9 @@ TODO_mutation-testing.md
 Coverage answers: "Was the code executed?"
 
 Mutation answers: "Would the tests catch meaningful behavioral changes?"
+
+## See also
+
+- [Project notes](../PROJECT.md) — smoke-test history, layout convention
+- [Reusable test patterns](../_docs/) — wrapped-commit, etc.
+  - [Wrapped-commit pattern](../_docs/test-pattern-wrapped-commit.md) — for testing DB exception handlers
