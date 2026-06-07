@@ -8,6 +8,16 @@ The leading underscore on `_docs/` marks it as metadata, not a workflow (the wor
 
 - **[test-pattern-wrapped-commit.md](test-pattern-wrapped-commit.md)** — for testing exception handlers in code that uses a real database. Generalizable across ORMs and HTTP frameworks.
 
+## Workflow-specific docs
+
+Some workflows have their own `_docs/` subdirectories with operational procedures for that workflow. See:
+
+- [`application-test-coverage/_docs/`](../../application-test-coverage/_docs/README.md) — orchestration protocol for large multi-module repos (3-role split, file-claim, branch-per-module)
+
+## Cross-cutting rules
+
+- [`shared/concurrency.md`](../shared/concurrency.md) — cross-workflow rules for spawning sub-agents and coordinating parallel work.
+
 ## Adding a new pattern
 
 1. Write the file with a clear "When to use" section at the top.

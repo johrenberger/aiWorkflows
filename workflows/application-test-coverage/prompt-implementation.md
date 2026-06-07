@@ -20,7 +20,7 @@ ALLOW_CI_CHANGES=true
 ALLOW_TEST_CONFIG_CHANGES=true
 MAX_FILES_PER_BATCH=5
 MAX_REPAIR_ATTEMPTS_PER_FAILURE_CLASS=2
-MAX_BASELINE_TEST_MINUTES=20
+MAX_BASELINE_TEST_MINUTES=30
 ENABLE_TESTABILITY_CLASSIFICATION=true
 MULTI_MODULE_MODE=auto
 MODULE_LIST=<OPTIONAL_COMMA_SEPARATED_LIST_OR_BLANK>
@@ -78,10 +78,25 @@ TESTABILITY CLASSIFICATION (when ENABLE_TESTABILITY_CLASSIFICATION=true):
 Before classifying eligible/excluded, perform a testability pass. Mark each source file with one of:
   - testable: unit-testable in isolation (default for plain Java/Python/JS classes without framework coupling)
   - integration-only: requires Spring/Hibernate/database/JSF/runtime context to instantiate. Eligible only if the test infrastructure (TestContext, @DataJpaTest, etc.) is already wired.
+  - test-infrastructure: NOT a real test. DataProviders, Spring @Configuration test beans, test doubles (e.g. `TestOfferTimeZoneProcessorImpl extends OfferTimeZoneProcessorImpl`), test-only interfaces, and stub classes used by other tests. These files are test scaffolding, not test code. Excluded with rationale "test-infrastructure".
   - generated: produced by a build step (Hibernate hbm2java, Lombok @Builder synthetics, JSF facelets, etc.). Excluded with rationale "generated".
   - framework-boilerplate: pure delegation to a parent class or annotation processor output. Excluded with rationale "boilerplate".
   - jsp-view: JSP/JSF template files without compiled Java counterparts. Excluded with rationale "view template".
 Record the testability decision in the per-file table. This prevents hours of futile test-writing against generated Hibernate entities.
+
+PRODUCTION-FILE HEURISTIC:
+A source file under `src/main/<lang>/` is still classified as `test-infrastructure` (not production) if BOTH conditions hold:
+  1. The file's package or directory contains a `test` segment (e.g. `org.example.foo.test`, `com/x/y/test/...`).
+  2. The file's name starts with `Test` (e.g. `TestRollbackActivity.java`, `TestPaymentGateway.java`).
+This catches the BroadleafCommerce pattern where test fixtures are placed in `src/main/java/<...>/test/` for cross-module consumption. Apply with care: do not exclude files that are clearly production code with a misleading name.
+
+FRAMEWORK DETECTION:
+Detect the test framework in addition to the build system. Add to Phase 4:
+  - Python: pytest, unittest, nose2. Detect via imports in test files.
+  - Java: JUnit 3 (extends TestCase), JUnit 4 (org.junit.Test), JUnit 5 (org.junit.jupiter), TestNG (org.testng.annotations). Detect via imports in test files.
+  - JavaScript: jest, mocha, vitest, jasmine, ava. Detect via devDependencies in package.json or imports.
+  - Go: standard testing package (no separate detection needed).
+Record the test framework in TC-FRAMEWORK-1 of the ledger. The framework matters because some of them (TestNG especially) have very different test-discovery and assertion idioms than JUnit.
 
 TEST FILE NAMING CONVENTION:
 Tests must be named to match the source file under test, scoped by module:
@@ -95,6 +110,7 @@ BASELINE TEST TIMEOUT:
 Phase 5 ("Run baseline tests where feasible") is bounded by MAX_BASELINE_TEST_MINUTES. If the baseline exceeds the bound, do not abort the workflow — record the result as TC-BLK-BaselineTimeout in the ledger and proceed with the next phase using whatever partial coverage was produced so far. Do not invent coverage numbers.
 
 PHASES:
+0.5. ENVIRONMENT PRE-FLIGHT: detect the language stack from the URL/repo shape, verify the required tools (compiler, build tool, test runner) are on PATH at the right version, check disk free, network reachability, and GitHub auth. Produce a SETUP.md report. Fail fast with TC-BLK-PreFlight if anything's missing.
 1. Validate input repository URL.
 2. Clone/open repository and checkout branch if provided.
 3. Capture commit, branch, status, and timestamp.
@@ -102,7 +118,7 @@ PHASES:
 4a. If MULTI_MODULE_MODE != off, detect module boundaries and record them in TODO_test-coverage.md. If MULTI_MODULE_MODE=explicit, restrict scope to MODULE_LIST.
 5. Run baseline tests where feasible (bounded by MAX_BASELINE_TEST_MINUTES).
 6. Run baseline coverage where feasible.
-7. If ENABLE_TESTABILITY_CLASSIFICATION=true, classify each file as testable/integration-only/generated/framework-boilerplate/jsp-view before eligibility.
+7. If ENABLE_TESTABILITY_CLASSIFICATION=true, classify each file as testable/integration-only/test-infrastructure/generated/framework-boilerplate/jsp-view before eligibility.
 8. Classify eligible and excluded files.
 9. Map per-file coverage gaps (per module, if multi-module).
 10. Select a bounded work batch, default max 5 files.
@@ -128,6 +144,17 @@ TEST QUALITY RULES:
 RECOVERY:
 If interrupted, resume from TODO_test-coverage.md checkpoints. Do not rescan or rerun expensive commands unless required for correctness.
 
+SUB-AGENT ORCHESTRATION (multi-module repositories):
+- See `workflows/application-test-coverage/_docs/multi-module-orchestration.md` for the full protocol. The summary:
+  - Inline execution is the default. Spawn sub-agents only on multi-module repos with 4+ modules or 1,000+ eligible files.
+  - The 3 roles: **discoverer** (read-only, owns module map + eligibility), **test-writer** (one per active module, owns test impl), **coverage-manager** (one, owns coverage runs + ledger updates).
+  - The main agent always owns: input validation, the runtime contract, the canonical ledger, the final commit.
+  - Sub-agents write ONLY to scratch directories (e.g. `/tmp/tw-<id>/scratch/`) and return a file manifest with SHA-256 hashes. The main agent promotes scratch files to the canonical tree atomically after verification.
+  - The file-claim protocol uses a per-file row in TODO_test-coverage.md. Claim rows have an agent id and a status. Lease timeout is 30 minutes.
+  - Use `git worktree` to give each test-writer its own worktree on its own branch. The main agent merges per-module branches back when their focused tests pass.
+  - If more than 50% of test-writer batches fail with repair-loop exhaustion, abandon sub-agents and run remaining files inline.
+- See `workflows/shared/concurrency.md` for the cross-workflow rules (claim/lease protocol, atomic write semantics, branch isolation).
+
 FINAL RESPONSE:
 Summarize:
 - Repository analyzed.
@@ -137,4 +164,5 @@ Summarize:
 - Files still below 90% and why.
 - Commands passing/failing.
 - Whether commit was created.
+- Sub-agents spawned (if any), per role, with claim/release counts.
 ```

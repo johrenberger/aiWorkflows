@@ -18,7 +18,7 @@ ALLOW_CI_CHANGES=true
 ALLOW_TEST_CONFIG_CHANGES=true
 MAX_FILES_PER_BATCH=5
 MAX_REPAIR_ATTEMPTS_PER_FAILURE_CLASS=2
-MAX_BASELINE_TEST_MINUTES=20
+MAX_BASELINE_TEST_MINUTES=30
 ENABLE_TESTABILITY_CLASSIFICATION=true
 MULTI_MODULE_MODE=auto
 MODULE_LIST=<optional comma-separated list>
@@ -37,6 +37,14 @@ Use `MULTI_MODULE_MODE=explicit` with `MODULE_LIST=core,common` to restrict the 
 
 `MULTI_MODULE_MODE=off` reverts to the single-scope behavior of earlier versions.
 
+## Environment Pre-Flight
+
+Before any work begins (Phase 0.5), the workflow verifies the runtime environment. See [`workflows/shared/environment-pre-flight.md`](../shared/environment-pre-flight.md) for the full rules.
+
+The pre-flight detects the language stack from the URL or repo shape, then verifies the required tools for that stack are on PATH at the correct version. It fails fast with `TC-BLK-PreFlight` if anything is missing, producing a `SETUP.md` report with install commands.
+
+**Why this matters:** without the pre-flight, the agent tries to run a missing tool (e.g. `mvn` for a Java/Maven repo) and either silently fails or starts a 30+ min install. The pre-flight is a 30-second check that prevents hours of wasted work.
+
 ## Phases
 
 ### Phase 0 — Input Validation
@@ -45,6 +53,14 @@ Use `MULTI_MODULE_MODE=explicit` with `MODULE_LIST=core,common` to restrict the 
 - Validate URL format.
 - Capture optional branch.
 - Capture workflow config values.
+
+### Phase 0.5 — Environment Pre-Flight
+
+- Detect language stack from the URL or repo shape.
+- Verify required tools are on PATH at the correct version (see `workflows/shared/environment-pre-flight.md`).
+- Check disk free, network reachability, GitHub auth.
+- Generate `SETUP.md` with environment state and install commands.
+- Fail fast with `TC-BLK-PreFlight` if anything is missing.
 
 ### Phase 1 — Clone / Open Repository
 

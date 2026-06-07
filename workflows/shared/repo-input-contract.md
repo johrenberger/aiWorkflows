@@ -21,11 +21,17 @@ ALLOW_CI_CHANGES=true
 ALLOW_TEST_CONFIG_CHANGES=true
 MAX_FILES_PER_BATCH=5
 MAX_REPAIR_ATTEMPTS_PER_FAILURE_CLASS=2
-MAX_BASELINE_TEST_MINUTES=20
+MAX_BASELINE_TEST_MINUTES=30
 ENABLE_TESTABILITY_CLASSIFICATION=true
 MULTI_MODULE_MODE=off|auto|explicit
 MODULE_LIST=<comma-separated module names>
 ```
+
+## Pre-Flight Behavior
+
+Every workflow that touches the runtime environment MUST run a pre-flight phase before any other work. See [`environment-pre-flight.md`](environment-pre-flight.md) for the full rules.
+
+The pre-flight is enabled by default and is not optional. Workflows that explicitly opt out (for read-only analysis modes) should set a workflow-specific flag and document it.
 
 ## Repository Handling
 
