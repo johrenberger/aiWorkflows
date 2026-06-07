@@ -94,9 +94,53 @@ FRAMEWORK DETECTION:
 Detect the test framework in addition to the build system. Add to Phase 4:
   - Python: pytest, unittest, nose2. Detect via imports in test files.
   - Java: JUnit 3 (extends TestCase), JUnit 4 (org.junit.Test), JUnit 5 (org.junit.jupiter), TestNG (org.testng.annotations). Detect via imports in test files.
+  - Groovy/Spock: org.spockframework or `Specification` base class. Detect via imports or `extends Specification`. Common in Java/Maven projects that mix JUnit and Spock.
   - JavaScript: jest, mocha, vitest, jasmine, ava. Detect via devDependencies in package.json or imports.
   - Go: standard testing package (no separate detection needed).
-Record the test framework in TC-FRAMEWORK-1 of the ledger. The framework matters because some of them (TestNG especially) have very different test-discovery and assertion idioms than JUnit.
+Record the test framework in TC-FRAMEWORK-1 of the ledger. The framework matters because some of them (TestNG, Spock especially) have very different test-discovery and assertion idioms than JUnit.
+
+REGEX GOTCHAS (classification):
+When using regex to detect patterns in source files, ALWAYS wrap alternations in non-capturing groups:
+  - ❌ `extends\s+Exception|RuntimeException|Error|Throwable` — matches "Error" anywhere
+  - ✅ `extends\s+(?:Exception|RuntimeException|Error|Throwable)` — matches the alternation only
+Without the `(?:...)` group, the `|` operator has the lowest precedence and the regex matches the wrong thing. This is a silent failure that classifies hundreds of files incorrectly. See `workflows/shared/sub-module-reactor.md` (section: "Coverage provenance") for the full case study.
+
+ARCHITECTURE-AWARE CLASSIFICATION (when MULTI_MODULE_MODE != off):
+For multi-module repos, the per-module role matters:
+  - API-only modules (interfaces + abstract bases + concrete *Impl.java as POJOs) — skip the integration-only check. These modules have 0 Spring/Hibernate annotations. All testable files are plain POJOs.
+  - Web/wiring modules (Spring @Service, @Controller, @Repository) — keep the integration-only check.
+  - Persistence modules (Hibernate @Entity) — keep the integration-only check.
+  - Test infrastructure modules (Spring @Configuration in src/test/) — apply test-infrastructure rules aggressively.
+Detect the module role by sampling 100 source files and checking for Spring/Hibernate annotation density:
+  - 0 annotations: API-only
+  - > 5% of files have @Service or @Controller: web/wiring
+  - > 5% of files have @Entity: persistence
+  - > 30% of files have @Configuration in src/test/: test infrastructure
+Record the module role in TC-MODULE-ROLE-1 of the ledger.
+
+COVERAGE PROVENANCE (when ENABLE_TESTABILITY_CLASSIFICATION=true):
+For each testable file with current coverage, record WHERE that coverage comes from:
+  - direct: a test file in the SAME module and SAME sub-module (e.g. `framework/src/test/.../XTest.java` for `framework/src/main/.../X.java`)
+  - transitive: a test elsewhere exercises this class via a call chain (e.g. `ItemOfferProcessorSpec` calls `ItemOfferProcessorImpl` which uses `OrderOfferComparator`)
+  - none: zero coverage
+This affects test-writing strategy:
+  - direct → EXTEND the existing test (5-10 min)
+  - transitive → ADD a focused direct test (10-15 min) — locks in coverage, prevents regression if the upstream refactors
+  - none → ADD a test from scratch (15-30 min)
+Record coverage-provenance in the per-file table.
+
+MOCK TYPE FIDELITY (when writing tests for class getters that return complex types):
+If the production code's getter returns `Foo`, the Spock/Groovy mock must return `Foo` (not a primitive that wraps to `Foo`). Common gotchas in BroadleafCommerce-style codebases:
+  - `getPotentialSavings()` returns `org.broadleafcommerce.common.money.Money` (not `BigDecimal`)
+  - `getTotal()` returns `Money`
+  - `getDate()` returns `java.util.Date` (not `java.time.LocalDateTime`)
+  - `getId()` returns `Long` (not `long` boxed — well, long IS boxed in Optional/ID types)
+  - `getCategory()` / `getProduct()` returns the interface, not the *Impl
+Always check the actual return type with `javap -p` or by reading the interface declaration, not by guessing from the field name.
+
+DEFAULT FIELD VALUES (when designing tests that target conditional paths):
+If a test aims to exercise a code path that depends on a field's value (e.g. `if (transaction.isSaveToken())` or `if (order.getTotal().greaterThan(Money.ZERO))`), the field MUST be set to the right value in the test fixture. The default field value (e.g. `false` for boolean, `null` for objects) will skip the path and the test will pass without exercising it.
+Audit each new test for: "which conditional path am I targeting? Is the controlling field set correctly?"
 
 TEST FILE NAMING CONVENTION:
 Tests must be named to match the source file under test, scoped by module:

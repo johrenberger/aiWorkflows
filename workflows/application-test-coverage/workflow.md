@@ -45,6 +45,15 @@ The pre-flight detects the language stack from the URL or repo shape, then verif
 
 **Why this matters:** without the pre-flight, the agent tries to run a missing tool (e.g. `mvn` for a Java/Maven repo) and either silently fails or starts a 30+ min install. The pre-flight is a 30-second check that prevents hours of wasted work.
 
+## Java + Maven Specifics
+
+For Java + Maven projects, additional checks are required:
+
+- **JaCoCo agent attachment** — see [`workflows/shared/java-jacoco-patterns.md`](../shared/java-jacoco-patterns.md). The most common failure: `<argLine>${surefire.argLine}</argLine>` evaluates at parse time, before `prepare-agent` runs. The agent is never attached, and `target/jacoco.exec` doesn't exist.
+- **Multi-module reactor** — see [`workflows/shared/sub-module-reactor.md`](../shared/sub-module-reactor.md). The most common failure: `mvn -pl parent -am test` only builds the parent POM, not its sub-modules. The correct invocation is `mvn -f parent/pom.xml -am test`.
+
+These two runbooks cover the 3 most common silent failures when running coverage on a Java + Maven project.
+
 ## Phases
 
 ### Phase 0 — Input Validation
