@@ -23,6 +23,8 @@ Cross-workflow rules live in `workflows/shared/` — a single source of truth fo
 | [`app-dev-discovery/`](app-dev-discovery/) | Map a codebase's architecture, data, and tests | Stable | 17 |
 | [`application-test-coverage/`](application-test-coverage/) | Bring test coverage to 90%+ per file | **Smoke-tested 2026-06-07** | 15 |
 | [`application-mutation-testing/`](application-mutation-testing/) | Mutation testing to validate test-suite quality | Smoke-tested 2026-06-07 (gates passed; tool install blocked by default) | 17 |
+| [`component-test-analysis/`](component-test-analysis/) | Read-only analysis of a repo's component-level testing strategy; emits machine-readable gap backlog | Shipped 2026-06-08; first real run against `creative-ai` | 9 |
+| [`component-test-generation/`](component-test-generation/) | Consumes `component-test-analysis` output and **generates runnable test files** in the target repo | Shipped 2026-06-08 | 9 |
 
 ## Layout convention
 
@@ -97,3 +99,4 @@ workflows/
 - **CI** for the workflows themselves: a `.github/workflows/ci.yml` that runs the gate validators on every PR.
 - **Mutation workflow run** against `pytest-fastapi-crud-example` (codebase is now stable and well-covered). Needs `ALLOW_DEPENDENCY_INSTALL=true` to install `mutmut`.
 - **"How to contribute" guide** for adding new workflows (the file layout is convention, not enforced).
+- **`component-test-generation` smoke test** against `creative-ai` analysis output (PR #2 on `johrenberger/creative-ai`). Profile: `safe` + `DRY_RUN=true` for first contact.
