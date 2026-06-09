@@ -21,6 +21,7 @@ Cross-workflow rules live in `workflows/shared/` — a single source of truth fo
 |---|---|---|---|
 | [`api-testing-workflow/`](api-testing-workflow/) | Smoke-test a live HTTP API (k6 + pytest) | Stable | 15 |
 | [`app-dev-discovery/`](app-dev-discovery/) | Map a codebase's architecture, data, and tests | Stable | 17 |
+| [`repo-discovery-analyzer/`](repo-discovery-analyzer/) | Build the deterministic repo discovery analyzer CLI | Prototype implementation in progress | 1 |
 | [`application-test-coverage/`](application-test-coverage/) | Bring test coverage to 90%+ per file | **Smoke-tested 2026-06-07** | 15 |
 | [`application-mutation-testing/`](application-mutation-testing/) | Mutation testing to validate test-suite quality | Smoke-tested 2026-06-07 (gates passed; tool install blocked by default) | 17 |
 | [`component-test-analysis/`](component-test-analysis/) | Read-only analysis of a repo's component-level testing strategy; emits machine-readable gap backlog | Shipped 2026-06-08; first real run against `creative-ai` | 9 |

@@ -8,6 +8,7 @@ runner script + agent prompt + validation gate + evidence templates.
 | Workflow | Description | Status |
 | --- | --- | --- |
 | [`workflows/app-dev-discovery/`](workflows/app-dev-discovery/) | Analyzes a GitHub repo and generates a developer onboarding / architecture discovery guide | v1 (tested on johrenberger/creative-ai) |
+| [`workflows/repo-discovery-analyzer/`](workflows/repo-discovery-analyzer/) | Builds the deterministic Python CLI that analyzes a local GitHub checkout and emits structured evidence JSON | prototype implementation in progress |
 
 ## Conventions
 
