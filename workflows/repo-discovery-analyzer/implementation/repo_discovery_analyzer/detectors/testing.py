@@ -2,20 +2,24 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from ..io_utils import safe_read_text
+from ..io_utils import DEFAULT_MAX_SUMMARY_ITEMS, safe_read_text
 from ..model import FileRecord
 
 
 def detect_testing(repo_path: Path, owner: str, repo: str, commit: str, records: list[FileRecord]) -> dict:
     findings: list[dict] = []
-    test_paths = [r.path for r in records if r.role_guess == "test"]
+    urls_by_path = {record.path: record.github_url for record in records}
+    all_test_paths = [r.path for r in records if r.role_guess == "test"]
+    test_paths = all_test_paths[:DEFAULT_MAX_SUMMARY_ITEMS]
     if test_paths:
         findings.append(
             {
                 "type": "test-surface",
                 "framework_tool": _infer_framework(records, repo_path),
                 "paths": sorted(test_paths),
-                "github_urls": _urls(records, test_paths),
+                "github_urls": _urls(urls_by_path, test_paths),
+                "path_count": len(all_test_paths),
+                "paths_truncated": len(all_test_paths) > len(test_paths),
                 "command": _test_command(repo_path),
                 "confidence": "high",
             }
@@ -27,20 +31,23 @@ def detect_testing(repo_path: Path, owner: str, repo: str, commit: str, records:
                 "type": "coverage-tool",
                 "framework_tool": coverage,
                 "paths": _paths_for(records, coverage),
-                "github_urls": _urls(records, _paths_for(records, coverage)),
+                "github_urls": _urls(urls_by_path, _paths_for(records, coverage)),
                 "command": None,
                 "confidence": "medium",
             }
         )
-    ci = [r.path for r in records if ".github/workflows" in r.path or "gitlab-ci" in r.path.lower() or "jenkins" in r.path.lower()]
+    all_ci = [r.path for r in records if ".github/workflows" in r.path or "gitlab-ci" in r.path.lower() or "jenkins" in r.path.lower()]
+    ci = all_ci[:DEFAULT_MAX_SUMMARY_ITEMS]
     if ci:
         findings.append(
             {
                 "type": "ci-test-step",
                 "framework_tool": "CI workflow",
                 "paths": sorted(ci),
-                "github_urls": _urls(records, ci),
-                "command": _ci_test_command(repo_path),
+                "github_urls": _urls(urls_by_path, ci),
+                "path_count": len(all_ci),
+                "paths_truncated": len(all_ci) > len(ci),
+                "command": _ci_test_command(records, repo_path),
                 "confidence": "medium",
             }
         )
@@ -82,10 +89,10 @@ def _test_command(repo_path: Path) -> str | None:
     return None
 
 
-def _ci_test_command(repo_path: Path) -> str | None:
-    for path in repo_path.rglob("*"):
-        if path.is_file() and ".github/workflows" in path.as_posix():
-            text, _ = safe_read_text(path)
+def _ci_test_command(records: list[FileRecord], repo_path: Path) -> str | None:
+    for record in records:
+        if ".github/workflows" in record.path:
+            text, _ = safe_read_text(repo_path / record.path)
             if text and "test" in text.lower():
                 if "npm test" in text:
                     return "npm test"
@@ -99,20 +106,14 @@ def _ci_test_command(repo_path: Path) -> str | None:
 
 
 def _paths_for(records: list[FileRecord], needle: str) -> list[str]:
-    return [r.path for r in records if needle.lower() in r.path.lower()]
+    return [r.path for r in records if needle.lower() in r.path.lower()][:DEFAULT_MAX_SUMMARY_ITEMS]
 
 
-def _urls(records: list[FileRecord], paths: list[str]) -> list[str]:
-    urls = []
-    for path in paths:
-        for record in records:
-            if record.path == path:
-                urls.append(record.github_url)
-    return sorted(set(urls))
+def _urls(urls_by_path: dict[str, str], paths: list[str]) -> list[str]:
+    return sorted({urls_by_path[path] for path in paths if path in urls_by_path})
 
 
 def _ratio(records: list[FileRecord]) -> dict:
     source = sum(1 for r in records if r.role_guess == "source")
     tests = sum(1 for r in records if r.role_guess == "test")
     return {"source_files": source, "test_files": tests, "ratio": round(tests / source, 4) if source else None}
-

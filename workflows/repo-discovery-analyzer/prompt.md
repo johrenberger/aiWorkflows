@@ -59,10 +59,14 @@ The analyzer must write these files into `--output-dir`:
 - `contradiction_candidates.json`
 - `github_links.json`
 - `validation_report.json`
+- `analysis_report.md`
 
 ## Implementation Principles
 
-1. Use only deterministic ordering and machine-readable JSON.
+1. Use deterministic ordering and machine-readable JSON for evidence outputs.
+   After validation, generate `analysis_report.md` solely from the persisted JSON
+   files. Keep large report sections bounded and link findings to commit-pinned
+   source evidence where available.
 2. Do not run application code, tests, package installs, or builds in the target
    repository.
 3. Do not modify the target repository being analyzed by the analyzer.
@@ -169,4 +173,3 @@ When finished, report:
 - validation status
 - any gaps or assumptions
 - the top files a maintainer should review first
-

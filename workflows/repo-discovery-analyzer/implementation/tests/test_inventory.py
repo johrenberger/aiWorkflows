@@ -35,6 +35,20 @@ class InventoryTests(unittest.TestCase):
             self.assertEqual(roles["tests/auth.test.js"], "test")
             self.assertEqual(roles["widget.spec.ts"], "test")
 
+    def test_large_file_is_skipped_by_default_and_streamed_when_included(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = Path(tmp)
+            path = repo / "large.py"
+            path.write_text("line\n" * 20, encoding="utf-8")
+
+            skipped = scan_repo(repo, "acme", "widget", "abc1234", False, 16)[0]
+            included = scan_repo(repo, "acme", "widget", "abc1234", True, 16)[0]
+
+            self.assertTrue(skipped.skipped)
+            self.assertIn("file exceeds max_file_bytes", skipped.skip_reason or "")
+            self.assertFalse(included.skipped)
+            self.assertEqual(included.line_count, 20)
+
 
 if __name__ == "__main__":
     unittest.main()

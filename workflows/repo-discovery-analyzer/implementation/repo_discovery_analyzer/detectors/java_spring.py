@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from ..io_utils import safe_read_text, short_snippet
+from ..io_utils import DEFAULT_MAX_SUMMARY_ITEMS, safe_read_text, short_snippet
 from ..model import FileRecord
 
 
@@ -16,6 +16,8 @@ RE_METHOD = re.compile(r'Method\.(GET|POST|PUT|DELETE|PATCH)')
 def detect_java_spring_routes(repo_path: Path, owner: str, repo: str, commit: str, records: list[FileRecord]) -> dict:
     routes: list[dict] = []
     schema: list[dict] = []
+    route_total = 0
+    entity_total = 0
     for record in records:
         if not record.path.endswith(".java") or record.skipped:
             continue
@@ -36,8 +38,9 @@ def detect_java_spring_routes(repo_path: Path, owner: str, repo: str, commit: st
                 if any(tag in annotation for tag in ("GetMapping", "PostMapping", "PutMapping", "DeleteMapping", "PatchMapping", "RequestMapping")):
                     method, path = _java_route(annotation)
                     if method and path:
-                        routes.append(
-                            {
+                        route_total += 1
+                        if len(routes) < DEFAULT_MAX_SUMMARY_ITEMS:
+                            routes.append({
                                 "method": method,
                                 "path": path,
                                 "source_file": record.path,
@@ -45,13 +48,13 @@ def detect_java_spring_routes(repo_path: Path, owner: str, repo: str, commit: st
                                 "handler": class_name,
                                 "framework": "Spring MVC",
                                 "confidence": "high",
-                            }
-                        )
+                            })
                 if "@Entity" in annotation:
                     entity_name = class_name or Path(record.path).stem
                     fields = _java_fields(lines)
-                    schema.append(
-                        {
+                    entity_total += 1
+                    if len(schema) < DEFAULT_MAX_SUMMARY_ITEMS:
+                        schema.append({
                             "name": entity_name,
                             "source_file": record.path,
                             "github_url": record.github_url,
@@ -59,13 +62,19 @@ def detect_java_spring_routes(repo_path: Path, owner: str, repo: str, commit: st
                             "relationships": _java_relationships(text),
                             "migration_source_type": "jpa-entity",
                             "confidence": "high",
-                        }
-                    )
+                        })
             pending_annotations = []
 
     routes = sorted(routes, key=lambda x: (x["source_file"], x["method"], x["path"]))
     schema = sorted(schema, key=lambda x: (x["source_file"], x["name"]))
-    return {"routes": routes, "entities": schema}
+    return {
+        "routes": routes,
+        "routes_total": route_total,
+        "routes_truncated": route_total > len(routes),
+        "entities": schema,
+        "entities_total": entity_total,
+        "entities_truncated": entity_total > len(schema),
+    }
 
 
 def _java_route(annotation: str) -> tuple[str | None, str | None]:
@@ -107,4 +116,3 @@ def _java_relationships(text: str) -> list[str]:
         if needle in text:
             rels.append(needle)
     return rels
-

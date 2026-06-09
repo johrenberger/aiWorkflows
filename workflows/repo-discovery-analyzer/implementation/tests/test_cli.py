@@ -30,8 +30,13 @@ class CliTests(unittest.TestCase):
             output = Path(out_dir)
             for name in REQUIRED_OUTPUTS:
                 self.assertTrue((output / name).exists(), name)
+            report = (output / "analysis_report.md").read_text(encoding="utf-8")
+            self.assertIn("# Repository Analysis: widget", report)
+            self.assertIn("## Executive Summary", report)
+            self.assertIn("## Technology Stack", report)
+            self.assertIn("## Evidence Files", report)
+            self.assertIn("validation_report.json", report)
 
 
 if __name__ == "__main__":
     unittest.main()
-

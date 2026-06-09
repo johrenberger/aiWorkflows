@@ -3,12 +3,15 @@ from __future__ import annotations
 import json
 import os
 import re
-from dataclasses import dataclass
+from functools import lru_cache
 from pathlib import Path
 from typing import Any, Iterable
 
 from .model import FileRecord
 
+
+DEFAULT_MAX_READ_BYTES = 2_000_000
+DEFAULT_MAX_SUMMARY_ITEMS = 1_000
 
 DEFAULT_EXCLUDES = {
     ".git",
@@ -59,13 +62,24 @@ RE_URL = re.compile(r"https?://[^\s'\"<>]+")
 RE_CREDENTIAL_VALUE = re.compile(r"(?i)(=|:)\s*['\"]?([A-Za-z0-9_\-+/=]{12,})['\"]?")
 
 
-def safe_read_text(path: Path, max_bytes: int | None = None) -> tuple[str | None, str | None]:
+def safe_read_text(path: Path, max_bytes: int | None = DEFAULT_MAX_READ_BYTES) -> tuple[str | None, str | None]:
+    effective_max = DEFAULT_MAX_READ_BYTES if max_bytes is None else max_bytes
+    return _safe_read_text_cached(str(path.resolve()), effective_max)
+
+
+@lru_cache(maxsize=64)
+def _safe_read_text_cached(path_str: str, max_bytes: int) -> tuple[str | None, str | None]:
+    return _read_text_uncached(Path(path_str), max_bytes)
+
+
+def _read_text_uncached(path: Path, max_bytes: int = DEFAULT_MAX_READ_BYTES) -> tuple[str | None, str | None]:
     try:
-        data = path.read_bytes()
+        with path.open("rb") as fh:
+            data = fh.read(max_bytes + 1)
     except OSError as exc:
         return None, f"unreadable: {exc.strerror or exc.__class__.__name__}"
-    if max_bytes is not None and len(data) > max_bytes:
-        return None, f"file exceeds max_file_bytes ({len(data)} > {max_bytes})"
+    if len(data) > max_bytes:
+        return None, f"file exceeds max read size ({len(data)} > {max_bytes})"
     try:
         return data.decode("utf-8"), None
     except UnicodeDecodeError:
@@ -73,6 +87,35 @@ def safe_read_text(path: Path, max_bytes: int | None = None) -> tuple[str | None
             return data.decode("utf-8", errors="replace"), None
         except Exception as exc:  # pragma: no cover - extremely defensive
             return None, f"unreadable: {exc.__class__.__name__}"
+
+
+def clear_safe_read_text_cache() -> None:
+    _safe_read_text_cached.cache_clear()
+
+
+def stream_line_count(path: Path, chunk_bytes: int = 64 * 1024) -> tuple[int | None, str | None]:
+    line_count = 0
+    saw_data = False
+    ended_with_newline = False
+    try:
+        with path.open("rb") as fh:
+            while True:
+                chunk = fh.read(chunk_bytes)
+                if not chunk:
+                    break
+                saw_data = True
+                line_count += chunk.count(b"\n")
+                ended_with_newline = chunk.endswith(b"\n")
+    except OSError as exc:
+        return None, f"unreadable: {exc.strerror or exc.__class__.__name__}"
+    if saw_data and not ended_with_newline:
+        line_count += 1
+    return line_count, None
+
+
+def bounded_items(items: list[Any], limit: int = DEFAULT_MAX_SUMMARY_ITEMS) -> tuple[list[Any], int, bool]:
+    total_count = len(items)
+    return items[:limit], total_count, total_count > limit
 
 
 def count_lines(text: str | None) -> int | None:
@@ -184,11 +227,9 @@ def json_dump(path: Path, payload: Any, indent: int = 2) -> None:
         fh.write("\n")
 
 
-def walk_files(repo_path: Path) -> list[Path]:
-    files: list[Path] = []
+def walk_files(repo_path: Path):
     for root, dirs, filenames in os.walk(repo_path):
         dirs[:] = sorted(d for d in dirs if d not in DEFAULT_EXCLUDES)
         root_path = Path(root)
         for filename in sorted(filenames):
-            files.append(root_path / filename)
-    return sorted(files, key=lambda p: p.relative_to(repo_path).as_posix())
+            yield root_path / filename

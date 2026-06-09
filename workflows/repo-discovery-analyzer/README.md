@@ -23,6 +23,11 @@ The repository also carries a local implementation prototype under
 `implementation/` so the analyzer can be exercised and iterated on in this
 workspace.
 
+Analyzer runs finish by rendering `analysis_report.md` from the generated JSON
+evidence. The report summarizes repository scale, stack, structure, entry
+points, routes, data models, dependencies, integrations, tests, security,
+operations, hygiene findings, contradictions, warnings, and evidence files.
+
 ## Files
 
 ```text
