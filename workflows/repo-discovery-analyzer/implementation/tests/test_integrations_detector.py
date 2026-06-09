@@ -140,13 +140,9 @@ class CloudSdkTests(unittest.TestCase):
             result = detect_integrations(repo, "acme", "widget", "abc1234", records, dependencies, {"security_signals": []}, {"technologies": []})
         self.assertIsNotNone(_by_tech(result["integrations"], "AWS SDK"))
 
-    def test_azure_sdk(self) -> None:
-        # KNOWN BUG: the Azure check uses `name in dep_names` which is
-        # an exact-match dict lookup, not substring. So
-        # "azure-storage-blob" doesn't match either "azure" or
-        # "azure-storage". The exact-string dep "azure" or
-        # "azure-storage" is required. Pinning actual behavior: the
-        # real Azure dep name doesn't trigger the branch.
+    def test_azure_sdk_substring(self) -> None:
+        # Substring match: "azure-storage-blob" matches the "azure"
+        # prefix in the new implementation.
         with tempfile.TemporaryDirectory() as tmp:
             repo = Path(tmp)
             _write(repo, "requirements.txt", "azure-storage-blob==12.0\n")
@@ -162,10 +158,10 @@ class CloudSdkTests(unittest.TestCase):
             }
             dependencies = {"dependencies": [dep]}
             result = detect_integrations(repo, "acme", "widget", "abc1234", records, dependencies, {"security_signals": []}, {"technologies": []})
-        self.assertIsNone(_by_tech(result["integrations"], "Azure SDK"))
+        self.assertIsNotNone(_by_tech(result["integrations"], "Azure SDK"))
 
     def test_azure_exact_name(self) -> None:
-        # The exact string "azure" DOES match the branch.
+        # The exact string "azure" also matches.
         with tempfile.TemporaryDirectory() as tmp:
             repo = Path(tmp)
             _write(repo, "requirements.txt", "azure==1.0\n")

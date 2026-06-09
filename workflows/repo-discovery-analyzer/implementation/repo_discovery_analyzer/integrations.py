@@ -26,17 +26,22 @@ def detect_integrations(repo_path: Path, owner: str, repo: str, commit: str, rec
         )
 
     dep_names = {item["name"].lower(): item for item in dependencies.get("dependencies", [])}
-    if any(name in dep_names for name in ("sentry", "@sentry/node", "sentry-sdk")):
+    # Substring-based matching: real package names are usually longer
+    # than the prefix (e.g. "azure-storage-blob" should match "azure").
+    def _matches(needles: tuple[str, ...]) -> bool:
+        return any(needle in name for name in dep_names for needle in needles)
+
+    if _matches(("sentry", "@sentry/node", "sentry-sdk")):
         add("observability", "Sentry", _paths_for_dep(records, dep_names, ("sentry", "@sentry/node", "sentry-sdk")), "high")
-    if any(name in dep_names for name in ("opentelemetry-api", "@opentelemetry/api", "opentelemetry")):
+    if _matches(("opentelemetry-api", "@opentelemetry/api", "opentelemetry")):
         add("observability", "OpenTelemetry", _paths_for_dep(records, dep_names, ("opentelemetry-api", "@opentelemetry/api", "opentelemetry")), "high")
-    if any(name in dep_names for name in ("prometheus-client", "prom-client")):
+    if _matches(("prometheus-client", "prom-client")):
         add("observability", "Prometheus", _paths_for_dep(records, dep_names, ("prometheus-client", "prom-client")), "high")
-    if any(name in dep_names for name in ("aws-sdk", "@aws-sdk/*", "boto3")):
+    if _matches(("aws-sdk", "@aws-sdk", "boto3")):
         add("cloud", "AWS SDK", _paths_for_dep(records, dep_names, ("aws-sdk", "@aws-sdk", "boto3")), "medium")
-    if any(name in dep_names for name in ("@azure/*", "azure", "azure-storage")):
-        add("cloud", "Azure SDK", _paths_for_dep(records, dep_names, ("azure", "azure-storage", "@azure")), "medium")
-    if any(name in dep_names for name in ("google-cloud", "@google-cloud", "google-cloud-storage")):
+    if _matches(("azure", "@azure")):
+        add("cloud", "Azure SDK", _paths_for_dep(records, dep_names, ("azure", "@azure")), "medium")
+    if _matches(("google-cloud", "@google-cloud")):
         add("cloud", "GCP SDK", _paths_for_dep(records, dep_names, ("google-cloud", "@google-cloud")), "medium")
     if any(term in _security_text(security) for term in ("oauth", "oidc", "saml")):
         add("identity", "OAuth/OIDC/SAML", _paths_for_security(security, ("oauth", "oidc", "saml")), "high")
