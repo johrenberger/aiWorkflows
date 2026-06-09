@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from .github_links import url_for_path
-from .io_utils import count_lines, guess_language, guess_role, is_probably_text, normalize_path, safe_read_text, walk_files
+from .io_utils import guess_language, guess_role, is_probably_text, normalize_path, stream_line_count, walk_files
 from .model import FileRecord
 
 
@@ -49,10 +49,10 @@ def scan_repo(repo_path: Path, owner: str, repo: str, commit: str, include_large
                 )
             )
             continue
-        text = None
+        line_count = None
         skip_reason = None
         if is_probably_text(path):
-            text, skip_reason = safe_read_text(path, None)
+            line_count, skip_reason = stream_line_count(path)
         if skip_reason:
             records.append(
                 FileRecord(
@@ -77,8 +77,8 @@ def scan_repo(repo_path: Path, owner: str, repo: str, commit: str, include_large
                 size_bytes=size_bytes,
                 language_guess=guess_language(path),
                 role_guess=guess_role(path),
-                line_count=count_lines(text),
-                source_line_count=count_lines(text) if text is not None else None,
+                line_count=line_count,
+                source_line_count=line_count,
                 github_url=url_for_path(owner, repo, commit, rel),
                 reviewed_by_analyzer=True,
                 skipped=False,
@@ -126,4 +126,3 @@ def build_project_structure(repo_path: Path, records: list[FileRecord]) -> dict:
         "notable_directories": notable_dirs,
         "reading_order": reading_order,
     }
-

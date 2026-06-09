@@ -17,10 +17,11 @@ from .github_links import build_links_by_path, commit_pinned_prefix, detect_defa
 from .detectors.hygiene import detect_hygiene
 from .integrations import detect_integrations
 from .inventory import build_project_structure, scan_repo
-from .io_utils import json_dump
+from .io_utils import DEFAULT_MAX_SUMMARY_ITEMS, clear_safe_read_text_cache, json_dump
 from .detectors.java_spring import detect_java_spring_routes
 from .detectors.javascript import detect_javascript_routes
 from .loc_metrics import compute_loc_metrics
+from .markdown_report import REPORT_NAME, generate_markdown_report
 from .model import AnalysisConfig, AnalysisManifest, TOOL_NAME, dataclass_to_json
 from .detectors.security import detect_security
 from .detectors.stack import detect_stack
@@ -47,6 +48,7 @@ REQUIRED_OUTPUTS = [
     "contradiction_candidates.json",
     "github_links.json",
     "validation_report.json",
+    REPORT_NAME,
 ]
 
 
@@ -65,6 +67,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> int:
+    clear_safe_read_text_cache()
     args = build_parser().parse_args(argv)
     cfg = AnalysisConfig(
         repo_path=Path(args.repo_path).resolve(),
@@ -107,8 +110,43 @@ def main(argv: list[str] | None = None) -> int:
     java_routes = detect_java_spring_routes(cfg.repo_path, owner, repo, cfg.commit, records)
     js_routes = detect_javascript_routes(cfg.repo_path, owner, repo, cfg.commit, records)
     database_schema = detect_database_schema(cfg.repo_path, owner, repo, cfg.commit, records)
-    routes = {"routes": _merge_sorted(java_routes.get("routes", []) + js_routes.get("routes", []))}
-    db_schema = {"entities": _merge_sorted(java_routes.get("entities", []) + js_routes.get("entities", []) + database_schema.get("entities", []))}
+    all_merged_routes = _merge_sorted(java_routes.get("routes", []) + js_routes.get("routes", []))
+    route_source_truncated = java_routes.get("routes_truncated", False) or js_routes.get("routes_truncated", False)
+    merged_routes = all_merged_routes[:DEFAULT_MAX_SUMMARY_ITEMS]
+    routes_total = (
+        java_routes.get("routes_total", len(java_routes.get("routes", [])))
+        + js_routes.get("routes_total", len(js_routes.get("routes", [])))
+        if route_source_truncated
+        else len(all_merged_routes)
+    )
+    routes = {
+        "routes": merged_routes,
+        "routes_total": routes_total,
+        "routes_truncated": route_source_truncated or len(all_merged_routes) > len(merged_routes),
+    }
+    all_merged_entities = _merge_sorted(
+        java_routes.get("entities", []) + js_routes.get("entities", []) + database_schema.get("entities", [])
+    )
+    entity_source_truncated = (
+        java_routes.get("entities_truncated", False)
+        or js_routes.get("entities_truncated", False)
+        or database_schema.get("entities_truncated", False)
+    )
+    merged_entities = all_merged_entities[:DEFAULT_MAX_SUMMARY_ITEMS]
+    entities_total = (
+        (
+            java_routes.get("entities_total", len(java_routes.get("entities", [])))
+            + js_routes.get("entities_total", len(js_routes.get("entities", [])))
+            + database_schema.get("entities_total", len(database_schema.get("entities", [])))
+        )
+        if entity_source_truncated
+        else len(all_merged_entities)
+    )
+    db_schema = {
+        "entities": merged_entities,
+        "entities_total": entities_total,
+        "entities_truncated": entity_source_truncated or len(all_merged_entities) > len(merged_entities),
+    }
     dependencies = detect_dependencies(cfg.repo_path, owner, repo, cfg.commit, records)
     testing = detect_testing(cfg.repo_path, owner, repo, cfg.commit, records)
     security = detect_security(cfg.repo_path, owner, repo, cfg.commit, records)
@@ -164,8 +202,10 @@ def main(argv: list[str] | None = None) -> int:
     for name, payload in outputs.items():
         json_dump(cfg.output_dir / name, payload, indent=cfg.json_indent)
 
-    validation = validate_outputs(cfg.output_dir, REQUIRED_OUTPUTS[:-1], warnings, repo_path=cfg.repo_path, commit=cfg.commit)
+    required_evidence = [name for name in REQUIRED_OUTPUTS if name.endswith(".json") and name != "validation_report.json"]
+    validation = validate_outputs(cfg.output_dir, required_evidence, warnings, repo_path=cfg.repo_path, commit=cfg.commit)
     json_dump(cfg.output_dir / "validation_report.json", validation, indent=cfg.json_indent)
+    generate_markdown_report(cfg.output_dir)
 
     if cfg.fail_on_validation_error and validation["status"] == "failed":
         return 1

@@ -5,7 +5,7 @@ import re
 from pathlib import Path
 
 from ..github_links import url_for_path
-from ..io_utils import safe_read_text, short_snippet
+from ..io_utils import DEFAULT_MAX_SUMMARY_ITEMS, safe_read_text, short_snippet
 from ..model import FileRecord
 
 
@@ -14,7 +14,8 @@ def detect_stack(repo_path: Path, owner: str, repo: str, commit: str, records: l
     items: list[dict] = []
 
     def add(technology: str, category: str, confidence: str, paths: list[str], version: str | None = None, snippets: list[str] | None = None):
-        paths = [p for p in sorted(set(paths)) if p in files]
+        all_paths = [p for p in sorted(set(paths)) if p in files]
+        paths = all_paths[:DEFAULT_MAX_SUMMARY_ITEMS]
         if not paths:
             return
         evidence_urls = [files[p].github_url for p in paths]
@@ -25,6 +26,8 @@ def detect_stack(repo_path: Path, owner: str, repo: str, commit: str, records: l
                 "confidence": confidence,
                 "evidence_paths": paths,
                 "evidence_urls": evidence_urls,
+                "evidence_path_count": len(all_paths),
+                "evidence_paths_truncated": len(all_paths) > len(paths),
                 "evidence_snippets": snippets or [],
                 "version": version,
             }
@@ -88,12 +91,15 @@ def detect_stack(repo_path: Path, owner: str, repo: str, commit: str, records: l
                 add("Spring Security", "security", "medium", [path], None, [_pom_snippet(text, "spring-security")])
 
     java_files = [r for r in records if r.path.endswith(".java") and not r.skipped]
-    if any("public static void main" in (_read_text(repo_path / r.path) or "") for r in java_files):
-        add("Java", "language", "high", [r.path for r in java_files[:1]], None, [])
-    if any("@SpringBootApplication" in (_read_text(repo_path / r.path) or "") for r in java_files):
-        add("Spring Boot", "backend-framework", "high", [r.path for r in java_files if "@SpringBootApplication" in (_read_text(repo_path / r.path) or "")][:5], None, [])
-    if any("@RestController" in (_read_text(repo_path / r.path) or "") or "@Controller" in (_read_text(repo_path / r.path) or "") for r in java_files):
-        add("Spring MVC", "backend-framework", "high", [r.path for r in java_files if "@RestController" in (_read_text(repo_path / r.path) or "") or "@Controller" in (_read_text(repo_path / r.path) or "")][:5], None, [])
+    java_texts = {r.path: (_read_text(repo_path / r.path) or "") for r in java_files}
+    if any("public static void main" in text for text in java_texts.values()):
+        add("Java", "language", "high", [java_files[0].path], None, [])
+    spring_boot_paths = [path for path, text in java_texts.items() if "@SpringBootApplication" in text]
+    if spring_boot_paths:
+        add("Spring Boot", "backend-framework", "high", spring_boot_paths[:5], None, [])
+    spring_mvc_paths = [path for path, text in java_texts.items() if "@RestController" in text or "@Controller" in text]
+    if spring_mvc_paths:
+        add("Spring MVC", "backend-framework", "high", spring_mvc_paths[:5], None, [])
 
     dockerfile_paths = [r.path for r in records if Path(r.path).name.lower() in {"dockerfile", "containerfile"}]
     if dockerfile_paths:
@@ -107,12 +113,24 @@ def detect_stack(repo_path: Path, owner: str, repo: str, commit: str, records: l
     if any("k8s" in r.path.lower() or "kubernetes" in r.path.lower() for r in records):
         add("Kubernetes", "infrastructure", "medium", [r.path for r in records if "k8s" in r.path.lower() or "kubernetes" in r.path.lower()])
 
-    if any("aws-sdk" in (_read_text(repo_path / r.path) or "").lower() or "boto3" in (_read_text(repo_path / r.path) or "").lower() for r in records):
-        add("AWS", "cloud", "medium", [r.path for r in records if "aws" in r.path.lower()][:5])
-    if any("azure" in (_read_text(repo_path / r.path) or "").lower() for r in records):
-        add("Azure", "cloud", "medium", [r.path for r in records if "azure" in r.path.lower()][:5])
-    if any("google" in (_read_text(repo_path / r.path) or "").lower() or "gcp" in (_read_text(repo_path / r.path) or "").lower() for r in records):
-        add("GCP", "cloud", "medium", [r.path for r in records if "gcp" in r.path.lower() or "google" in r.path.lower()][:5])
+    cloud_hits: dict[str, list[str]] = {"AWS": [], "Azure": [], "GCP": []}
+    for record in records:
+        text = java_texts.get(record.path)
+        if text is None:
+            text = _read_text(repo_path / record.path) or ""
+        lowered = text.lower()
+        if "aws-sdk" in lowered or "boto3" in lowered:
+            cloud_hits["AWS"].append(record.path)
+        if "azure" in lowered:
+            cloud_hits["Azure"].append(record.path)
+        if "google" in lowered or "gcp" in lowered:
+            cloud_hits["GCP"].append(record.path)
+    if cloud_hits["AWS"]:
+        add("AWS", "cloud", "medium", cloud_hits["AWS"][:5])
+    if cloud_hits["Azure"]:
+        add("Azure", "cloud", "medium", cloud_hits["Azure"][:5])
+    if cloud_hits["GCP"]:
+        add("GCP", "cloud", "medium", cloud_hits["GCP"][:5])
 
     items = sorted(items, key=lambda x: (x["category"], x["technology"], tuple(x["evidence_paths"])))
     return {"technologies": items}

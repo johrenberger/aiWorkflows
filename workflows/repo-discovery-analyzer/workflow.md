@@ -7,6 +7,7 @@ The target implementation should:
 
 - expose the required CLI flags
 - generate the JSON evidence files listed in the requirements
+- generate `analysis_report.md` from the persisted JSON evidence after validation
 - avoid mutating the target repository during analysis
 - remain deterministic and cross-platform
 - keep the baseline dependency footprint minimal
@@ -23,4 +24,3 @@ repo:
 The workflow prompt is the source of truth for implementation behavior. The
 validator is intentionally narrower and only checks that the expected package
 layout and top-level implementation files exist.
-

@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from ..io_utils import redact_text, safe_read_text, short_snippet
+from ..io_utils import DEFAULT_MAX_SUMMARY_ITEMS, redact_text, safe_read_text, short_snippet
 from ..model import FileRecord
 
 
@@ -64,6 +64,14 @@ PLACEHOLDER_VALUES = {
 
 def detect_security(repo_path: Path, owner: str, repo: str, commit: str, records: list[FileRecord]) -> dict:
     findings: list[dict] = []
+    total_count = 0
+
+    def add(finding: dict) -> None:
+        nonlocal total_count
+        total_count += 1
+        if len(findings) < DEFAULT_MAX_SUMMARY_ITEMS:
+            findings.append(finding)
+
     for record in records:
         if record.skipped or not _is_security_evidence(record):
             continue
@@ -74,17 +82,17 @@ def detect_security(repo_path: Path, owner: str, repo: str, commit: str, records
         for category, signal, severity, pattern in SECURITY_PATTERNS:
             match_line = _matching_line(lines, pattern)
             if match_line:
-                findings.append(_finding(category, signal, severity, record, match_line))
+                add(_finding(category, signal, severity, record, match_line))
         for signal, pattern in HASH_PATTERNS:
             match_line = _matching_line(lines, pattern)
             if match_line:
-                findings.append(_finding("password hashing", signal, "low", record, match_line))
+                add(_finding("password hashing", signal, "low", record, match_line))
         for line in lines:
             secret_match = QUOTED_SECRET_ASSIGNMENT_RE.search(line)
             if not secret_match and Path(record.path).suffix.lower() in CONFIG_EXTENSIONS:
                 secret_match = UNQUOTED_CONFIG_SECRET_RE.search(line)
             if secret_match and not _is_placeholder(secret_match.group(2)):
-                findings.append(
+                add(
                     {
                         "category": "secrets-like pattern",
                         "signal": f"possible hardcoded {secret_match.group(1).lower()}",
@@ -103,9 +111,13 @@ def detect_security(repo_path: Path, owner: str, repo: str, commit: str, records
             )
         env_line = _matching_line(lines, env_pattern)
         if env_line:
-            findings.append(_finding("environment variable usage", "environment variables", "info", record, env_line))
+            add(_finding("environment variable usage", "environment variables", "info", record, env_line))
 
-    return {"security_signals": sorted(findings, key=lambda x: (x["category"], x["source_file"], x["signal"]))}
+    return {
+        "security_signals": sorted(findings, key=lambda x: (x["category"], x["source_file"], x["signal"])),
+        "security_signals_total": total_count,
+        "security_signals_truncated": total_count > len(findings),
+    }
 
 
 def _finding(category: str, signal: str, severity: str, record: FileRecord, text: str) -> dict:

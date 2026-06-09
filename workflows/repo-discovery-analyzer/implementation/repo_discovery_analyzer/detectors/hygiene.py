@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from ..io_utils import redact_text, safe_read_text, short_snippet
+from ..io_utils import DEFAULT_MAX_SUMMARY_ITEMS, redact_text, safe_read_text, short_snippet
 from ..model import FileRecord
 
 
@@ -35,9 +35,17 @@ UNQUOTED_CONFIG_CREDENTIAL_RE = re.compile(
 
 def detect_hygiene(repo_path: Path, owner: str, repo: str, commit: str, records: list[FileRecord]) -> dict:
     findings: list[dict] = []
+    total_count = 0
+
+    def add(finding: dict) -> None:
+        nonlocal total_count
+        total_count += 1
+        if len(findings) < DEFAULT_MAX_SUMMARY_ITEMS:
+            findings.append(finding)
+
     manager_files = [r.path for r in records if Path(r.path).name in {"package-lock.json", "yarn.lock", "pnpm-lock.yaml", "pom.xml", "build.gradle", "build.gradle.kts"}]
     if len({Path(p).name for p in manager_files if Path(p).name}) > 1:
-        findings.append(
+        add(
             {
                 "type": "package-manager-conflict",
                 "path": ", ".join(sorted({Path(p).name for p in manager_files})),
@@ -51,7 +59,7 @@ def detect_hygiene(repo_path: Path, owner: str, repo: str, commit: str, records:
 
     for record in records:
         if record.role_guess == "source" and record.line_count and record.line_count > 1000:
-            findings.append(_finding("large-file", record.path, record.github_url, None, None, "large file may be hard to review", "high"))
+            add(_finding("large-file", record.path, record.github_url, None, None, "large file may be hard to review", "high"))
         if not record.skipped and _is_hygiene_evidence(record):
             text, _ = safe_read_text(repo_path / record.path)
             if not text:
@@ -59,7 +67,7 @@ def detect_hygiene(repo_path: Path, owner: str, repo: str, commit: str, records:
             for lineno, line in enumerate(text.splitlines(), start=1):
                 lowered = line.lower()
                 if record.role_guess != "test" and _has_marker(lowered):
-                    findings.append(
+                    add(
                         {
                             "type": "marker",
                             "path": record.path,
@@ -72,7 +80,7 @@ def detect_hygiene(repo_path: Path, owner: str, repo: str, commit: str, records:
                     )
                 url_match = URL_RE.search(line)
                 if record.role_guess != "test" and url_match and _is_actionable_url(url_match.group(0), line):
-                    findings.append(
+                    add(
                         _finding(
                             "hardcoded-url",
                             record.path,
@@ -91,7 +99,7 @@ def detect_hygiene(repo_path: Path, owner: str, repo: str, commit: str, records:
                     and credential_match
                     and not _is_placeholder(credential_match.group(2))
                 ):
-                    findings.append(
+                    add(
                         _finding(
                             "credential-like-key",
                             record.path,
@@ -102,7 +110,11 @@ def detect_hygiene(repo_path: Path, owner: str, repo: str, commit: str, records:
                             "high",
                         )
                     )
-    return {"hygiene_findings": sorted(findings, key=lambda x: (x["type"], x["path"], x.get("line_number") or 0))}
+    return {
+        "hygiene_findings": sorted(findings, key=lambda x: (x["type"], x["path"], x.get("line_number") or 0)),
+        "hygiene_findings_total": total_count,
+        "hygiene_findings_truncated": total_count > len(findings),
+    }
 
 
 def _finding(

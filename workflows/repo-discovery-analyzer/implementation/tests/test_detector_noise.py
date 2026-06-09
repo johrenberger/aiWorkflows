@@ -3,7 +3,9 @@ from __future__ import annotations
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
+from repo_discovery_analyzer import io_utils
 from repo_discovery_analyzer.detectors.hygiene import detect_hygiene
 from repo_discovery_analyzer.detectors.security import detect_security
 from repo_discovery_analyzer.inventory import scan_repo
@@ -124,6 +126,52 @@ class DetectorNoiseTests(unittest.TestCase):
             self.assertTrue(
                 any(item["type"] == "credential-like-key" for item in hygiene["hygiene_findings"])
             )
+
+    def test_safe_read_text_caches_repeat_reads(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = Path(tmp)
+            path = repo / "README.md"
+            path.write_text("cached content\n", encoding="utf-8")
+
+            io_utils.clear_safe_read_text_cache()
+            with patch("repo_discovery_analyzer.io_utils._read_text_uncached", wraps=io_utils._read_text_uncached) as mocked:
+                first = io_utils.safe_read_text(path)
+                second = io_utils.safe_read_text(path)
+
+            self.assertEqual(first, second)
+            self.assertEqual(mocked.call_count, 1)
+
+    def test_safe_read_text_stops_at_requested_limit(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "large.txt"
+            path.write_text("x" * 32, encoding="utf-8")
+
+            io_utils.clear_safe_read_text_cache()
+            text, reason = io_utils.safe_read_text(path, max_bytes=16)
+
+            self.assertIsNone(text)
+            self.assertIn("file exceeds max read size", reason or "")
+
+    def test_bounded_items_reports_truncation(self) -> None:
+        items, total, truncated = io_utils.bounded_items(list(range(5)), limit=3)
+
+        self.assertEqual(items, [0, 1, 2])
+        self.assertEqual(total, 5)
+        self.assertTrue(truncated)
+
+    def test_hygiene_findings_report_bounded_total(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = Path(tmp)
+            for index in range(5):
+                (repo / f"module_{index}.py").write_text("# TODO: follow up\n", encoding="utf-8")
+            records = scan_repo(repo, "acme", "widget", "abc1234", False, 4096)
+
+            with patch("repo_discovery_analyzer.detectors.hygiene.DEFAULT_MAX_SUMMARY_ITEMS", 3):
+                result = detect_hygiene(repo, "acme", "widget", "abc1234", records)
+
+            self.assertEqual(len(result["hygiene_findings"]), 3)
+            self.assertEqual(result["hygiene_findings_total"], 5)
+            self.assertTrue(result["hygiene_findings_truncated"])
 
 
 if __name__ == "__main__":

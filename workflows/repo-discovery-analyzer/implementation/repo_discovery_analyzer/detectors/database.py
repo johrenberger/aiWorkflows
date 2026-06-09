@@ -3,12 +3,20 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from ..io_utils import safe_read_text
+from ..io_utils import DEFAULT_MAX_SUMMARY_ITEMS, safe_read_text
 from ..model import FileRecord
 
 
 def detect_database_schema(repo_path: Path, owner: str, repo: str, commit: str, records: list[FileRecord]) -> dict:
     entities: list[dict] = []
+    total_count = 0
+
+    def add(entity: dict) -> None:
+        nonlocal total_count
+        total_count += 1
+        if len(entities) < DEFAULT_MAX_SUMMARY_ITEMS:
+            entities.append(entity)
+
     for record in records:
         if record.skipped:
             continue
@@ -16,7 +24,7 @@ def detect_database_schema(repo_path: Path, owner: str, repo: str, commit: str, 
         if not text:
             continue
         if record.path.endswith(".java") and "@Entity" in text:
-            entities.append(
+            add(
                 {
                     "name": _java_entity_name(text, record.path),
                     "source_file": record.path,
@@ -28,7 +36,7 @@ def detect_database_schema(repo_path: Path, owner: str, repo: str, commit: str, 
                 }
             )
         if record.path.endswith(".sql") and re.search(r"create\s+table", text, re.I):
-            entities.append(
+            add(
                 {
                     "name": _sql_table_name(text, record.path),
                     "source_file": record.path,
@@ -40,7 +48,7 @@ def detect_database_schema(repo_path: Path, owner: str, repo: str, commit: str, 
                 }
             )
         if record.path.endswith("schema.prisma"):
-            entities.append(
+            add(
                 {
                     "name": "Prisma schema",
                     "source_file": record.path,
@@ -52,7 +60,11 @@ def detect_database_schema(repo_path: Path, owner: str, repo: str, commit: str, 
                 }
             )
     entities = sorted(entities, key=lambda x: (x["source_file"], x["name"]))
-    return {"entities": entities}
+    return {
+        "entities": entities,
+        "entities_total": total_count,
+        "entities_truncated": total_count > len(entities),
+    }
 
 
 def _java_entity_name(text: str, path: str) -> str:
@@ -79,4 +91,3 @@ def _sql_fields(text: str) -> list[str]:
         if re.match(r"\s*[A-Za-z0-9_]+\s+", line):
             fields.append(line.strip().rstrip(","))
     return fields[:50]
-

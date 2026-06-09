@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections import Counter
 from pathlib import Path
 
+from .io_utils import DEFAULT_MAX_SUMMARY_ITEMS, bounded_items
 from .model import FileRecord
 
 
@@ -28,14 +29,19 @@ def compute_loc_metrics(records: list[FileRecord]) -> dict:
         ({"path": path, "line_count": count} for path, count in dir_sizes.items()),
         key=lambda item: (-item["line_count"], item["path"]),
     )[:25]
-    large_files = [r.path for r in records if r.line_count and r.line_count > 1000]
+    large_files, large_files_total, large_files_truncated = bounded_items(
+        sorted(r.path for r in records if r.line_count and r.line_count > 1000),
+        DEFAULT_MAX_SUMMARY_ITEMS,
+    )
     return {
         "total_files": total_files,
         "total_lines": total_lines,
         "lines_by_language": dict(sorted(by_language.items())),
         "largest_files": largest_files,
         "largest_directories": largest_dirs,
-        "large_files_over_threshold": sorted(large_files),
+        "large_files_over_threshold": large_files,
+        "large_files_over_threshold_total": large_files_total,
+        "large_files_over_threshold_truncated": large_files_truncated,
         "source_to_test_ratio": _source_to_test_ratio(records),
     }
 
@@ -50,4 +56,3 @@ def _source_to_test_ratio(records: list[FileRecord]) -> dict:
             source += 1
     ratio = round(tests / source, 4) if source else None
     return {"source_files": source, "test_files": tests, "ratio": ratio}
-
