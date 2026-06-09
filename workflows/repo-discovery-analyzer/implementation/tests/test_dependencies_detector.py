@@ -144,71 +144,117 @@ class PomXmlTests(unittest.TestCase):
 
 
 class GradleTests(unittest.TestCase):
-    def test_gradle_branch_raises_value_error(self) -> None:
-        # KNOWN BUG: the gradle regex has 3 capture groups
-        # (group:artifact:version) but the for-loop unpacks as 2
-        # (name, version). Any build.gradle with dependencies in Maven
-        # coordinate form crashes the detector with ValueError. The
-        # gradle branch is therefore a no-op in practice. The detector
-        # should still return the package.json/requirements.txt deps
-        # that exist alongside build.gradle.
+    def test_gradle_implementation_dep(self) -> None:
+        # Gradle deps in Maven coordinate form are extracted using
+        # the (group, artifact, version) 3-tuple. The dep name is the
+        # artifact id (matching the convention used for Maven deps).
         with tempfile.TemporaryDirectory() as tmp:
             repo = Path(tmp)
             _write(repo, "build.gradle", "dependencies { implementation 'com.squareup.okhttp3:okhttp:4.12.0' }\n")
-            _write(repo, "requirements.txt", "fastapi==0.110.0\n")
-            try:
-                result = detect_dependencies(repo, "acme", "widget", "abc1234", [_record("build.gradle"), _record("requirements.txt")])
-            except ValueError:
-                self.skipTest("gradle branch is broken; expected ValueError")
-        # If we got here, the gradle bug has been fixed.
-        self.assertIsNotNone(_by_name(result["dependencies"], "com.squareup.okhttp3"))
-        self.assertEqual(_by_name(result["dependencies"], "com.squareup.okhttp3")["ecosystem"], "gradle")
+            result = detect_dependencies(repo, "acme", "widget", "abc1234", [_record("build.gradle")])
+        dep = _by_name(result["dependencies"], "okhttp")
+        self.assertIsNotNone(dep)
+        self.assertEqual(dep["ecosystem"], "gradle")
+        self.assertEqual(dep["version"], "4.12.0")
 
-    def test_gradle_artifact_form_skipped(self) -> None:
-        # Even when the regex matches, the unpacking crashes. So we
-        # simply verify that build.gradle alone produces no output.
+    def test_gradle_api_and_test_implementation(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             repo = Path(tmp)
-            _write(repo, "build.gradle", "dependencies { implementation 'com.squareup.okhttp3:okhttp:4.12.0' }\n")
-            try:
-                result = detect_dependencies(repo, "acme", "widget", "abc1234", [_record("build.gradle")])
-            except ValueError:
-                self.skipTest("gradle branch raises ValueError due to 3-vs-2 unpack bug")
-        self.assertEqual(result["dependencies"], [])
+            text = (
+                "dependencies {\n"
+                "  api 'org.springframework:spring-core:6.1.0'\n"
+                "  testImplementation 'junit:junit:4.13.2'\n"
+                "  compileOnly 'javax.servlet:javax.servlet-api:4.0.1'\n"
+                "}\n"
+            )
+            _write(repo, "build.gradle", text)
+            result = detect_dependencies(repo, "acme", "widget", "abc1234", [_record("build.gradle")])
+        artifacts = {d["name"] for d in result["dependencies"]}
+        self.assertIn("spring-core", artifacts)
+        self.assertIn("junit", artifacts)
+        self.assertIn("javax.servlet-api", artifacts)
+        junit = _by_name(result["dependencies"], "junit")
+        self.assertEqual(junit["version"], "4.13.2")
 
-    def test_gradle_kts_also_raises(self) -> None:
+    def test_gradle_kts_also_parsed(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             repo = Path(tmp)
-            _write(repo, "build.gradle.kts", "dependencies { implementation(\"org.slf4j:slf4j-api:2.0.0\") }\n")
-            try:
-                result = detect_dependencies(repo, "acme", "widget", "abc1234", [_record("build.gradle.kts")])
-            except ValueError:
-                self.skipTest("gradle branch raises ValueError")
-        self.assertEqual(result["dependencies"], [])
+            _write(repo, "build.gradle.kts", 'dependencies { implementation("org.slf4j:slf4j-api:2.0.0") }\n')
+            result = detect_dependencies(repo, "acme", "widget", "abc1234", [_record("build.gradle.kts")])
+        dep = _by_name(result["dependencies"], "slf4j-api")
+        self.assertIsNotNone(dep)
+        self.assertEqual(dep["version"], "2.0.0")
+
+    def test_gradle_two_part_coord(self) -> None:
+        # 2-part coordinates (group:artifact, no explicit version) are
+        # accepted; version is None.
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = Path(tmp)
+            _write(
+                repo,
+                "build.gradle",
+                "dependencies { implementation 'org.springframework.boot:spring-boot-starter-web' }\n",
+            )
+            result = detect_dependencies(repo, "acme", "widget", "abc1234", [_record("build.gradle")])
+        dep = _by_name(result["dependencies"], "spring-boot-starter-web")
+        self.assertIsNotNone(dep)
+        self.assertIsNone(dep["version"])
+
+    def test_gradle_dedup_per_artifact(self) -> None:
+        # Multiple distinct artifacts under the same group should each
+        # produce a separate dependency entry.
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = Path(tmp)
+            _write(
+                repo,
+                "build.gradle",
+                "dependencies {\n"
+                "  implementation 'org.springframework.boot:spring-boot-starter-actuator'\n"
+                "  implementation 'org.springframework.boot:spring-boot-starter-webmvc'\n"
+                "  testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'\n"
+                "}\n",
+            )
+            result = detect_dependencies(repo, "acme", "widget", "abc1234", [_record("build.gradle")])
+        gradle = [d for d in result["dependencies"] if d["ecosystem"] == "gradle"]
+        self.assertEqual(len(gradle), 3)
 
 
 class GoModTests(unittest.TestCase):
-    def test_go_mod_not_matched(self) -> None:
-        # KNOWN BUG: the go.mod regex `^\s*([A-Za-z0-9._/\-]+)\s+v(...)`
-        # requires the name to appear at the start of a line, but in
-        # go.mod the package name appears after the "require " keyword.
-        # The branch never fires. Pinning current behavior.
+    def test_go_mod_require_line(self) -> None:
+        # Standard go.mod form: "require <name> v<x>"
         with tempfile.TemporaryDirectory() as tmp:
             repo = Path(tmp)
             _write(repo, "go.mod", "module example.com/x\n\ngo 1.22\n\nrequire github.com/gin-gonic/gin v1.9.1\n")
             result = detect_dependencies(repo, "acme", "widget", "abc1234", [_record("go.mod")])
-        self.assertEqual(result["dependencies"], [])
-
-    def test_go_mod_bare_name_at_line_start(self) -> None:
-        # If the name appears at the start of a line (no "require"
-        # prefix), the regex does match.
-        with tempfile.TemporaryDirectory() as tmp:
-            repo = Path(tmp)
-            _write(repo, "go.mod", "github.com/gin-gonic/gin v1.9.1\n")
-            result = detect_dependencies(repo, "acme", "widget", "abc1234", [_record("go.mod")])
         dep = _by_name(result["dependencies"], "github.com/gin-gonic/gin")
         self.assertIsNotNone(dep)
+        self.assertEqual(dep["version"], "1.9.1")
         self.assertEqual(dep["ecosystem"], "go")
+
+    def test_go_mod_skips_module_and_go_lines(self) -> None:
+        # The "module" and "go" keywords should not be treated as deps.
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = Path(tmp)
+            _write(repo, "go.mod", "module example.com/x\n\ngo 1.22\n\nrequire github.com/foo/bar v1.0.0\n")
+            result = detect_dependencies(repo, "acme", "widget", "abc1234", [_record("go.mod")])
+        names = {d["name"] for d in result["dependencies"]}
+        self.assertNotIn("module", names)
+        self.assertNotIn("go", names)
+        self.assertIn("github.com/foo/bar", names)
+
+    def test_go_mod_require_block(self) -> None:
+        # Block form: "require ( foo v1; bar v2 )" — both extracted.
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = Path(tmp)
+            _write(
+                repo,
+                "go.mod",
+                "module x\n\ngo 1.22\n\nrequire (\n\tgithub.com/foo/foo v1.0.0\n\tgithub.com/bar/bar v2.0.0\n)\n",
+            )
+            result = detect_dependencies(repo, "acme", "widget", "abc1234", [_record("go.mod")])
+        names = {d["name"] for d in result["dependencies"]}
+        self.assertIn("github.com/foo/foo", names)
+        self.assertIn("github.com/bar/bar", names)
 
 
 class CargoTests(unittest.TestCase):
@@ -254,13 +300,13 @@ class UrlAssociationTests(unittest.TestCase):
 
 class LikelyRoleTests(unittest.TestCase):
     def test_known_prefixes(self) -> None:
-        # Pinning actual behavior — the function only matches substrings
-        # of the package name against the mapping. "psycopg2-binary" does
-        # not contain "postgres" as a substring, so it returns None.
         self.assertEqual(_likely_role("react"), "frontend framework")
         self.assertEqual(_likely_role("pytest"), "testing")
         self.assertEqual(_likely_role("redis-py"), "cache")
-        # KNOWN: psycopg2-binary returns None (no "postgres" substring).
+        # psycopg2-binary still returns None — the mapping uses
+        # "postgres" substring, which is not in this name. (Could be
+        # improved in a future pass, but is the current documented
+        # behavior.)
         self.assertIsNone(_likely_role("psycopg2-binary"))
         self.assertEqual(_likely_role("sentry-sdk"), "observability")
         self.assertEqual(_likely_role("prometheus-client"), "observability")

@@ -228,11 +228,8 @@ class MavenPomDetectionTests(unittest.TestCase):
 
 class GradleDetectionTests(unittest.TestCase):
     def test_spring_boot_in_gradle(self) -> None:
-        # KNOWN BUG: the detector checks for "spring-boot" (with hyphen)
-        # in gradle files, but the canonical Gradle plugin id is
-        # "org.springframework.boot" (with a dot). The Maven artifact id
-        # form ("spring-boot-starter-web") would match, but the plugin
-        # id form does not. Pinning the current (buggy) behavior.
+        # The plugin-id form "org.springframework.boot" is now detected
+        # alongside the Maven artifact form.
         with tempfile.TemporaryDirectory() as tmp:
             repo = Path(tmp)
             _write(
@@ -241,13 +238,14 @@ class GradleDetectionTests(unittest.TestCase):
                 "plugins { id 'org.springframework.boot' version '3.2.0' }\n",
             )
             result = detect_stack(repo, "acme", "widget", "abc1234", [_record("build.gradle")])
-        self.assertIsNone(_by_category(result, "Spring Boot"))
+        sb = _by_category(result, "Spring Boot")
+        self.assertIsNotNone(sb)
+        self.assertEqual(sb["version"], "3.2.0")
         # Spring MVC still detected via the "org.springframework" substring.
         self.assertIsNotNone(_by_category(result, "Spring MVC"))
 
     def test_spring_boot_in_gradle_with_artifact_form(self) -> None:
-        # If the dep is written in Maven artifact form (spring-boot-starter-*),
-        # it does match the detector's "spring-boot" check.
+        # Maven artifact form (spring-boot-starter-*) also matches.
         with tempfile.TemporaryDirectory() as tmp:
             repo = Path(tmp)
             _write(
@@ -258,10 +256,8 @@ class GradleDetectionTests(unittest.TestCase):
             result = detect_stack(repo, "acme", "widget", "abc1234", [_record("build.gradle")])
         sb = _by_category(result, "Spring Boot")
         self.assertIsNotNone(sb)
-        # KNOWN BUG: the version regex captures the artifact name
-        # ("spring-boot-starter-web") instead of the trailing version
-        # ("3.2.0"). Pinning the current behavior.
-        self.assertEqual(sb["version"], "spring-boot-starter-web")
+        # The version is the trailing "3.2.0", not the artifact name.
+        self.assertEqual(sb["version"], "3.2.0")
 
     def test_spring_mvc_in_gradle_kts(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -395,7 +391,13 @@ class HelperTests(unittest.TestCase):
         self.assertIsNone(_pom_version("<project></project>"))
 
     def test_gradle_version_extraction(self) -> None:
-        v = _gradle_version('org.springframework.boot:3.2.0')
+        # Plugin-id form: "id 'org.springframework.boot' version '3.2.0'"
+        v = _gradle_version("id 'org.springframework.boot' version '3.2.0'")
+        self.assertEqual(v, "3.2.0")
+
+    def test_gradle_version_extraction_maven_coord(self) -> None:
+        # Maven-coordinate form: ":spring-boot-starter-web:3.2.0"
+        v = _gradle_version("implementation 'org.springframework.boot:spring-boot-starter-web:3.2.0'")
         self.assertEqual(v, "3.2.0")
 
     def test_gradle_version_returns_none_when_absent(self) -> None:

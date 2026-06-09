@@ -106,11 +106,11 @@ class NextApiRouteTests(unittest.TestCase):
             repo = Path(tmp)
             _write(repo, "pages/api/list.js", "export default function handler(req, res) {}\n")
             result = detect_javascript_routes(repo, "acme", "widget", "abc1234", [_record("pages/api/list.js")])
-        # KNOWN BUG: the detector checks `"/pages/api/" in record.path`
-        # (with a leading slash), but record paths from scan_repo don't
-        # have a leading slash. The branch is therefore unreachable in
-        # production. This test pins the current (buggy) behavior.
-        self.assertEqual(result["routes"], [])
+        routes = result["routes"]
+        self.assertEqual(len(routes), 1)
+        self.assertEqual(routes[0]["method"], "GET")
+        self.assertEqual(routes[0]["path"], "/api/list")
+        self.assertEqual(routes[0]["framework"], "Next.js API")
 
     def test_pages_api_post_when_explicit(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -121,24 +121,22 @@ class NextApiRouteTests(unittest.TestCase):
                 "export async function POST(req, res) {}\n",
             )
             result = detect_javascript_routes(repo, "acme", "widget", "abc1234", [_record("pages/api/submit.js")])
-        # Same bug: no leading slash in record.path → branch not entered.
-        self.assertEqual(result["routes"], [])
+        self.assertEqual(result["routes"][0]["method"], "POST")
+        self.assertEqual(result["routes"][0]["path"], "/api/submit")
 
     def test_app_api_route_strips_route_segment(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             repo = Path(tmp)
             _write(repo, "app/api/widgets/route.ts", "export async function GET() {}\n")
             result = detect_javascript_routes(repo, "acme", "widget", "abc1234", [_record("app/api/widgets/route.ts")])
-        # Same bug: leading-slash check fails.
-        self.assertEqual(result["routes"], [])
+        self.assertEqual(result["routes"][0]["path"], "/api/widgets")
 
     def test_next_handler_name_extraction(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             repo = Path(tmp)
             _write(repo, "pages/api/x.js", "export async function MY_HANDLER(req) {}\n")
             result = detect_javascript_routes(repo, "acme", "widget", "abc1234", [_record("pages/api/x.js")])
-        # Same bug.
-        self.assertEqual(result["routes"], [])
+        self.assertEqual(result["routes"][0]["handler"], "MY_HANDLER")
 
 
 class PrismaSchemaTests(unittest.TestCase):
@@ -200,17 +198,15 @@ class EdgeCaseTests(unittest.TestCase):
 
 class NextApiPathHelperTests(unittest.TestCase):
     def test_pages_api_prefix_stripped(self) -> None:
-        # KNOWN BUG: _next_api_path strips the prefix (including "/api/")
-        # but doesn't re-add "/api/" to the result. So the output is
-        # "/widgets/list" rather than the expected "/api/widgets/list".
-        # This is consistent with the detector's main bug — neither
-        # branch ever actually fires in production.
-        self.assertEqual(_next_api_path("pages/api/widgets/list.js"), "/widgets/list")
-        self.assertEqual(_next_api_path("src/pages/api/foo.ts"), "/foo")
+        # Path normalization strips the "pages/api/" or "app/api/" prefix
+        # and re-adds "/api/" so the result is the canonical API path.
+        self.assertEqual(_next_api_path("pages/api/widgets/list.js"), "/api/widgets/list")
+        self.assertEqual(_next_api_path("src/pages/api/foo.ts"), "/api/foo")
 
     def test_app_api_route_segment_stripped(self) -> None:
-        self.assertEqual(_next_api_path("app/api/widgets/route.ts"), "/widgets")
-        self.assertEqual(_next_api_path("src/app/api/items/route.js"), "/items")
+        # app/api/ paths have the literal "route" segment stripped.
+        self.assertEqual(_next_api_path("app/api/widgets/route.ts"), "/api/widgets")
+        self.assertEqual(_next_api_path("src/app/api/items/route.js"), "/api/items")
 
     def test_unmatched_path_returns_default(self) -> None:
         # Path doesn't contain either prefix → returns the literal "/api".
@@ -218,7 +214,7 @@ class NextApiPathHelperTests(unittest.TestCase):
 
     def test_normalizes_backslashes(self) -> None:
         # Windows-style paths get backslashes replaced before prefix match.
-        self.assertEqual(_next_api_path("src\\pages\\api\\foo.ts"), "/foo")
+        self.assertEqual(_next_api_path("src\\pages\\api\\foo.ts"), "/api/foo")
 
 
 class NextHandlerNameHelperTests(unittest.TestCase):

@@ -70,15 +70,37 @@ def detect_dependencies(repo_path: Path, owner: str, repo: str, commit: str, rec
         if path.exists():
             text, _ = safe_read_text(path)
             if text:
-                for name, version in re.findall(r"(?:implementation|api|testImplementation|compileOnly)\s+[\"']([^:\"']+):([^:\"']+):([^\"']+)[\"']", text):
-                    add(name, version, "gradle", None, gradle_name, _likely_role(name))
+                # Accept both 2-part coords (group:artifact, common in
+                # Spring Boot starter projects where the version is
+                # managed by a plugin) and 3-part coords
+                # (group:artifact:version). Capture the group and the
+                # artifact, with version when present. Accept both
+                # groovy form (implementation 'x:y:z') and kotlin form
+                # (implementation("x:y:z")). Each unique artifact is
+                # emitted as a separate dep keyed by the artifact id
+                # (consistent with how Maven deps are emitted).
+                for group, artifact, version in re.findall(
+                    r"(?:implementation|api|testImplementation|compileOnly)\s*\(?\s*[\"']([^:\"']+):([^:\"']+)(?::([^\"']+))?[\"']",
+                    text,
+                ):
+                    add(artifact, version or None, "gradle", None, gradle_name, _likely_role(artifact))
 
     go_mod = repo_path / "go.mod"
     if go_mod.exists():
         text, _ = safe_read_text(go_mod)
         if text:
-            for name, version in re.findall(r"^\s*([A-Za-z0-9._/\-]+)\s+v([0-9][^\s]*)", text, re.M):
-                add(name, version, "go", None, "go.mod", _likely_role(name))
+            # go.mod lines look like:
+            #   require github.com/gin-gonic/gin v1.9.1
+            #   require (github.com/foo v1.0; github.com/bar v2.0)
+            #   github.com/baz v1.2
+            # We accept a name anywhere on the line followed by whitespace
+            # and "v<digits>" (the standard go.mod version prefix).
+            for name, version in re.findall(r"([A-Za-z0-9][A-Za-z0-9._/\-]*)\s+v([0-9][0-9A-Za-z.\-]*)", text):
+                # Skip module path declarations and go version lines.
+                stripped = name.strip()
+                if stripped in {"go", "module"}:
+                    continue
+                add(stripped, version, "go", None, "go.mod", _likely_role(stripped))
 
     cargo = repo_path / "Cargo.toml"
     if cargo.exists():

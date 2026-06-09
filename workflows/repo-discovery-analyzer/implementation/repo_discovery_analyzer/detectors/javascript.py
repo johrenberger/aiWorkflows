@@ -37,7 +37,7 @@ def detect_javascript_routes(repo_path: Path, owner: str, repo: str, commit: str
                         "confidence": "high",
                     })
 
-        if "/pages/api/" in record.path.replace("\\", "/") or "/app/api/" in record.path.replace("\\", "/"):
+        if "pages/api/" in record.path.replace("\\", "/") or "app/api/" in record.path.replace("\\", "/"):
             method = "GET"
             if "export async function POST" in text:
                 method = "POST"
@@ -85,7 +85,7 @@ def _next_api_path(path: str) -> str:
             suffix = normalized.split(prefix, 1)[1]
             suffix = suffix.rsplit(".", 1)[0]
             suffix = suffix.replace("/route", "")
-            return "/" + suffix.strip("/")
+            return "/api/" + suffix.strip("/")
     return "/api"
 
 

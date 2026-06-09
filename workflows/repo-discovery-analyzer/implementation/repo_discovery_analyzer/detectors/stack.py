@@ -83,8 +83,8 @@ def detect_stack(repo_path: Path, owner: str, repo: str, commit: str, records: l
     for path in gradle_paths:
         text, _ = safe_read_text(repo_path / path)
         if text:
-            if "spring-boot" in text:
-                add("Spring Boot", "backend-framework", "high", [path], _gradle_version(text), [_pom_snippet(text, "spring-boot")])
+            if "spring-boot" in text or "org.springframework.boot" in text:
+                add("Spring Boot", "backend-framework", "high", [path], _gradle_version(text), [_pom_snippet(text, "spring-boot") or _pom_snippet(text, "springframework.boot")])
             if "org.springframework" in text or "spring-webmvc" in text:
                 add("Spring MVC", "backend-framework", "medium", [path], None, [_pom_snippet(text, "spring-webmvc")])
             if "spring-security" in text:
@@ -164,8 +164,19 @@ def _pom_version(text: str) -> str | None:
 
 
 def _gradle_version(text: str) -> str | None:
-    m = re.search(r'org\.springframework\.boot[:=]\s*[\'"]?([0-9A-Za-z.\-]+)', text)
-    return m.group(1).strip() if m else None
+    # Match either a plugin id form ("org.springframework.boot version '3.2.0'")
+    # or a Maven-coordinate form ("org.springframework.boot:spring-boot-starter-web:3.2.0").
+    # Plugin-id form: "version '<digits>'" follows the plugin id.
+    m = re.search(r"org\.springframework\.boot[^,\n]*?version\s*[\"']([0-9][0-9A-Za-z.\-]*)", text)
+    if m:
+        return m.group(1).strip()
+    # Maven-coord form: "org.springframework.boot:<artifact>:<digits>" — the
+    # version is whatever sits after the second ":" (i.e. the trailing
+    # numeric token).
+    m = re.search(r"org\.springframework\.boot:([^:]+):([0-9][0-9A-Za-z.\-]*)", text)
+    if m:
+        return m.group(2).strip()
+    return None
 
 
 def _pom_snippet(text: str, needle: str) -> str | None:
