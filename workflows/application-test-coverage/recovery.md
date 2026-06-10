@@ -8,6 +8,16 @@
 4. Verify no unrelated user changes would be overwritten.
 5. Continue from the next incomplete phase.
 
+## v2-aware resume
+
+If the workflow used `application-test-automation-v2` (Phase 2.5), the deterministic analysis lives in `<ARTIFACTS_DIR>/v2/`. On resume:
+
+1. Verify the v2 outputs are still present (`ls <ARTIFACTS_DIR>/v2/v2_summary.md`). If they're missing or stale, re-run `workflows/shared/integrate-v2.sh <REPO_PATH> <ARTIFACTS_DIR> 50 [--generate-coverage]`.
+2. Re-read `v2_summary.md` to recover the work batch (Phase 8) and per-file work-item specs (`v2/ai_work_items/wi-*.md`).
+3. Do not re-run v2 if the pre-batch `coverage_baseline.json` is still accurate — only re-run if the source tree has changed since the last v2 run.
+
+If the pre-flight (Phase 0.5) was completed but Phase 2.5 was not, check whether `test-factory` is on PATH before resuming. If it's missing, the resume continues in manual-detect mode (Phases 3-9) and should record `TC-BLK-V2NotInstalled` in the ledger.
+
 ## Checkpoints
 
 ```markdown

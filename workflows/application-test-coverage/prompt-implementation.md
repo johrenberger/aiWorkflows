@@ -79,6 +79,105 @@ STRICT RULES:
 - Every finding must include file, command, config, coverage, static, or failure evidence.
 - Every actionable item must be a checkable Markdown task with a stable ID.
 
+## PHASE 2.5 — Deterministic Analysis via application-test-automation-v2
+
+**When `test-factory` is on PATH**, replace the LLM-driven Phases 3-9 with a single deterministic run of `application-test-automation-v2`. This makes stack detection, baseline coverage, eligibility classification, and work-batch selection consistent and reproducible. The LLM still owns test design, mock fidelity, test writing, focused validation, repair, full validation, ledger finalization, and the commit.
+
+### Step 2.5.1 — Verify v2 is installed
+
+```bash
+command -v test-factory || {
+  echo "v2 not installed; falling back to manual Phases 3-9"
+  # Record TC-BLK-V2NotInstalled in TODO_test-coverage.md and proceed manually
+}
+```
+
+If v2 is missing, skip to the manual Phases 3-9 and append `TC-BLK-V2NotInstalled` to the ledger's Blocker section. Do NOT pretend to use v2.
+
+### Step 2.5.2 — Run v2 against the target repo
+
+```bash
+# Default: limit 50, no --generate-coverage (assumes pre-existing reports in the repo)
+workflows/shared/integrate-v2.sh <REPO_PATH> <ARTIFACTS_DIR> 50
+
+# If the repo has no pre-existing coverage report, opt in to generation:
+workflows/shared/integrate-v2.sh <REPO_PATH> <ARTIFACTS_DIR> 50 --generate-coverage
+```
+
+`integrate-v2.sh` writes to `<ARTIFACTS_DIR>/v2/`. The most important file for the LLM is `<ARTIFACTS_DIR>/v2/v2_summary.md` — a pre-rendered hand-off doc. The 13 raw JSON outputs and 27 `ai_work_items/wi-*.md` files are also there for the LLM to consume directly.
+
+**Exit codes from `integrate-v2.sh`:**
+- `0` — success; proceed to Step 2.5.3.
+- `1` — v2 not installed; fall back to manual Phases 3-9 with `TC-BLK-V2NotInstalled`.
+- `2` — bad user input (missing args); abort the workflow.
+- `3` — v2 ran but produced no `coverage_baseline.json`; the repo may be docs-only or have no scannable source. Fall back to manual Phases 3-9 with `TC-BLK-V2NoCoverage`.
+- `4` — v2 ran but found no eligible files. Record `TC-BLK-NoEligibleFiles` and end the workflow after documenting the result.
+
+### Step 2.5.3 — Populate the ledger from v2 outputs
+
+For each ledger section below, the evidence MUST cite the v2 artifact that produced it:
+
+| Ledger section | Source | Evidence field cites |
+|---|---|---|
+| **TC-FRAMEWORK-1** (Detected Stack) | `v2/language_stack.json` + `v2/adapter_detections.json` | `integrate-v2.sh output -> v2/language_stack.json` |
+| **TC-CKPT-3** (Framework Detected) | same as TC-FRAMEWORK-1 | same |
+| **TC-CKPT-5** (Baseline Coverage Complete) | `v2/coverage_baseline.json` (+ `v2/coverage_runs/generate.json` if `--generate-coverage` was used) | `integrate-v2.sh output -> v2/coverage_baseline.json` |
+| **TC-CKPT-6** (Eligible Files Classified) | `v2/exclusions.json` + filtered `v2/risk_scores.json` | `integrate-v2.sh output -> v2/exclusions.json` |
+| **TC-CKPT-7** (Coverage Gaps Mapped) | `v2/test_gap_queue.json` (sorted by `risk_score × coverage_gap`) | `integrate-v2.sh output -> v2/test_gap_queue.json` |
+| **TC-CKPT-8** (Work Batch Selected) | top N from `v2/test_gap_queue.json` where N = `MAX_FILES_PER_BATCH` | `integrate-v2.sh output -> v2/test_gap_queue.json (top N)` |
+| **Per-File Coverage Tracking** (entire table) | `v2/coverage_baseline.json` joined with `v2/risk_scores.json` | `integrate-v2.sh output -> v2/coverage_baseline.json + v2/risk_scores.json` |
+| **TC-VAL-21** (Coverage Provenance) | `v2/source_test_map.json` (candidate tests per source file) | `integrate-v2.sh output -> v2/source_test_map.json` |
+
+If `ENABLE_TESTABILITY_CLASSIFICATION=true`, populate the per-file testability column from `v2/risk_scores.json`:
+- `coverage_gap > 0` AND no exclusion → `testable` (default) or `integration-only` if the file uses framework-specific runtime context (heuristic: file imports Spring/Hibernate/SQLAlchemy/Prisma decorators).
+- in `v2/exclusions.json` with rationale `generated` → `generated`.
+- in `v2/exclusions.json` with rationale `test-infrastructure` → `test-infrastructure`.
+- in `v2/exclusions.json` with rationale `framework-boilerplate` → `framework-boilerplate`.
+- All others → `testable` with a note in the rationale column.
+
+### Step 2.5.4 — Mark Phases 3-9 complete in one step
+
+Once the ledger sections above are populated, mark these checkpoints as complete in a single step:
+
+```
+- [x] TC-CKPT-3 FRAMEWORK_DETECTED
+- [x] TC-CKPT-4 BASELINE_TESTS_COMPLETE   (TC-VAL-4 satisfied via v2/commands_discovered.json)
+- [x] TC-CKPT-5 BASELINE_COVERAGE_COMPLETE
+- [x] TC-CKPT-6 ELIGIBLE_FILES_CLASSIFIED
+- [x] TC-CKPT-7 COVERAGE_GAPS_MAPPED
+- [x] TC-CKPT-8 WORK_BATCH_SELECTED
+```
+
+(Phases 4, 4a, 5, 6, 7, 8, 9 are conceptually done; they just produced v2's JSON outputs instead of LLM re-derivation.)
+
+### Step 2.5.5 — Continue to Phase 10 (unchanged LLM behavior)
+
+From here on, the workflow is identical to the manual version:
+
+- **Phase 10** — work batch is already selected (Step 2.5.3). Confirm the top N entries.
+- **Phase 11-12** — for each work-batch file, read `v2/ai_work_items/wi-<hash>.md` to get the per-file spec (target lines, conventions, existing tests, recommended test type). The LLM extends that spec with mock-fidelity choices, AAA structure, edge cases, and writes the actual test file.
+- **Phase 13** — run focused tests for changed modules.
+- **Phase 14** — re-run v2 to get a coverage delta:
+
+  ```bash
+  workflows/shared/integrate-v2.sh <REPO_PATH> <ARTIFACTS_DIR> 50 --generate-coverage
+  ```
+
+  Then diff the new `coverage_baseline.json` against the pre-batch one. The diff IS the evidence for `TC-VAL-RESULT-2 [Coverage Recheck]`. Do not invent numbers; if the diff is empty, the test batch did not move coverage and the LLM MUST investigate.
+- **Phases 15-18** — unchanged.
+
+### Hard rules (non-negotiable)
+
+1. **Do NOT re-derive stack, framework, or coverage values** from manual grep / file reading. The v2 outputs are the source of truth. If you believe v2 is wrong, record `TC-BLK-V2Disagreement` in the ledger and skip that file.
+2. **Do NOT skip Phase 2.5** if v2 is available. Even if you think you already know the stack, the v2 outputs are required for the work queue and per-file work-item specs.
+3. **Do NOT re-implement Phases 3-9** even partially. v2 replaces them entirely.
+4. **Do NOT modify files in the v2 output directory** (`<artifacts>/v2/`). v2 writes are deterministic. Re-run v2 if you want fresh data.
+5. **Do NOT cite manual file reads** as evidence for sections that v2 produced. Cite the v2 JSON path.
+
+If v2 is unavailable, fall back to the manual Phases 3-9 (the original behavior) and record `TC-BLK-V2NotInstalled` in the ledger.
+
+See `workflows/shared/v2-integration.md` for the full cross-workflow protocol, schema stability notes, and the rationale for this design.
+
 COVERAGE POLICY:
 - Target >=90% line coverage per eligible source file.
 - Where branch coverage is supported, critical files should also target >=90% branch coverage.
@@ -189,6 +288,7 @@ Phase 5 ("Run baseline tests where feasible") is bounded by MAX_BASELINE_TEST_MI
 
 PHASES:
 0.5. ENVIRONMENT PRE-FLIGHT: detect the language stack from the URL/repo shape, verify the required tools (compiler, build tool, test runner) are on PATH at the right version, check disk free, network reachability, and GitHub auth. Produce a SETUP.md report. Fail fast with TC-BLK-PreFlight if anything's missing.
+2.5. **DETERMINISTIC ANALYSIS via application-test-automation-v2**: if `test-factory` is on PATH, run the v2 pipeline to produce stack detection, baseline coverage, eligibility, and the work batch in one step. This replaces the LLM-driven Phases 3-9 below with deterministic outputs. **See the "Phase 2.5" section below for the full protocol.** When v2 is unavailable, fall back to the manual Phases 3-9 and record `TC-BLK-V2NotInstalled` in the ledger.
 1. Validate input repository URL.
 2. Clone/open repository and checkout branch if provided.
 3. Capture commit, branch, status, and timestamp.
