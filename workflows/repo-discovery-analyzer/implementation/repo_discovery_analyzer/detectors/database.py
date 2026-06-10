@@ -59,8 +59,107 @@ def detect_database_schema(repo_path: Path, owner: str, repo: str, commit: str, 
 
 
 def _java_entity_name(text: str, path: str) -> str:
-    m = re.search(r"class\s+([A-Za-z0-9_]+)", text)
-    return m.group(1) if m else Path(path).stem
+    """Find the top-level class name in a Java source file.
+
+    Returns the first class IDENT that looks like a top-level declaration.
+    Real Java class names start with an uppercase letter, and the real
+    declaration is not inside a comment or string literal — so we strip
+    comments and string contents first, then look for the first identifier
+    after a `class` keyword. This avoids the false-positive we hit on
+    johrenberger/BroadleafCommerce where a Javadoc phrase like
+    "* Merges jars, class names and mapping files" caused the previous
+    regex to capture `names` instead of the real class name 9 lines later.
+
+    Falls back to the filename stem when no class is found (e.g. Kotlin
+    files with @Entity annotations, or annotation-only files).
+    """
+    stripped = _strip_java_comments_and_strings(text)
+    m = re.search(r"class\s+([A-Za-z_][A-Za-z0-9_]*)", stripped)
+    if m and m.group(1)[0].isupper():
+        return m.group(1)
+    return Path(path).stem
+
+
+def _strip_java_comments_and_strings(text: str) -> str:
+    """Replace the contents of /* */, // comments, and "string"/'char' literals
+    with whitespace of equal length so byte offsets and line numbers are
+    preserved. Used to keep regex search anchored outside of comment/string
+    contexts that may legitimately contain the keyword we're looking for."""
+    out = list(text)
+    i = 0
+    n = len(out)
+    while i < n:
+        c = out[i]
+        # Block comment /* ... */
+        if c == "/" and i + 1 < n and out[i + 1] == "*":
+            j = text.find("*/", i + 2)
+            if j == -1:
+                for k in range(i, n):
+                    if not out[k].isspace():
+                        out[k] = " "
+                break
+            for k in range(i, j + 2):
+                if not out[k].isspace():
+                    out[k] = " "
+            i = j + 2
+            continue
+        # Line comment // ...
+        if c == "/" and i + 1 < n and out[i + 1] == "/":
+            j = text.find("\n", i + 2)
+            if j == -1:
+                for k in range(i, n):
+                    if not out[k].isspace():
+                        out[k] = " "
+                break
+            for k in range(i, j):
+                if not out[k].isspace():
+                    out[k] = " "
+            i = j
+            continue
+        # String literal "..."
+        if c == '"':
+            j = i + 1
+            while j < n:
+                if out[j] == "\\" and j + 1 < n:
+                    if not out[j].isspace():
+                        out[j] = " "
+                    if not out[j + 1].isspace():
+                        out[j + 1] = " "
+                    j += 2
+                    continue
+                if out[j] == '"':
+                    j += 1
+                    break
+                if out[j] == "\n":
+                    break
+                if not out[j].isspace():
+                    out[j] = " "
+                j += 1
+            i = j
+            continue
+        # Char literal '...'
+        if c == "'":
+            j = i + 1
+            while j < n:
+                if out[j] == "\\" and j + 1 < n:
+                    if not out[j].isspace():
+                        out[j] = " "
+                    if not out[j + 1].isspace():
+                        out[j + 1] = " "
+                    j += 2
+                    continue
+                if out[j] == "'":
+                    j += 1
+                    break
+                if out[j] == "\n":
+                    break
+                if not out[j].isspace():
+                    out[j] = " "
+                j += 1
+            i = j
+            continue
+        i += 1
+    return "".join(out)
 
 
 def _java_fields(text: str) -> list[str]:

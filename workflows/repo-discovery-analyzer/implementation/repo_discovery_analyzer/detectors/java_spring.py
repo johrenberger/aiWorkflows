@@ -5,9 +5,10 @@ from pathlib import Path
 
 from ..io_utils import DEFAULT_MAX_SUMMARY_ITEMS, safe_read_text, short_snippet
 from ..model import FileRecord
+from .database import _java_entity_name
 
 
-RE_CLASS = re.compile(r"\bclass\s+([A-Za-z0-9_]+)")
+RE_CLASS = re.compile(r"\bclass\s+([A-Z][A-Za-z0-9_]*)")
 RE_REQUEST = re.compile(r'@(GetMapping|PostMapping|PutMapping|DeleteMapping|PatchMapping|RequestMapping)\s*(?:\(([^)]*)\))?')
 RE_PATH = re.compile(r'(?:value|path)\s*=\s*"(.*?)"')
 RE_METHOD = re.compile(r'Method\.(GET|POST|PUT|DELETE|PATCH)')
@@ -50,7 +51,10 @@ def detect_java_spring_routes(repo_path: Path, owner: str, repo: str, commit: st
                                 "confidence": "high",
                             })
                 if "@Entity" in annotation:
-                    entity_name = class_name or Path(record.path).stem
+                    # Use the canonical entity-name extractor from database.py
+                    # so we don't double-classify the same file with a broken
+                    # regex (see regression test_java_entity_name_skips_javadoc_class_keyword).
+                    entity_name = _java_entity_name(text, record.path)
                     fields = _java_fields(lines)
                     entity_total += 1
                     if len(schema) < DEFAULT_MAX_SUMMARY_ITEMS:
