@@ -137,6 +137,34 @@ class TestFactoryOrchestrator:
     def _enabled_adapter(self, adapter: Any) -> bool:
         return bool(self.config.language_adapters.get(adapter.language, True))
 
+    def _primary_adapter(self) -> Any | None:
+        """Return the adapter whose `detect()` has the highest confidence
+        (i.e. the adapter that actually matches the target repo's primary
+        language). Used by coverage_generate() to pick which
+        discover_coverage_command to invoke. Falls back to the first enabled
+        adapter if no adapter detects the repo at all.
+        """
+        best: tuple[float, Any] | None = None
+        for adapter in self.adapters:
+            if not self._enabled_adapter(adapter):
+                continue
+            try:
+                detection = adapter.detect(self.repo_root)
+            except Exception:
+                continue
+            confidence = float(getattr(detection, "confidence", 0.0) or 0.0)
+            if best is None or confidence > best[0]:
+                best = (confidence, adapter)
+        if best is None:
+            return None
+        if best[0] <= 0.0:
+            # No adapter detected the repo. Fall back to the first enabled
+            # adapter so the command at least gets a chance to run.
+            for adapter in self.adapters:
+                if self._enabled_adapter(adapter):
+                    return adapter
+        return best[1]
+
     def adapter_for_language(self, language: str) -> Any:
         lang = language.lower()
         if lang in {"python", "py"}:
@@ -296,6 +324,109 @@ class TestFactoryOrchestrator:
         _dump_json(self.artifacts / "coverage_baseline.json", [asdict(record) for record in coverage])
         _dump_json(self.artifacts / "coverage_deltas" / "baseline.json", [asdict(record) for record in coverage])
         return coverage
+
+    def coverage_generate(self, module: str | None = None) -> dict[str, Any]:
+        """Run the primary adapter's `discover_coverage_command` to actually
+        *generate* a coverage report on disk, then return the parsed records.
+
+        This is opt-in (called from `run(generate_coverage=True)`) because it
+        mutates the target repo (writes `coverage.json` / `coverage.xml`) and
+        is the slowest step in the pipeline (5-30 min for a typical repo).
+
+        Bug surfaced 2026-06-10 on v2's self-coverage run: the user had to
+        manually run `coverage run -m pytest && coverage json` before
+        `test-factory run`, because `coverage()` only reads existing reports.
+        See PR #23.
+        """
+        adapter = self._primary_adapter()
+        if adapter is None:
+            return {
+                "status": "skipped",
+                "reason": "no enabled adapter for the primary language",
+                "command": None,
+                "exit_code": None,
+                "stdout": "",
+                "stderr": "",
+            }
+        sample_module = module or "root"
+        command = adapter.discover_coverage_command(self.repo_root, sample_module)
+        artifact_dir = self.artifacts / "coverage_runs"
+        artifact_dir.mkdir(parents=True, exist_ok=True)
+        record_path = artifact_dir / "generate.json"
+        timeout_seconds = self.config.validation_timeouts.full_seconds
+        # Snapshot pre-run reports so we can detect whether the command
+        # actually wrote new ones. Silent-pass-but-no-coverage-file is the
+        # most common failure mode (e.g. pytest-cov plugin version
+        # incompatibility — exits 0 but writes nothing). PR #23 adds the
+        # post-run check so the user gets a warning instead of empty
+        # coverage_baseline.json.
+        repo_root = Path(self.repo_root)
+        def _existing_reports() -> set[Path]:
+            found: set[Path] = set()
+            for pattern in ("**/coverage.json", "**/coverage.xml", "**/.coverage"):
+                for p in repo_root.glob(pattern):
+                    if p.is_file():
+                        found.add(p.resolve())
+            return found
+        pre_reports = _existing_reports()
+        try:
+            completed = subprocess.run(
+                command.command,
+                cwd=command.cwd,
+                capture_output=True,
+                text=True,
+                timeout=timeout_seconds,
+                shell=False,
+            )
+            status = "completed" if completed.returncode == 0 else "failed"
+            result: dict[str, Any] = {
+                "status": status,
+                "command": command.render(),
+                "exit_code": completed.returncode,
+                "stdout": completed.stdout[-4000:],  # cap to avoid blowing up artifacts
+                "stderr": completed.stderr[-4000:],
+                "timeout_seconds": timeout_seconds,
+            }
+        except subprocess.TimeoutExpired as exc:
+            result = {
+                "status": "timeout",
+                "command": command.render(),
+                "exit_code": 124,
+                "stdout": (exc.stdout or "")[-4000:] if isinstance(exc.stdout, str) else "",
+                "stderr": (exc.stderr or "timeout")[-4000:] if isinstance(exc.stderr, (str, bytes)) else "timeout",
+                "timeout_seconds": timeout_seconds,
+            }
+        except FileNotFoundError as exc:
+            result = {
+                "status": "missing_binary",
+                "command": command.render(),
+                "exit_code": 127,
+                "stdout": "",
+                "stderr": f"command not found: {exc}",
+                "timeout_seconds": timeout_seconds,
+            }
+        # Post-run check: did the command actually produce a new coverage
+        # report? If the subprocess exited 0 but no file was written,
+        # surface that as a warning so the user doesn't waste an hour
+        # wondering why coverage_baseline.json is empty.
+        post_reports = _existing_reports()
+        new_reports = sorted(post_reports - pre_reports)
+        result["new_reports"] = [str(p) for p in new_reports]
+        if result["status"] == "completed" and not new_reports:
+            result["status"] = "no_report_written"
+            result["warning"] = (
+                "coverage command exited 0 but did not write a coverage.json / "
+                "coverage.xml / .coverage file. Common causes: pytest-cov plugin "
+                "version incompatible with the installed pytest; --cov specified "
+                "without a package name; coverage.py not installed. The pipeline "
+                "will continue with whatever pre-existing reports it can find."
+            )
+        _dump_json(record_path, result)
+        # If the command succeeded (or partially succeeded), refresh parsed
+        # records so the caller doesn't have to call `coverage()` separately.
+        if result["status"] in {"completed", "no_report_written"}:
+            return {"generation": result, "records": [asdict(r) for r in self.coverage(module=module)]}
+        return {"generation": result, "records": []}
 
     def score(self, module: str | None = None) -> list[RiskScoreRecord]:
         coverage_rows = {
@@ -624,15 +755,29 @@ class TestFactoryOrchestrator:
         mutation: bool | None = None,
         mutation_high_risk_only: bool | None = None,
         module: str | None = None,
+        generate_coverage: bool = False,
     ) -> dict[str, Any]:
         self.scan(module=module)
+        # Opt-in coverage generation: when generate_coverage is True, run the
+        # primary adapter's `discover_coverage_command` to actually produce a
+        # coverage report. This is a non-deterministic, slow, and repo-mutating
+        # step (writes coverage.json / coverage.xml into the target repo), so
+        # it is OFF by default. When False (the default), `coverage()` below
+        # only reads whatever reports already exist on disk. See PR #23.
+        coverage_generation: dict[str, Any] | None = None
+        if generate_coverage:
+            coverage_generation = self.coverage_generate(module=module)
         self.coverage(module=module)
         self.score(module=module)
         self.queue(module=module)
         self.workitems(limit=limit, module=module)
         self.mutate(enabled=mutation, high_risk_only=mutation_high_risk_only)
         self.report(module=module)
-        return {"status": "ok", "module_scope": module or "all"}
+        return {
+            "status": "ok",
+            "module_scope": module or "all",
+            "coverage_generation": coverage_generation,
+        }
 
     def branch(self, module: str, allow_dirty: bool = False) -> dict[str, Any]:
         record = create_branch(self.repo_root, module, self.config.branching.branch_prefix, allow_dirty=allow_dirty or self.config.branching.allow_dirty)

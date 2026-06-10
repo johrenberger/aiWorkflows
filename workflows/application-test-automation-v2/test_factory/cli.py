@@ -25,6 +25,10 @@ def build_parser() -> argparse.ArgumentParser:
         sub.add_argument("--allow-dirty", action="store_true")
         sub.add_argument("--mutation", action="store_true")
         sub.add_argument("--mutation-high-risk-only", action="store_true")
+        sub.add_argument("--generate-coverage", action="store_true",
+                         help="(run only) Run the primary adapter's discover_coverage_command to "
+                              "actually produce a coverage report before parsing. Off by default. "
+                              "Mutates the target repo (writes coverage.json/xml).")
     return parser
 
 
@@ -57,6 +61,7 @@ def main(argv: list[str] | None = None) -> int:
                 mutation=args.mutation,
                 mutation_high_risk_only=args.mutation_high_risk_only or None,
                 module=args.module or args.scope,
+                generate_coverage=args.generate_coverage,
             )
         elif args.command == "branch":
             result = orchestrator.branch(args.scope or args.module or "root", allow_dirty=args.allow_dirty)
