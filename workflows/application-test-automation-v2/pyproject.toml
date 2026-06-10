@@ -14,6 +14,19 @@ authors = [{name = "OpenAI"}]
 [project.scripts]
 test-factory = "test_factory.cli:main"
 
+[project.optional-dependencies]
+# Required for `python -m pytest` and for `test-factory run --generate-coverage`
+# to actually produce coverage.json / coverage.xml. The fallback
+# `scripts/run_tests.py` covers systems where pytest is not installed,
+# but does not support --cov / --cov-report flags. Pin pytest<9 because
+# pytest-cov 7.x references pytest.PytestWarning which pytest 9 removed
+# (Bug #5, PR #24).
+dev = [
+    "pytest>=8,<9",
+    "pytest-cov>=6,<8",
+    "coverage>=7",
+]
+
 [tool.setuptools]
 include-package-data = true
 
