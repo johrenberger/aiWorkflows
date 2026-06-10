@@ -125,6 +125,10 @@ class WorkItemRecord:
     status: str = "pending"
     priority: float = 0.0
     content_path: str = ""
+    validated_files: list[str] = field(default_factory=list)
+    validation_repo_sha: str = ""
+    validation_reason: str = ""
+    validation_report_path: str = ""
 
 
 @dataclass(slots=True)
@@ -137,6 +141,7 @@ class ValidationRunRecord:
     timeout_seconds: int = 0
     artifact_path: str = ""
     phase: str = "targeted"
+    status: str = "completed"
 
 
 @dataclass(slots=True)
@@ -182,4 +187,3 @@ class CommitRecord:
     message: str
     sha: str = ""
     files: list[str] = field(default_factory=list)
-

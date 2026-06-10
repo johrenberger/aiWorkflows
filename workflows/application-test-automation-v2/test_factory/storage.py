@@ -83,7 +83,11 @@ CREATE TABLE IF NOT EXISTS work_items (
   acceptance_criteria TEXT NOT NULL DEFAULT '[]',
   status TEXT NOT NULL DEFAULT 'pending',
   priority REAL NOT NULL DEFAULT 0,
-  content_path TEXT NOT NULL DEFAULT ''
+  content_path TEXT NOT NULL DEFAULT '',
+  validated_files TEXT NOT NULL DEFAULT '[]',
+  validation_repo_sha TEXT NOT NULL DEFAULT '',
+  validation_reason TEXT NOT NULL DEFAULT '',
+  validation_report_path TEXT NOT NULL DEFAULT ''
 );
 
 CREATE TABLE IF NOT EXISTS validation_runs (
@@ -143,6 +147,13 @@ CREATE TABLE IF NOT EXISTS commits (
 );
 """
 
+WORK_ITEM_EXTRA_COLUMNS = (
+    ("validated_files", "TEXT NOT NULL DEFAULT '[]'"),
+    ("validation_repo_sha", "TEXT NOT NULL DEFAULT ''"),
+    ("validation_reason", "TEXT NOT NULL DEFAULT ''"),
+    ("validation_report_path", "TEXT NOT NULL DEFAULT ''"),
+)
+
 
 def _json(value: Any) -> str:
     if value is None:
@@ -163,7 +174,14 @@ class Storage:
         self.conn = sqlite3.connect(self.db_path)
         self.conn.row_factory = sqlite3.Row
         self.conn.executescript(SCHEMA)
+        self._migrate()
         self.conn.commit()
+
+    def _migrate(self) -> None:
+        existing_columns = {row["name"] for row in self.conn.execute("PRAGMA table_info(work_items)")}
+        for column, ddl in WORK_ITEM_EXTRA_COLUMNS:
+            if column not in existing_columns:
+                self.conn.execute(f"ALTER TABLE work_items ADD COLUMN {column} {ddl}")
 
     def close(self) -> None:
         self.conn.close()
@@ -306,10 +324,27 @@ class Storage:
 
     def upsert_work_item(self, record: Any) -> None:
         data = _to_jsonable(record)
+        existing = self.get_work_item(data["work_item_id"])
+        status = data.get("status", "pending")
+        validated_files = data.get("validated_files", [])
+        validation_repo_sha = data.get("validation_repo_sha", "")
+        validation_reason = data.get("validation_reason", "")
+        validation_report_path = data.get("validation_report_path", "")
+        if existing is not None:
+            if status == "pending":
+                status = existing["status"]
+            if not validated_files:
+                validated_files = json.loads(existing["validated_files"])
+            if not validation_repo_sha:
+                validation_repo_sha = existing["validation_repo_sha"]
+            if not validation_reason:
+                validation_reason = existing["validation_reason"]
+            if not validation_report_path:
+                validation_report_path = existing["validation_report_path"]
         self.execute(
             """
-            INSERT INTO work_items(work_item_id, source_path, language, module, current_line_coverage, current_branch_coverage, uncovered_lines, uncovered_branches, risk_score, risk_factors, existing_test_files, recommended_test_type, supporting_files, conventions_summary, validation_command, acceptance_criteria, status, priority, content_path)
-            VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+            INSERT INTO work_items(work_item_id, source_path, language, module, current_line_coverage, current_branch_coverage, uncovered_lines, uncovered_branches, risk_score, risk_factors, existing_test_files, recommended_test_type, supporting_files, conventions_summary, validation_command, acceptance_criteria, status, priority, content_path, validated_files, validation_repo_sha, validation_reason, validation_report_path)
+            VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
             ON CONFLICT(work_item_id) DO UPDATE SET
               source_path=excluded.source_path,
               language=excluded.language,
@@ -328,7 +363,11 @@ class Storage:
               acceptance_criteria=excluded.acceptance_criteria,
               status=excluded.status,
               priority=excluded.priority,
-              content_path=excluded.content_path
+              content_path=excluded.content_path,
+              validated_files=excluded.validated_files,
+              validation_repo_sha=excluded.validation_repo_sha,
+              validation_reason=excluded.validation_reason,
+              validation_report_path=excluded.validation_report_path
             """,
             (
                 data["work_item_id"],
@@ -347,9 +386,13 @@ class Storage:
                 data.get("conventions_summary", ""),
                 data.get("validation_command", ""),
                 _json(data.get("acceptance_criteria", [])),
-                data.get("status", "pending"),
+                status,
                 float(data.get("priority", 0)),
                 data.get("content_path", ""),
+                _json(validated_files),
+                validation_repo_sha,
+                validation_reason,
+                validation_report_path,
             ),
         )
 
@@ -362,6 +405,39 @@ class Storage:
 
     def update_work_item_status(self, work_item_id: str, status: str) -> None:
         self.execute("UPDATE work_items SET status=? WHERE work_item_id=?", (status, work_item_id))
+
+    def update_work_item_validation(
+        self,
+        work_item_id: str,
+        *,
+        status: str,
+        validated_files: list[str] | None = None,
+        validation_repo_sha: str = "",
+        validation_reason: str = "",
+        validation_report_path: str = "",
+    ) -> None:
+        row = self.get_work_item(work_item_id)
+        if row is None:
+            return
+        self.execute(
+            """
+            UPDATE work_items
+            SET status=?,
+                validated_files=?,
+                validation_repo_sha=?,
+                validation_reason=?,
+                validation_report_path=?
+            WHERE work_item_id=?
+            """,
+            (
+                status,
+                _json(validated_files if validated_files is not None else json.loads(row["validated_files"])),
+                validation_repo_sha or row["validation_repo_sha"],
+                validation_reason,
+                validation_report_path or row["validation_report_path"],
+                work_item_id,
+            ),
+        )
 
     def get_work_item(self, work_item_id: str) -> sqlite3.Row | None:
         return self.conn.execute("SELECT * FROM work_items WHERE work_item_id=?", (work_item_id,)).fetchone()

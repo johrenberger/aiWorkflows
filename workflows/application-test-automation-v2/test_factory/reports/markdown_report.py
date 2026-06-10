@@ -37,6 +37,8 @@ def render_final_report(artifacts_dir: str | Path) -> str:
     module_graph = _load_json(artifacts_dir, "module_graph.json", {})
     weighted = _load_json(artifacts_dir, "risk_weighted_coverage.json", {})
     component_candidates = _load_json(artifacts_dir, "component_test_candidates.json", [])
+    adapter_detections = _load_json(artifacts_dir, "adapter_detections.json", [])
+    commands_discovered = _load_json(artifacts_dir, "commands_discovered.json", [])
     mutation_dir = artifacts_dir / "mutation"
     mutation_candidates = _load_json(mutation_dir, "mutation_candidates.json", [])
     mutation_results = _load_json(mutation_dir, "mutation_results.json", [])
@@ -47,7 +49,15 @@ def render_final_report(artifacts_dir: str | Path) -> str:
         if row.get("line_coverage", 0) < 90 or (row.get("branch_coverage") is not None and row.get("branch_coverage", 0) < 90)
     ]
     missing_evidence = sorted({item for row in risk for item in row.get("missing_evidence", [])})
-
+    limitations = []
+    if not coverage:
+        limitations.append("coverage reports were not discovered in this run")
+    if coverage and any(row.get("branch_coverage") is None for row in coverage):
+        limitations.append("branch coverage is only available where the underlying tool reports it")
+    if not commands_discovered:
+        limitations.append("command discovery evidence is missing")
+    if not mutation_results:
+        limitations.append("mutation execution has not been recorded yet")
     parts = [
         "# Final Report",
         f"- Files discovered: `{len(inventory)}`",
@@ -56,6 +66,10 @@ def render_final_report(artifacts_dir: str | Path) -> str:
         f"- Queue items: `{len(queue)}`",
         f"- Exclusions: `{len(exclusions)}`",
         "",
+        "## Repo Summary",
+        f"- Inventory artifact: `repo_inventory.json`",
+        f"- SQLite state: `{(artifacts_dir / 'test_factory.sqlite').exists()}`",
+        "",
         "## Language Stack",
     ]
     if language_stack:
@@ -63,25 +77,13 @@ def render_final_report(artifacts_dir: str | Path) -> str:
             parts.append(f"- `{language}`: `{count}`")
     else:
         parts.append("- no language evidence recorded")
-
-    parts.extend(
-        [
-            "",
-            "## Module Graph Summary",
-        ]
-    )
+    parts.extend(["", "## Module Graph Summary"])
     if module_graph:
         for module, langs in list(module_graph.items())[:10]:
             parts.append(f"- `{module}`: {langs}")
     else:
         parts.append("- no module graph recorded")
-
-    parts.extend(
-        [
-            "",
-            "## Coverage Baseline",
-        ]
-    )
+    parts.extend(["", "## Coverage Baseline"])
     if coverage:
         parts.append(f"- Line-weighted index: `{weighted.get('line_index', 0)}`")
         parts.append(f"- Branch-weighted index: `{weighted.get('branch_index', 0)}`")
@@ -90,111 +92,61 @@ def render_final_report(artifacts_dir: str | Path) -> str:
             parts.append(f"- {_item_path(row)} | line={row.get('line_coverage', 0)} | branch={row.get('branch_coverage')}")
     else:
         parts.append("- no coverage reports were found")
-
-    parts.extend(
-        [
-            "",
-            "## Highest Risk Gaps",
-        ]
-    )
-    if queue:
-        parts.extend(_format_top_items(queue, 10))
-    else:
-        parts.append("- no queue items were generated")
-
-    parts.extend(
-        [
-            "",
-            "## Recommended Next Work Items",
-        ]
-    )
-    if queue:
-        parts.extend(_format_top_items(queue, 10))
-    else:
-        parts.append("- no recommendations available")
-
-    parts.extend(
-        [
-            "",
-            "## Component or Integration Candidates",
-        ]
-    )
-    if component_candidates:
-        parts.extend(_format_top_items(component_candidates, 10))
-    else:
-        parts.append("- none recorded")
-
-    parts.extend(
-        [
-            "",
-            "## Mutation Candidates",
-        ]
-    )
+    parts.extend(["", "## Risk-Weighted Coverage"])
+    parts.append(f"- Line-weighted index: `{weighted.get('line_index', 0)}`")
+    parts.append(f"- Branch-weighted index: `{weighted.get('branch_index', 0)}`")
+    parts.extend(["", "## Highest Risk Gaps"])
+    parts.extend(_format_top_items(queue, 10) or ["- no queue items were generated"])
+    parts.extend(["", "## Recommended Next Work Items"])
+    parts.extend(_format_top_items(queue, 10) or ["- no recommendations available"])
+    parts.extend(["", "## Component or Integration Candidates"])
+    parts.extend(_format_top_items(component_candidates, 10) or ["- none recorded"])
+    parts.extend(["", "## Mutation Candidates"])
     if mutation_candidates:
         for item in mutation_candidates[:10]:
             parts.append(f"- {_item_path(item)} | score={item.get('score', 0)}")
     else:
         parts.append("- none recorded")
-
-    parts.extend(
-        [
-            "",
-            "## Mutation Results",
-        ]
-    )
+    parts.extend(["", "## Mutation Results"])
     if mutation_results:
         for item in mutation_results[:10]:
-            parts.append(f"- {_item_path(item)} | tool={item.get('tool', '')} | exit_code={item.get('exit_code', '')}")
+            parts.append(f"- {_item_path(item)} | tool={item.get('tool', '')} | exit_code={item.get('exit_code', '')} | status={item.get('status', 'completed')}")
     else:
         parts.append("- no mutation run results recorded")
-
-    parts.extend(
-        [
-            "",
-            "## Mutation Detection",
-        ]
-    )
-    if mutation_detection:
-        parts.append(f"- tool: `{mutation_detection.get('tool', '')}`")
-        parts.append(f"- available: `{mutation_detection.get('available', False)}`")
-    else:
-        parts.append("- no mutation tool detection recorded")
-
-    parts.extend(
-        [
-            "",
-            "## Exclusions",
-        ]
-    )
+    parts.extend(["", "## Exclusions"])
     if exclusions:
         for row in exclusions[:10]:
             parts.append(f"- {row.get('path', 'unknown')} | {row.get('reason', '')} | {row.get('rule', '')}")
     else:
         parts.append("- none recorded")
-
-    parts.extend(
-        [
-            "",
-            "## Missing Evidence",
-        ]
-    )
+    parts.extend(["", "## Adapter Confidence"])
+    if adapter_detections:
+        for row in adapter_detections:
+            parts.append(f"- {row.get('language', 'unknown')} via {row.get('adapter', '')} | confidence={row.get('confidence', 0)} | evidence={', '.join(row.get('evidence', [])) or 'none'}")
+    else:
+        parts.append("- no adapter detections recorded")
+    parts.extend(["", "## Missing Evidence"])
     if missing_evidence:
         for item in missing_evidence:
             parts.append(f"- {item}")
     else:
         parts.append("- none recorded")
-
-    parts.extend(
-        [
-            "",
-            "## Adapter Confidence",
-            "- adapter confidence is derived from detected stack evidence during scan; this workflow currently records the evidence, not a numeric confidence summary, in the final report",
-            "",
-            "## Limitations",
-            "- coverage reports were not discovered in this run",
-            "- branch coverage is only available where the underlying tool reports it",
-            "- queue priorities are deterministic but depend on available file-level evidence",
-        ]
-    )
+    parts.extend(["", "## Commands Discovered"])
+    if commands_discovered:
+        for row in commands_discovered:
+            parts.append(f"- {row.get('language', 'unknown')} {row.get('kind', '')}: `{row.get('command', '')}`")
+    else:
+        parts.append("- none recorded")
+    parts.extend(["", "## Mutation Detection"])
+    if mutation_detection:
+        if isinstance(mutation_detection, dict) and "tool" in mutation_detection:
+            parts.append(f"- tool: `{mutation_detection.get('tool', '')}`")
+            parts.append(f"- available: `{mutation_detection.get('available', False)}`")
+        else:
+            for language, row in sorted(mutation_detection.items()):
+                parts.append(f"- {language}: tool=`{row.get('tool', '')}` available=`{row.get('available', False)}`")
+    else:
+        parts.append("- no mutation tool detection recorded")
+    parts.extend(["", "## Limitations"])
+    parts.extend([f"- {item}" for item in limitations] or ["- none recorded"])
     return "\n".join(parts) + "\n"
-
