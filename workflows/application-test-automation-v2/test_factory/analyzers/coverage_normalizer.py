@@ -151,3 +151,58 @@ def parse_coverage_final_json(report_path: str | Path) -> list[CoverageRecord]:
         branch_pct = _pct(branch_covered, branch_total) if branch_total else None
         records.append(CoverageRecord(path=path, line_coverage=_pct(covered_lines, total_lines), branch_coverage=branch_pct, uncovered_lines=uncovered_lines, uncovered_branches=uncovered_branches, report_ref=str(report_path)))
     return records
+
+
+def parse_coverage_py_json(report_path: str | Path) -> list[CoverageRecord]:
+    """Parse a `coverage.json` file produced by `coverage json` (the coverage.py
+    tool, not istanbul/nyc). The schema is:
+
+        {
+          "meta": {"version": "...", "timestamp": "...", ...},
+          "files": {
+            "path/to/file.py": {
+              "executed_lines": [1, 2, 5, ...],
+              "missing_lines":  [3, 4, ...],
+              "excluded_lines": [],
+              "summary": {"covered_lines": N, "num_statements": M, "percent_covered": P, ...}
+            }
+          },
+          "totals": {...}
+        }
+
+    Bug surfaced 2026-06-10 on v2's self-coverage run: the orchestrator was
+    routing coverage.json to parse_coverage_final_json (the istanbul parser),
+    which produced 0%-coverage records for every file because the schemas
+    differ. See PR #22.
+    """
+    data = json.loads(Path(report_path).read_text(encoding="utf-8"))
+    files = data.get("files", {})
+    if not isinstance(files, dict):
+        return []
+    records: list[CoverageRecord] = []
+    for path, payload in files.items():
+        if not isinstance(payload, dict):
+            continue
+        summary = payload.get("summary", {}) or {}
+        # Prefer summary.percent_covered; fall back to computing from lists.
+        if "percent_covered" in summary:
+            line_pct = float(summary["percent_covered"])
+        else:
+            executed = payload.get("executed_lines") or []
+            missing = payload.get("missing_lines") or []
+            total = len(executed) + len(missing)
+            line_pct = _pct(len(executed), total) if total else 0.0
+        branch_pct_val = summary.get("percent_covered_branches")
+        branch_pct = float(branch_pct_val) if branch_pct_val is not None else None
+        missing_lines = payload.get("missing_lines") or []
+        records.append(
+            CoverageRecord(
+                path=path,
+                line_coverage=line_pct,
+                branch_coverage=branch_pct,
+                uncovered_lines=[int(n) for n in missing_lines if isinstance(n, (int, float))],
+                uncovered_branches=[],
+                report_ref=str(report_path),
+            )
+        )
+    return records

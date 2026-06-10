@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 from typing import Sequence
 
@@ -37,10 +38,22 @@ class PythonPytestAdapter(BaseAdapter):
         return records
 
     def discover_test_command(self, repo_path: str | Path, module: str) -> CommandSpec:
-        return CommandSpec(command=["pytest"], cwd=str(repo_path), description="Run pytest")
+        # Use `python -m pytest` so the test command resolves to the *current*
+        # interpreter's pytest, not a globally-installed `pytest` script from a
+        # different venv. (Bug surfaced 2026-06-10 on v2's own self-coverage run:
+        # script-invoked `pytest` had a different plugin set and tripped exit 2
+        # on a fixture that passes cleanly under `python -m pytest`.)
+        return CommandSpec(command=[sys.executable, "-m", "pytest"], cwd=str(repo_path), description="Run pytest via current interpreter")
 
     def discover_coverage_command(self, repo_path: str | Path, module: str) -> CommandSpec:
-        return CommandSpec(command=["pytest", "--cov", "--cov-report=xml"], cwd=str(repo_path), description="Run pytest with coverage")
+        # Same fix as discover_test_command. Emit `coverage.json` (pytest-cov 7.x
+        # default) AND `coverage.xml` (legacy / CI tools) so the orchestrator's
+        # `_discover_reports` pattern match picks up at least one of them.
+        return CommandSpec(
+            command=[sys.executable, "-m", "pytest", "--cov", "--cov-report=json", "--cov-report=xml"],
+            cwd=str(repo_path),
+            description="Run pytest with coverage (json+xml reports)",
+        )
 
     def parse_coverage(self, report_paths: Sequence[str | Path]) -> list[CoverageRecord]:
         records: list[CoverageRecord] = []
@@ -64,5 +77,5 @@ class PythonPytestAdapter(BaseAdapter):
         detection = self.detect_mutation_tool(repo_path, module)
         if detection.available:
             return CommandSpec(command=detection.command, cwd=str(repo_path), description="Run Python mutation testing")
-        return CommandSpec(command=["pytest"], cwd=str(repo_path), description="Fallback Python test command")
+        return CommandSpec(command=[sys.executable, "-m", "pytest"], cwd=str(repo_path), description="Fallback Python test command")
 
