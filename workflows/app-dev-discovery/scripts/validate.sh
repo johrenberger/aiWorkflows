@@ -39,17 +39,31 @@ check() {
 }
 
 # 1. Final doc exists
+# Repo name casing can differ between the URL arg (capitalized as on GitHub)
+# and the actual filename the agent writes (often lowercased). Match
+# case-insensitively across all candidates to avoid false negatives.
+REPO_LC="${REPO,,}"
+TODAY_LC="${TODAY,,}"
 FINAL_DOC_CANDIDATES=(
   "$WORKSPACE_DIR/docs/${TODAY}-${REPO}-app-dev-discovery.md"
   "$WORKSPACE_DIR/docs/${TODAY}-${REPO}-app-dev-discovery_cursor.md"
+  "$WORKSPACE_DIR/docs/${TODAY_LC}-${REPO_LC}-app-dev-discovery.md"
+  "$WORKSPACE_DIR/docs/${TODAY_LC}-${REPO_LC}-app-dev-discovery_cursor.md"
 )
 FOUND_DOC=""
 for f in "${FINAL_DOC_CANDIDATES[@]}"; do
   if [[ -f "$f" ]]; then FOUND_DOC="$f"; break; fi
 done
-# fallback: glob
+# fallback: glob (case-insensitive via shopt)
 if [[ -z "$FOUND_DOC" ]]; then
-  FOUND_DOC="$(ls "$WORKSPACE_DIR"/docs/*-"${REPO}"*-app-dev-discovery*.md 2>/dev/null | head -1 || true)"
+  shopt -s nullglob nocaseglob
+  for f in "$WORKSPACE_DIR"/docs/*-*-app-dev-discovery*.md; do
+    # Filter to the right date prefix
+    case "$(basename "$f")" in
+      "${TODAY}"-*|${TODAY_LC}-*) FOUND_DOC="$f"; break ;;
+    esac
+  done
+  shopt -u nocaseglob
 fi
 [[ -n "$FOUND_DOC" ]] && check "Final onboarding document exists" true || check "Final onboarding document exists" false
 
@@ -130,6 +144,43 @@ if [[ $RECOV -ge 14 ]]; then
   check "Evidence files for recoverability ($RECOV/16)" true
 else
   check "Evidence files for recoverability ($RECOV/16)" false
+fi
+
+# 11b. Analyzer JSON outputs present (analyzer-accelerated workflow)
+# These are the raw outputs the synthesizer consumes. Missing means the
+# synthesizer was never run, which would invalidate the deterministic
+# evidence backbone.
+ANALYZER_OUT="$EVIDENCE_DIR/../analyzer-output"
+ANALYZER_FILES=0
+for f in analysis_manifest.json tech_stack.json routes.json dependencies.json \
+          integrations.json repo_inventory.json tests.json db_schema.json \
+          build_deploy.json error_logging.json security_signals.json \
+          hygiene_findings.json contradiction_candidates.json project_structure.json \
+          entry_points.json; do
+  if [[ -f "$ANALYZER_OUT/$f" ]]; then
+    ANALYZER_FILES=$((ANALYZER_FILES+1))
+  fi
+done
+if [[ $ANALYZER_FILES -ge 14 ]]; then
+  check "Analyzer JSON outputs present ($ANALYZER_FILES/15)" true
+else
+  check "Analyzer JSON outputs present ($ANALYZER_FILES/15)" false
+fi
+
+# 11c. LLM-only sections were filled in (not left as skeletons)
+# The synthesizer injects `<!-- AGENT_FILL_REQUIRED -->` markers into
+# files where the agent must write narrative content. The agent must
+# remove these markers when filling in the section.
+LLM_SKIPPED=0
+for skel in 02-documentation-evidence.md 05-components-evidence.md 06-flows-evidence.md 14-risk-hygiene-evidence.md 15-contradiction-detection.md; do
+  if [[ -f "$EVIDENCE_DIR/$skel" ]] && grep -qF '<!-- AGENT_FILL_REQUIRED -->' "$EVIDENCE_DIR/$skel"; then
+    LLM_SKIPPED=$((LLM_SKIPPED+1))
+  fi
+done
+if [[ $LLM_SKIPPED -eq 0 ]]; then
+  check "LLM-only sections filled (no remaining AGENT_FILL_REQUIRED markers)" true
+else
+  check "LLM-only sections filled ($LLM_SKIPPED marker(s) remain)" false
 fi
 
 # 12. Filename format check

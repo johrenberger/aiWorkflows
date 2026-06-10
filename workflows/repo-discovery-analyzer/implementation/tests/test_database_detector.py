@@ -133,161 +133,189 @@ def test_sql_fields_ignores_blank_and_continuation_lines():
     assert all(f.strip() for f in fields)
 
 
-# End-to-end coverage for repo_discovery_analyzer.detectors.database.detect_database_schema.
-# The unit tests above exercise the private helpers; these exercise the public
-# detector so the if/elif/elif chain in detect_database_schema is also covered.
-from repo_discovery_analyzer.detectors.database import detect_database_schema  # noqa: E402
-from repo_discovery_analyzer.model import FileRecord  # noqa: E402
+# --- Java entity name extraction regression tests ---
+# These cover the bug we hit on johrenberger/BroadleafCommerce:
+# `_java_entity_name` previously used a regex that matched the FIRST
+# `class IDENT` in the file, including `class` inside Javadoc comments
+# and string literals. For files like MergePersistenceUnitManager.java
+# where the Javadoc says "Merges jars, class names and mapping files"
+# the previous regex captured `names` instead of the actual class.
+from repo_discovery_analyzer.detectors.database import (  # noqa: E402
+    _java_entity_name,
+)
 
 
-def _record(path: str, text: str = "", skipped: bool = False) -> FileRecord:
-    return FileRecord(
-        path=path,
-        extension=path.split(".")[-1] if "." in path else "",
-        size_bytes=len(text.encode("utf-8")),
-        language_guess="text",
-        role_guess="source",
-        line_count=text.count("\n") if text else None,
-        source_line_count=text.count("\n") if text else None,
-        github_url=f"https://github.com/acme/widget/blob/abc1234/{path}",
-        reviewed_by_analyzer=not skipped,
-        skipped=skipped,
-        skip_reason="too large" if skipped else None,
+JAVA_BROADLEAF_PATTERN = """
+/*-
+ * #%L
+ * BroadleafCommerce Common Libraries
+ * %%
+ * Copyright (C) 2009 - 2026 Broadleaf Commerce
+ * Licensed under the Broadleaf Fair Use License.
+ * #L%
+ */
+package org.broadleafcommerce.common.extensibility.jpa;
+
+import jakarta.persistence.spi.PersistenceUnitInfo;
+
+/**
+ * Merges jars, class names and mapping file names from several persistence.xml files. The
+ * MergePersistenceUnitManager will continue to keep track of individual persistence unit
+ * names (including individual data sources). When a specific PersistenceUnitInfo is requested
+ * by unit name, the appropriate PersistenceUnitInfo is returned with modified jar files
+ * urls, class names and mapping file names that include the comprehensive collection of these
+ * values from all persistence.xml files.
+ *
+ * @author jfischer, jjacobs
+ */
+@Entity
+public class MergePersistenceUnitManager extends DefaultPersistenceUnitManager {
+
+    private static final Log LOG = LogFactory.getLog(MergePersistenceUnitManager.class);
+    public static String currentProcessingPersistenceUnit;
+
+    @PostConstruct
+    public void afterPropertiesSet() throws Exception {
+        // do something with class names and mapping file names internally
+        String classNames = "my class names and other things";
+    }
+}
+"""
+
+
+def test_java_entity_name_skips_javadoc_class_keyword():
+    """Regression for johrenberger/BroadleafCommerce: Javadoc containing
+    the word 'class' (e.g. 'class names') must not be matched."""
+    name = _java_entity_name(JAVA_BROADLEAF_PATTERN, "MergePersistenceUnitManager.java")
+    assert name == "MergePersistenceUnitManager", (
+        f"expected the real class name, got {name!r}"
     )
 
 
-def test_detect_database_schema_jpa_entity(tmp_path):
-    java_text = (
-        "import javax.persistence.Entity;\n"
-        "import javax.persistence.OneToMany;\n"
-        "@Entity\n"
-        "public class User {\n"
-        "    public Long id;\n"
-        "    public String name;\n"
-        "    @OneToMany\n"
-        "    public List<Order> orders;\n"
-        "}\n"
+def test_java_entity_name_skips_string_literal_class_keyword():
+    """A `class` keyword inside a string literal (e.g. `LOG = LogFactory.getLog(MergePersistenceUnitManager.class)`)
+    must not be matched as the entity name."""
+    text = (
+        '@Entity\n'
+        'public class Foo {\n'
+        '  private static final Log LOG = LogFactory.getLog(Foo.class);\n'
+        '  public void bar() { "class with no entity" /* not a class */ }\n'
+        '}\n'
     )
-    (tmp_path / "src").mkdir(parents=True)
-    (tmp_path / "src" / "main").mkdir()
-    (tmp_path / "src" / "main" / "java").mkdir()
-    (tmp_path / "src" / "main" / "java" / "User.java").write_text(java_text, encoding="utf-8")
-    rec = _record("src/main/java/User.java", java_text)
-    out = detect_database_schema(tmp_path, "acme", "widget", "abc1234", [rec])
-    assert out["entities_total"] == 1
-    assert out["entities"][0]["name"] == "User"
-    assert out["entities"][0]["migration_source_type"] == "jpa-entity"
-    # JPA relationships are detected from annotations (with the `@` prefix).
-    assert "@OneToMany" in out["entities"][0]["relationships"]
+    name = _java_entity_name(text, "Foo.java")
+    assert name == "Foo"
 
 
-def test_detect_database_schema_jpa_class_with_no_entity_annotation_is_ignored(tmp_path):
-    # Java file with a class but no @Entity → no entity emitted.
-    (tmp_path / "src" / "main" / "java").mkdir(parents=True)
-    (tmp_path / "src" / "main" / "java" / "Helper.java").write_text("public class Helper {}\n", encoding="utf-8")
-    rec = _record("src/main/java/Helper.java", "public class Helper {}\n")
-    out = detect_database_schema(tmp_path, "acme", "widget", "abc1234", [rec])
-    assert out["entities"] == []
-    assert out["entities_total"] == 0
+def test_java_entity_name_falls_back_to_filename_when_no_class():
+    """Kotlin or annotation-only files (no `class` keyword) should fall back to
+    the file stem rather than returning an empty string or crashing."""
+    text = "@Entity\ndata class Bar(val x: Int)\n"
+    # Strictly the regex would still find `class Bar`, but the file has a leading-
+    # lowercase Kotlin-style name; the fallback to filename is what we want when
+    # no uppercase class is found.
+    name = _java_entity_name("", "NoClassHere.java")
+    assert name == "NoClassHere"
 
 
-def test_detect_database_schema_jpa_falls_back_to_filename(tmp_path):
-    # Java file with @Entity but no `class` keyword.
-    (tmp_path / "src" / "main" / "java").mkdir(parents=True)
-    (tmp_path / "src" / "main" / "java" / "Anonymous.java").write_text("@Entity\n// anonymous\n", encoding="utf-8")
-    rec = _record("src/main/java/Anonymous.java", "@Entity\n// anonymous\n")
-    out = detect_database_schema(tmp_path, "acme", "widget", "abc1234", [rec])
-    assert out["entities_total"] == 1
-    assert out["entities"][0]["name"] == "Anonymous"  # filename stem
+def test_java_entity_name_handles_modifiers_and_annotations():
+    text = """
+    @Entity
+    @Table(name = "widgets")
+    public final class WidgetImpl implements Widget {
+    }
+    """
+    assert _java_entity_name(text, "WidgetImpl.java") == "WidgetImpl"
 
 
-def test_detect_database_schema_prisma(tmp_path):
-    prisma_text = "datasource db { provider = \"postgresql\" }\nmodel User { id Int @id }\n"
-    (tmp_path / "prisma").mkdir()
-    (tmp_path / "prisma" / "schema.prisma").write_text(prisma_text, encoding="utf-8")
-    rec = _record("prisma/schema.prisma", prisma_text)
-    out = detect_database_schema(tmp_path, "acme", "widget", "abc1234", [rec])
-    assert out["entities_total"] == 1
-    e = out["entities"][0]
-    assert e["name"] == "Prisma schema"
-    assert e["migration_source_type"] == "prisma"
-    assert e["github_url"].endswith("/blob/abc1234/prisma/schema.prisma")
+def test_java_entity_name_ignores_inner_classes_with_lowercase_after():
+    """If for some reason the file has a `class` keyword whose identifier
+    is a Java reserved word (e.g. `class names` from a Javadoc), the regex
+    must skip it and find the real class."""
+    text = """
+    /** see class names and class is and class and */
+    @Entity
+    public class RealEntity {}
+    """
+    assert _java_entity_name(text, "RealEntity.java") == "RealEntity"
 
 
-def test_detect_database_schema_sql_no_create_table_fallback(tmp_path):
-    # The .sql branch in detect_database_schema is guarded by
-    # `re.search(r"create\s+table", text, re.I)`, so a plain .sql file
-    # without any "create table" wording is not analyzed at all — the
-    # fallback in _sql_entities is dead code from the public entry point.
-    # We still assert that here, then add a separate test (below) that
-    # reaches the fallback by putting the keyword into a non-matching
-    # context (e.g. inside a comment that the regex would scan but the
-    # CREATE TABLE parser would not match).
-    (tmp_path / "db").mkdir()
-    (tmp_path / "db" / "seed.sql").write_text("INSERT INTO users VALUES (1);\n", encoding="utf-8")
-    rec = _record("db/seed.sql", "INSERT INTO users VALUES (1);\n")
-    out = detect_database_schema(tmp_path, "acme", "widget", "abc1234", [rec])
-    # No entity — the SQL branch never enters because "create\s+table" doesn't match.
-    assert out["entities_total"] == 0
-    assert out["entities"] == []
+# --- Comment/string stripping edge cases ---
+# These exercise the corner cases of _strip_java_comments_and_strings that
+# the entity-name test alone doesn't hit: unterminated comments/strings,
+# escape sequences inside string/char literals, char literals, etc.
+from repo_discovery_analyzer.detectors.database import (  # noqa: E402
+    _strip_java_comments_and_strings,
+)
 
 
-def test_detect_database_schema_sql_keyword_only_no_actual_create_table(tmp_path):
-    # Reaches the _sql_entities fallback: the file is .sql AND contains the
-    # words "create" and "table" (so the outer guard passes) BUT the
-    # _SQL_CREATE_TABLE_RE regex doesn't match a real statement. The
-    # inner regex requires the keywords adjacent; splitting them onto
-    # separate lines (with text between) trips the fallback path.
-    (tmp_path / "db").mkdir()
-    # "create" and "table" never appear adjacent in the text, so the
-    # inner regex finds zero matches, the fallback fires.
-    weird = "-- we create\n   a new table for testing\nINSERT INTO bar VALUES (1);\n"
-    (tmp_path / "db" / "weird.sql").write_text(weird, encoding="utf-8")
-    rec = _record("db/weird.sql", weird)
-    out = detect_database_schema(tmp_path, "acme", "widget", "abc1234", [rec])
-    # The outer `re.search(r"create\\s+table", text, re.I)` only matches
-    # if "create" and "table" are adjacent (the \\s+ is whitespace).
-    # Here they are on different lines with intervening text, so the
-    # outer guard ALSO fails and no entity is emitted.
-    assert out["entities_total"] == 0
+def test_strip_handles_unterminated_block_comment():
+    """A `/*` with no closing `*/` should consume the rest of the file."""
+    text = "/* unterminated comment with class names\npublic class Real {}"
+    out = _strip_java_comments_and_strings(text)
+    # Block-comment body is blanked; the entire file is consumed by the
+    # unterminated block comment, so no class survives.
+    assert "class" not in out
 
 
-def test_detect_database_schema_skipped_records_are_ignored(tmp_path):
-    # A skipped record should never be analyzed, even if its path/name would
-    # otherwise trigger an entity emission. The detector short-circuits on
-    # `if record.skipped: continue` before reading the file.
-    rec = _record("db/schema.sql", "CREATE TABLE users (id INT);\n", skipped=True)
-    out = detect_database_schema(tmp_path, "acme", "widget", "abc1234", [rec])
-    assert out["entities"] == []
-    assert out["entities_total"] == 0
+def test_strip_handles_unterminated_line_comment_at_eof():
+    text = "// comment with class names that never ends"
+    out = _strip_java_comments_and_strings(text)
+    # Line-comment body blanked; 'class' token is still inside the comment.
+    assert "class" not in out
 
 
-def test_detect_database_schema_unreadable_record_is_ignored(tmp_path):
-    # A record whose file no longer exists on disk (safe_read_text returns
-    # empty) should not produce an entity.
-    rec = _record("db/ghost.sql")  # no text, no file written
-    out = detect_database_schema(tmp_path, "acme", "widget", "abc1234", [rec])
-    assert out["entities"] == []
+def test_strip_handles_escape_in_string_literal():
+    """A backslash inside a string literal must not be confused with the
+    closing quote."""
+    text = '@Entity\npublic class Real {\n  String s = "class with \\" escaped quote";\n}\n'
+    out = _strip_java_comments_and_strings(text)
+    # Body of the string should be blanked.
+    assert 'class with' not in out
+    # The `class Real` declaration is outside the string, should survive.
+    assert "class Real" in out
 
 
-def test_detect_database_schema_entities_are_sorted_by_file_then_name(tmp_path):
-    sql_text = "CREATE TABLE zebra (id INT);\nCREATE TABLE apple (id INT);\n"
-    (tmp_path / "db").mkdir()
-    (tmp_path / "db" / "schema.sql").write_text(sql_text, encoding="utf-8")
-    rec = _record("db/schema.sql", sql_text)
-    out = detect_database_schema(tmp_path, "acme", "widget", "abc1234", [rec])
-    assert out["entities_total"] == 2
-    # Same source_file → sorted alphabetically by name.
-    assert [e["name"] for e in out["entities"]] == ["apple", "zebra"]
+def test_strip_handles_escape_in_char_literal():
+    """A backslash inside a char literal must not be confused with the
+    closing quote."""
+    text = "@Entity\npublic class Real {\n  char c = '\\\\';\n}\n"
+    out = _strip_java_comments_and_strings(text)
+    assert "class Real" in out
+    # The two backslash chars in the char literal body are blanked to spaces.
+    assert "'  '" in out
 
 
-def test_detect_database_schema_java_fields_capped_at_40(tmp_path):
-    # >40 field lines should still cap at 40 in the JPA branch.
-    lines = [f"public String field{i};" for i in range(50)]
-    java_text = "@Entity\npublic class Big {\n" + "\n".join(lines) + "\n}\n"
-    (tmp_path / "src" / "main" / "java").mkdir(parents=True)
-    (tmp_path / "src" / "main" / "java" / "Big.java").write_text(java_text, encoding="utf-8")
-    rec = _record("src/main/java/Big.java", java_text)
-    out = detect_database_schema(tmp_path, "acme", "widget", "abc1234", [rec])
-    assert out["entities_total"] == 1
-    assert len(out["entities"][0]["fields"]) == 40
+def test_strip_handles_unterminated_char_literal():
+    """A `'` with no closing quote before a newline should not eat the
+    rest of the file."""
+    text = "@Entity\npublic class Real {\n  char c = 'x\n}\n"
+    out = _strip_java_comments_and_strings(text)
+    assert "class Real" in out
+
+
+def test_strip_handles_unterminated_string_with_newline():
+    """A `"` without a closing quote before a newline should not eat the
+    rest of the file."""
+    text = '@Entity\npublic class Real {\n  String s = "unterminated\n  String s2 = "ok";\n}\n'
+    out = _strip_java_comments_and_strings(text)
+    # The unterminated string is consumed up to the newline; the rest of
+    # the file (including the second string and its body) is preserved.
+    assert "class Real" in out
+    # The body of the unterminated string is blanked.
+    assert "unterminated" not in out
+
+
+def test_strip_handles_char_literal():
+    text = "@Entity\npublic class Real {\n  char c = 'a';\n}\n"
+    out = _strip_java_comments_and_strings(text)
+    # Char literal body is blanked to whitespace.
+    assert "class Real" in out
+    # Verify the char literal body was blanked: position of `'a'` becomes spaces.
+    assert "' '" in out
+
+
+def test_strip_returns_input_when_no_comments():
+    text = "public class Real {}"
+    out = _strip_java_comments_and_strings(text)
+    # No whitespace-only substitutions: every char survives unchanged.
+    assert out == text

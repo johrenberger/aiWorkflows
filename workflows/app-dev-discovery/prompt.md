@@ -1,9 +1,22 @@
-# OpenClaw Workflow Prompt: App Developer Discovery
+# OpenClaw Workflow Prompt: App Developer Discovery (Analyzer-Accelerated)
 
-> This file is the canonical prompt that drives the `app-dev-discovery` workflow.
-> It is passed to the executing agent (via `agent --message`, subagent spawn, or
-> a TaskFlow job). Keep it in sync with the spec — the spec is in `../SPEC.md` or
-> the version this was generated from.
+> This is the **analyzer-accelerated** version of the app-dev-discovery prompt.
+> The deterministic evidence-gathering phases (1, 3, 4, 7, 8, 9, 10, 11, 13,
+> 14, 15) are pre-computed by the `repo-discovery-analyzer` workflow and
+> written to the evidence directory by `synthesize-evidence.sh` BEFORE the
+> agent runs. The agent's job is narrowed to:
+>
+> 1. **Read** the pre-computed evidence files (00–15).
+> 2. **Fill in the LLM-only sections** (narrative in 02, 05, 06, 14, 15; the
+>    confidence scoring in 16).
+> 3. **Synthesize the final onboarding document** (Phase 16) by rolling up
+>    the evidence into a 18-section deliverable with Mermaid diagrams.
+> 4. **Validate** (Phase 17) and report.
+
+This is a major change from the previous prompt where the agent had to do
+all 18 phases from scratch. The new design trades a small amount of
+flexibility for ~10x speed, deterministic accuracy on facts (URLs, paths,
+versions), and consistent evidence quality across runs.
 
 ---
 
@@ -11,97 +24,117 @@
 
 The workflow accepts exactly one required runtime variable:
 
-- `GITHUB_PROJECT_URL` — the GitHub repository to analyze (e.g. `https://github.com/<org>/<repo>`).
+- `GITHUB_PROJECT_URL` — the GitHub repository to analyze.
 
 Optional environment variables consumed by the runner script:
 
 - `WORKSPACE_DIR` — working directory for the analysis. Default: the cloned repository.
-- `KEEP_TEMP` — if `true`, the `.openclaw/app-dev-discovery/` evidence directory is preserved on success. Default: `false`.
-- `DRY_RUN` — if `true`, do not commit or push. Default: `false`.
+- `KEEP_TEMP` — if `true`, the `.openclaw/app-dev-discovery/` evidence directory is preserved on success.
+- `DRY_RUN` — if `true`, do not commit or push.
 
 ## Mission
 
 You are an AI coding agent operating inside an existing source-code workspace.
 
-Your task is to produce a reliable, evidence-backed technical onboarding document for a developer who has just joined this project.
+Your task is to produce a reliable, evidence-backed technical onboarding document
+for a developer who has just joined this project.
 
-Do not guess. Ground every material claim in repository evidence.
+The bulk of the evidence is already on disk in `.openclaw/app-dev-discovery/`,
+produced deterministically by the `repo-discovery-analyzer` workflow. **Do not
+re-discover facts that are already in the evidence files** — your job is to
+synthesize, narrate, and validate.
 
 The final document must explain:
 
-- architecture
-- features
-- main flows
-- key components
-- technology stack
-- database/schema
-- APIs
-- integrations
-- testing
-- error handling
-- logging
-- security
-- build/deploy/infrastructure
-- architecture risks
+- architecture, features, main flows, key components, technology stack
+- database/schema, APIs, integrations
+- testing, error handling, logging, security
+- build/deploy/infrastructure, architecture risks
 - developer productivity guidance
 - discovery confidence
 
 ## Operating Principles
 
-Optimize for: reliability, recoverability, bounded context, validation, observability, synthesis quality, platform fit, evidence discipline.
+Optimize for: **reliability, recoverability, bounded context, validation,
+observability, synthesis quality, platform fit, evidence discipline**.
 
 Rules:
 
-1. Analyze the full project/workspace.
-2. Do not rely only on README files.
-3. Prefer source code, config, schemas, tests, and deployment files as primary evidence.
+1. **Read the evidence files first** — `.openclaw/app-dev-discovery/00-*.md`
+   through `15-*.md` are already on disk. Treat them as ground truth.
+2. Do not rely only on README files. Use the evidence + source code.
+3. Prefer source code, config, schemas, tests, and deployment files as
+   additional evidence when the analyzer's evidence is sparse.
 4. Mark uncertain conclusions explicitly.
 5. Never invent technologies, flows, APIs, diagrams, or dependencies.
 6. Use concise representative snippets only.
 7. Keep diagrams high-level.
-8. Use GitHub commit-pinned URLs for all code references.
-9. Generate one final onboarding document that rolls up the data from all sections.
-10. Use temporary intermediate evidence files only for workflow recoverability.
+8. **All GitHub links must be commit-pinned.** The analyzer produces
+   commit-pinned URLs in the evidence files; preserve the format.
+9. Generate one final onboarding document that rolls up the data from all
+   evidence sections.
+10. **The 16 evidence files are already on disk** — do not re-create them
+    from scratch. Edit / extend them where the prompt asks for LLM
+    judgment.
 11. Do not generate the final document until validation passes.
-12. Commit generated docs only after validation passes.
+12. The runner script handles branch creation, commit, and push.
 
 ## Execution Discipline (added by runner)
 
-- **Use absolute paths** in every `read`, `write`, `edit`, and `exec` call. The runner
-  passes the absolute `WORKSPACE_DIR` in runtime context — use that, not relative paths.
-- **Do not spawn sub-agents for the analysis phases.** Do the work inline so evidence
-  is consistent and the workflow is atomic. Sub-agents are fine only for isolated
-  read-only research, never for mutating the evidence directory.
-- **Do not run `openclaw agent`, `openclaw gateway restart`, or any other lifecycle
-  command** from inside this workflow.
-- **Do not modify or commit anything** — the runner script handles branch creation,
-  commit, and push. Your job is to produce the docs/ artifacts and stop.
-- **Write short evidence, not essays.** Aim for evidence files of 2-10KB each. The
-  final document is the rolled-up synthesis.
+- **Use absolute paths** in every `read`, `write`, `edit`, and `exec` call.
+- **Do not spawn sub-agents** for the analysis phases.
+- **Do not run `openclaw agent`, `openclaw gateway restart`, or any other
+  lifecycle command** from inside this workflow.
+- **Do not modify or commit anything** — the runner script handles that.
+- **Write short evidence, not essays.** Aim for evidence files of 2-10KB
+  each. The final document is the rolled-up synthesis.
 
-## Working Directory Layout
+## Evidence Directory Layout
 
-Create inside the target repository (or the cloned checkout):
+The runner has already executed `synthesize-evidence.sh` which produced:
 
 ```
 .openclaw/app-dev-discovery/
-  00-run-metadata.md
-  01-file-inventory.md
-  02-documentation-evidence.md
-  03-stack-evidence.md
-  04-structure-evidence.md
-  05-components-evidence.md
-  06-flows-evidence.md
-  07-data-evidence.md
-  08-dependencies-integrations-evidence.md
-  09-api-evidence.md
-  10-testing-evidence.md
-  11-error-logging-evidence.md
-  12-security-evidence.md
-  13-build-deploy-evidence.md
-  14-risk-hygiene-evidence.md
-  15-contradiction-detection.md
-  16-final-validation.md
+  00-run-metadata.md             (deterministic — analyzer)
+  01-file-inventory.md           (deterministic — analyzer)
+  02-documentation-evidence.md   (SKELETON — agent fills in)
+  03-stack-evidence.md           (deterministic — analyzer)
+  04-structure-evidence.md       (deterministic — analyzer)
+  05-components-evidence.md      (SKELETON — agent fills in)
+  06-flows-evidence.md           (SKELETON — agent fills in)
+  07-data-evidence.md            (deterministic — analyzer)
+  08-dependencies-integrations-evidence.md (deterministic — analyzer)
+  09-api-evidence.md             (deterministic — analyzer)
+  10-testing-evidence.md         (deterministic — analyzer)
+  11-error-logging-evidence.md   (deterministic — analyzer)
+  12-security-evidence.md        (deterministic — analyzer)
+  13-build-deploy-evidence.md    (deterministic — analyzer)
+  14-risk-hygiene-evidence.md    (PARTIAL — analyzer lists findings; agent interprets)
+  15-contradiction-detection.md  (PARTIAL — analyzer lists candidates; agent interprets)
+```
+
+Also on disk for the agent's reference (raw analyzer JSON outputs):
+
+```
+.openclaw/analyzer-output/
+  analysis_manifest.json
+  repo_inventory.json
+  tech_stack.json
+  project_structure.json
+  entry_points.json
+  routes.json
+  db_schema.json
+  dependencies.json
+  integrations.json
+  tests.json
+  error_logging.json
+  security_signals.json
+  build_deploy.json
+  hygiene_findings.json
+  contradiction_candidates.json
+  loc_metrics.json
+  github_links.json
+  validation_report.json
 ```
 
 Final deliverables (in the target repository):
@@ -116,126 +149,129 @@ docs/adr/001-current-architecture-baseline.md
 
 ### Phase 0 — Repository Acquisition and Metadata
 
-1. Read `GITHUB_PROJECT_URL`.
-2. Clone the repository if needed.
-3. If already cloned, confirm the remote matches `GITHUB_PROJECT_URL`.
-4. Fetch latest metadata without destructive changes.
-5. Determine: owner, repo name, default branch, checked-out branch, current commit hash, remote URL, current date.
-6. Build the GitHub source URL prefix: `https://github.com/<org>/<repo>/blob/<commit>/`
-7. Save metadata to `.openclaw/app-dev-discovery/00-run-metadata.md`.
-8. **Failure rule:** if repository access fails, stop immediately and report the URL, failure, and remediation.
+**Already done by `run.sh`.** No action required from the agent. Read
+`.openclaw/app-dev-discovery/00-run-metadata.md` for context.
 
 ### Phase 1 — Full Repository Inventory
 
-Generate a complete inventory. Include: path, file type, apparent role, whether reviewed directly, whether excluded, exclusion reason.
+**Already done by analyzer.** Read `.openclaw/app-dev-discovery/01-file-inventory.md`.
+The analyzer's inventory uses the same `path | type | role | reviewed |
+excluded | reason` schema as the previous agent-driven version. No
+additional action required.
 
-Exclude only low-value generated/vendor files: `.git/`, `node_modules/`, build artifacts, coverage outputs, binary/media files (unless docs/deploy relevant), lockfile internals.
-
-Do not exclude: application source, configuration, tests, migrations, scripts, infrastructure, CI/CD, docs, public assets.
-
-Save to `.openclaw/app-dev-discovery/01-file-inventory.md`.
+If the agent discovers significant inventory drift (e.g. a build artifact
+that should have been excluded but wasn't), it may amend the file with a
+note, but should not delete existing rows.
 
 ### Phase 2 — Documentation and Instruction Review
 
-Find and review: `README.md`, `LEIAME.md`, `CONTRIBUTING.md`, `docs/`, architecture notes, setup guides, runbooks, changelogs, important script comments.
+**LLM-only — agent fills in `.openclaw/app-dev-discovery/02-documentation-evidence.md`.**
 
-Summarize: project overview, setup/run instructions, conventions, contribution process, documentation gaps.
-
-Save to `.openclaw/app-dev-discovery/02-documentation-evidence.md`.
+Read README.md, CONTRIBUTING.md, docs/, architecture notes, setup guides,
+runbooks, changelogs, and important script comments. Summarize: project
+overview, setup/run instructions, conventions, contribution process,
+documentation gaps.
 
 ### Phase 3 — Technology Stack Detection
 
-Inspect: `package.json`, lockfiles, `pom.xml`, `build.gradle`, `.csproj`, `requirements.txt`, `pyproject.toml`, `go.mod`, `Cargo.toml`, `.tool-versions`, `.nvmrc`, `Dockerfile`, `docker-compose`, CI files, env/config templates.
-
-Identify: languages and versions, frameworks, package managers, build tools, database technologies, cloud SDKs/platforms, containerization, message brokers, caching, search/indexing, architecture style, test frameworks, lint/format tools.
-
-Every stack item must include a commit-pinned GitHub URL. Save to `.openclaw/app-dev-discovery/03-stack-evidence.md`.
+**Already done by analyzer.** Read `.openclaw/app-dev-discovery/03-stack-evidence.md`.
+The file contains a complete commit-pinned table. The agent may add a
+1-2 sentence "Architecture Style" paragraph at the bottom.
 
 ### Phase 4 — Project Structure and Entry Point Mapping
 
-Identify: main entry points, bootstrap files, routing files, controllers/handlers, services/use cases, models/entities, persistence layer, frontend entry points, background jobs/workers, scripts, configuration files, infrastructure files.
-
-Create a recommended reading path. Save to `.openclaw/app-dev-discovery/04-structure-evidence.md`.
+**Already done by analyzer.** Read `.openclaw/app-dev-discovery/04-structure-evidence.md`.
+The file contains top-level layout, notable directories, detected entry
+points, recommended reading order, and bootstrap/config files.
 
 ### Phase 5 — Key Component Analysis
 
-For each important component include: name, GitHub URL, responsibility, important classes/functions, dependencies, downstream consumers, representative snippet, reason it matters.
+**LLM-only — agent fills in `.openclaw/app-dev-discovery/05-components-evidence.md`.**
 
-Prioritize components that affect: app startup, request handling, domain logic, persistence, authn/authz, integrations, background processing, deployment/runtime.
+The file already contains a "Component Inventory (deterministic)" table
+from the analyzer. The agent's job is to write 1-3 short paragraphs per
+important component describing: name, responsibility, dependencies,
+downstream consumers, and why it matters.
 
-Save to `.openclaw/app-dev-discovery/05-components-evidence.md`.
+Prioritize components that affect: app startup, request handling, domain
+logic, persistence, authn/authz, integrations, background processing,
+deployment/runtime.
 
 ### Phase 6 — Execution and Data Flow Analysis
 
-Trace critical flows end-to-end (auth, request handling, CRUD, jobs, message processing, file upload/download, external API interaction).
+**LLM-only — agent fills in `.openclaw/app-dev-discovery/06-flows-evidence.md`.**
 
-For each flow include: trigger, entry point, major steps, data read/write behavior, error handling, key files/functions, persistence target, external services involved.
-
-Save to `.openclaw/app-dev-discovery/06-flows-evidence.md`.
+The file already contains a "Detected Triggers (deterministic)" table.
+The agent's job is to trace critical flows end-to-end and write 1-3
+sentences per flow: trigger, entry point, major steps, data read/write
+behavior, error handling, persistence target, external services.
 
 ### Phase 7 — Database and Schema Analysis
 
-If persistence exists, identify: database type, ORM/query layer, entities/tables/collections, relationships, migrations, seed data, repository/DAO patterns, critical indexes/constraints.
+**Already done by analyzer.** Read `.openclaw/app-dev-discovery/07-data-evidence.md`.
+The file contains the entities table + per-entity details.
 
-If none found, state explicitly: "no clear persistence layer was found" with evidence. Save to `.openclaw/app-dev-discovery/07-data-evidence.md`.
+If the analyzer's file says "No clear persistence layer was found", the
+agent may attempt a manual review of SQL files / ORM config and amend
+the file. Do not invent entities.
 
 ### Phase 8 — Dependencies, Integrations, and APIs
 
-Analyze: major libraries and their role, SDKs, external APIs, auth providers, payment/email/storage/search/queue integrations, message brokers, API documentation mechanisms.
-
-For APIs identify: endpoint definitions, routing structure, OpenAPI/Swagger/Javadoc/docstring evidence, how docs are generated or served.
-
-Save to `.openclaw/app-dev-discovery/08-dependencies-integrations-evidence.md` and `.openclaw/app-dev-discovery/09-api-evidence.md`.
+**Already done by analyzer.** Read `.openclaw/app-dev-discovery/08-dependencies-integrations-evidence.md`
+(major libraries + integrations) and `09-api-evidence.md` (API surface).
+The agent may add an "Auth Providers / APIs" section to 08- if it
+discovers auth patterns in source code.
 
 ### Phase 9 — Testing Analysis
 
-Identify: unit/integration/E2E tests, test frameworks, fixtures/mocks, test commands, CI test execution, coverage tooling, obvious test gaps.
-
-Save to `.openclaw/app-dev-discovery/10-testing-evidence.md`.
+**Already done by analyzer.** Read `.openclaw/app-dev-discovery/10-testing-evidence.md`.
+The file contains the test/source ratio and detected frameworks/commands.
+The agent may add "Test Gaps / Observations" notes.
 
 ### Phase 10 — Error Handling, Logging, and Observability
 
-Identify: global exception handling, custom error classes, middleware/filters/interceptors, logging library, log format, monitoring/telemetry, Sentry/Datadog/OpenTelemetry, retry patterns, alerting hooks.
-
-Save to `.openclaw/app-dev-discovery/11-error-logging-evidence.md`.
+**Already done by analyzer.** Read `.openclaw/app-dev-discovery/11-error-logging-evidence.md`.
+The agent may add pattern-level analysis (global exception handlers,
+retry, alerting) by reading source code.
 
 ### Phase 11 — Security Analysis
 
-Identify: authentication, authorization, input validation, secrets handling, security middleware, CSRF/CORS/CSP behavior, dependency risk indicators, password/token handling, env var usage, common attack protections.
-
-**Do not perform destructive security testing.** Save to `.openclaw/app-dev-discovery/12-security-evidence.md`.
+**Already done by analyzer (partial).** Read `.openclaw/app-dev-discovery/12-security-evidence.md`.
+The agent must extend this with auth/authorization analysis, secrets
+handling, CSRF/CORS/CSP behavior. **Do not perform destructive security
+testing.**
 
 ### Phase 12 — Build, Deployment, and Operations
 
-Inspect: Dockerfile, docker-compose, Kubernetes manifests, Terraform, Pulumi, CDK, GitHub Actions, GitLab CI, deployment scripts, env templates, release scripts, process managers, runtime ports, health checks.
+**Already done by analyzer.** Read `.openclaw/app-dev-discovery/13-build-deploy-evidence.md`.
+The agent must add: build flow narrative, deployment flow narrative,
+env var table, and local development notes.
 
-Document: build flow, deployment flow, operational dependencies, runtime assumptions, env vars, production hints, local development hints.
+### Phase 13 — Repository Hygiene and Architecture Risk
 
-Save to `.openclaw/app-dev-discovery/13-build-deploy-evidence.md`.
+**PARTIAL — analyzer lists findings; agent interprets.**
 
-### Phase 13 — Repository Hygiene and Architecture Risk Discovery
+Read `.openclaw/app-dev-discovery/14-risk-hygiene-evidence.md`. The
+analyzer has already produced a table of findings. The agent must:
 
-Search for: TODO, FIXME, HACK, XXX, TECHDEBT, DEPRECATED, `@deprecated`.
-
-Summarize: counts, locations, recurring themes, likely impact.
-
-Classify each finding as: Confirmed Risk, Probable Risk, Observation.
-
-Categories: Security, Testing, Performance, Reliability, Scalability, Maintainability, Operational Readiness, Documentation.
-
-Each finding must include: description, evidence, GitHub source URL, impact, confidence.
-
-Save to `.openclaw/app-dev-discovery/14-risk-hygiene-evidence.md`.
+1. Run grep for TODO, FIXME, HACK, XXX, TECHDEBT, DEPRECATED, @deprecated.
+2. Count occurrences, list top recurring themes, likely impact.
+3. Classify each finding as: Confirmed Risk, Probable Risk, Observation.
+4. Categories: Security, Testing, Performance, Reliability, Scalability,
+   Maintainability, Operational Readiness, Documentation.
 
 ### Phase 14 — Contradiction Detection
 
-Compare evidence across: documentation, source code, config, CI/CD, Docker/deployment, infrastructure, tests.
+**PARTIAL — analyzer lists candidates; agent interprets.**
 
-Look for contradictions: README says PostgreSQL but code uses MySQL, CI says Node 22 but Dockerfile says Node 20, docs say JWT but code uses sessions, setup docs list missing commands, deployment files reference missing services, API docs differ from implemented routes.
+Read `.openclaw/app-dev-discovery/15-contradiction-detection.md`. The
+analyzer has listed contradiction candidates. The agent must:
 
-For each contradiction include: summary, evidence A, evidence B, likely interpretation, impact, recommended follow-up.
-
-Save to `.openclaw/app-dev-discovery/15-contradiction-detection.md`.
+1. For each candidate, add: likely interpretation, recommended follow-up.
+2. Cross-check manually between: documentation, source code, config,
+   CI/CD, Docker, infrastructure, tests.
+3. Look for: README vs code, Dockerfile vs CI, docs vs implemented
+   routes, declared vs exposed ports.
 
 ### Phase 15 — Generate ADR Files
 
@@ -332,6 +368,10 @@ Create `docs/<yyyy-mm-dd>-<repo-name>-app-dev-discovery.md` with this structure:
 17. ADR Baseline
 18. Discovery Confidence and Unknowns
 
+**Source from the 16 evidence files** — they already have the relevant
+tables and lists with commit-pinned URLs. The agent's job is to compose
+the prose that connects them.
+
 Requirements:
 
 - Clear Markdown, commit-pinned GitHub links, short representative snippets.
@@ -357,9 +397,11 @@ Validate before finalizing:
 11. Contradictions are documented or explicitly stated as not found.
 12. Confidence scoring exists.
 13. One final onboarding document rolls up all required sections.
-14. Temporary evidence files exist for recoverability.
+14. **All 16 analyzer evidence files are on disk** (the runner's
+    `validate.sh` will check for these too).
 
-Write results to `.openclaw/app-dev-discovery/16-final-validation.md`. If validation fails, fix and rerun. Do not commit until it passes.
+Write results to `.openclaw/app-dev-discovery/16-final-validation.md`. If
+validation fails, fix and rerun. Do not commit until it passes.
 
 ### Phase 18 — Commit Workflow
 
@@ -383,3 +425,23 @@ When finished, respond with:
 - commit hash if committed
 - top 5 onboarding files to read first
 - major unknowns or limitations
+
+## Performance & Quality Notes
+
+This is the analyzer-accelerated variant. Compared to the previous
+all-LLM version, the tradeoffs are:
+
+| Aspect | Old (LLM) | New (Analyzer + LLM) |
+| --- | --- | --- |
+| Evidence accuracy | LLM-dependent | Deterministic (commit-pinned URLs verified) |
+| Speed | ~10-20 min/run | ~2-3 min/run |
+| Cost | High (every fact extracted by LLM) | Low (analyzer pre-computes 80%) |
+| Reproducibility | Variable (LLM drift) | High (deterministic backbone) |
+| Flexibility | LLM can interpret intent | LLM focuses on judgment calls only |
+| Coverage of rare stack patterns | Better (LLM can read anything) | Limited to analyzer's known patterns |
+
+**When to fall back to the old approach:** If the analyzer produces
+sparse or zero evidence for a non-standard stack (e.g. a custom DSL,
+rare language, hand-rolled build system), the agent can fall back to
+manual source review for the affected sections. Document this in the
+"Unknowns" section of the final doc.

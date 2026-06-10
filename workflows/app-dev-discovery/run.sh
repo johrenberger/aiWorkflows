@@ -190,6 +190,32 @@ EOF
 
 echo "  - metadata written to $EVIDENCE_DIR/00-run-metadata.md"
 
+# -------- Phase 0.5: Analyzer-accelerated evidence synthesis --------
+#
+# Run the repo-discovery-analyzer over the target repo and use the
+# synthesize-evidence.sh script to convert the JSON outputs into the
+# 16 evidence markdown templates. This pre-computes ~80% of the
+# evidence deterministically, leaving the agent to focus on narrative
+# synthesis, Mermaid diagrams, and risk interpretation.
+ANALYZER_OUT="$WORKSPACE_DIR/.openclaw/analyzer-output"
+SYNTHESIZER="$SCRIPT_DIR/scripts/synthesize-evidence.sh"
+
+if [[ -f "$SYNTHESIZER" ]]; then
+  echo
+  echo "[Phase 0.5] Analyzer-accelerated evidence synthesis"
+  if bash "$SYNTHESIZER" \
+      "$WORKSPACE_DIR" \
+      "$ANALYZER_OUT" \
+      "$WORKSPACE_DIR/$EVIDENCE_DIR" \
+      "$OWNER" "$REPO" "$CURRENT_COMMIT" 2>&1 | tail -20; then
+    echo "  - synthesizer complete"
+  else
+    echo "WARNING: synthesizer failed; agent will need to discover evidence manually" >&2
+  fi
+else
+  echo "WARN: synthesizer not found at $SYNTHESIZER — falling back to agent-only mode" >&2
+fi
+
 # -------- Agent invocation (or prompt-only) --------
 if [[ "$NO_AGENT" == "true" || "$DRY_RUN" == "true" ]]; then
   echo
@@ -270,15 +296,32 @@ echo "[Phase 18] Commit"
 cd "$WORKSPACE_DIR"
 
 # Determine final doc path
-FINAL_DOC="docs/${TODAY}-${REPO}-app-dev-discovery.md"
-if [[ ! -f "$FINAL_DOC" ]]; then
-  # Try alternate (the spec says yyyy-mm-dd-repo-name-app-dev-discovery_cursor.md)
-  FINAL_DOC_CANDIDATE=$(ls docs/${TODAY}-${REPO}*-app-dev-discovery*.md 2>/dev/null | head -1 || true)
-  if [[ -n "$FINAL_DOC_CANDIDATE" ]]; then FINAL_DOC="$FINAL_DOC_CANDIDATE"; fi
+# Try a few casings — the agent may have lowercased the repo segment.
+REPO_LC="${REPO,,}"
+TODAY_LC="${TODAY,,}"
+FINAL_DOC=""
+for cand in \
+  "docs/${TODAY}-${REPO}-app-dev-discovery.md" \
+  "docs/${TODAY}-${REPO}-app-dev-discovery_cursor.md" \
+  "docs/${TODAY_LC}-${REPO_LC}-app-dev-discovery.md" \
+  "docs/${TODAY_LC}-${REPO_LC}-app-dev-discovery_cursor.md"
+do
+  if [[ -f "$cand" ]]; then FINAL_DOC="$cand"; break; fi
+done
+# Last-resort: case-insensitive glob
+if [[ -z "$FINAL_DOC" ]]; then
+  shopt -s nullglob nocaseglob
+  for f in docs/*-*-app-dev-discovery*.md; do
+    case "$(basename "$f")" in
+      "${TODAY}"-*|"${TODAY_LC}"-*) FINAL_DOC="$f"; break ;;
+    esac
+  done
+  shopt -u nocaseglob
 fi
 
-if [[ ! -f "$FINAL_DOC" ]]; then
-  echo "ERROR: final document not found at $FINAL_DOC" >&2
+if [[ -z "$FINAL_DOC" || ! -f "$FINAL_DOC" ]]; then
+  echo "ERROR: final document not found in docs/ (tried multiple casings)" >&2
+  ls docs/ >&2
   exit 5
 fi
 
