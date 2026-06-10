@@ -1,0 +1,14 @@
+{
+  "src/foo.ts": {
+    "statementMap": {
+      "0": { "start": { "line": 1 } },
+      "1": { "start": { "line": 2 } }
+    },
+    "s": { "0": 1, "1": 0 },
+    "branchMap": {
+      "0": { "loc": { "start": { "line": 2 } } }
+    },
+    "b": { "0": [1, 0] }
+  }
+}
+
