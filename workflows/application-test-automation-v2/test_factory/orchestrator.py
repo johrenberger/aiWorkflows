@@ -365,13 +365,26 @@ class TestFactoryOrchestrator:
         # incompatibility — exits 0 but writes nothing). PR #23 adds the
         # post-run check so the user gets a warning instead of empty
         # coverage_baseline.json.
+        #
+        # PR #26 (Bug #6) fixes a false-positive in the PR #23 check: it
+        # compared by path identity (`post - pre`), so a pre-existing
+        # coverage.json that pytest-cov rewrote in place looked like
+        # "nothing was written". The fix captures pre-run mtimes and
+        # considers a report "new" if its post-run mtime is strictly
+        # newer than the snapshot. This catches both:
+        #   - truly new files (e.g. `.coverage` is created fresh)
+        #   - overwritten files (e.g. `coverage.json` rewritten at the
+        #     same path but with newer content)
         repo_root = Path(self.repo_root)
-        def _existing_reports() -> set[Path]:
-            found: set[Path] = set()
+        def _existing_reports() -> dict[Path, float]:
+            found: dict[Path, float] = {}
             for pattern in ("**/coverage.json", "**/coverage.xml", "**/.coverage"):
                 for p in repo_root.glob(pattern):
                     if p.is_file():
-                        found.add(p.resolve())
+                        try:
+                            found[p.resolve()] = p.stat().st_mtime
+                        except OSError:
+                            continue
             return found
         pre_reports = _existing_reports()
         try:
@@ -414,8 +427,19 @@ class TestFactoryOrchestrator:
         # report? If the subprocess exited 0 but no file was written,
         # surface that as a warning so the user doesn't waste an hour
         # wondering why coverage_baseline.json is empty.
+        #
+        # Compare mtimes against the pre-run snapshot. A report is
+        # considered "new or updated" if its mtime is strictly newer
+        # than the pre-run mtime. This catches both freshly-created
+        # files and pre-existing files that were rewritten in place
+        # (the most common case once you have any prior coverage run).
         post_reports = _existing_reports()
-        new_reports = sorted(post_reports - pre_reports)
+        new_reports: list[Path] = []
+        for path, post_mtime in post_reports.items():
+            pre_mtime = pre_reports.get(path)
+            if pre_mtime is None or post_mtime > pre_mtime:
+                new_reports.append(path)
+        new_reports = sorted(new_reports)
         result["new_reports"] = [str(p) for p in new_reports]
         if result["status"] == "completed" and not new_reports:
             result["status"] = "no_report_written"
