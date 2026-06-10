@@ -43,6 +43,7 @@ def run_command(command: CommandSpec, artifact_dir: str | Path, timeout_seconds:
             timeout_seconds=timeout_seconds,
             artifact_path=str(artifact_path),
             phase=phase,
+            status="completed",
         )
     except subprocess.TimeoutExpired as exc:
         record = ValidationRunRecord(
@@ -54,6 +55,31 @@ def run_command(command: CommandSpec, artifact_dir: str | Path, timeout_seconds:
             timeout_seconds=timeout_seconds,
             artifact_path=str(artifact_path),
             phase=phase,
+            status="timeout",
+        )
+    except FileNotFoundError as exc:
+        record = ValidationRunRecord(
+            work_item_id=work_item_id,
+            command=command.render(),
+            exit_code=127,
+            stdout="",
+            stderr=str(exc),
+            timeout_seconds=timeout_seconds,
+            artifact_path=str(artifact_path),
+            phase=phase,
+            status="missing-executable",
+        )
+    except OSError as exc:
+        record = ValidationRunRecord(
+            work_item_id=work_item_id,
+            command=command.render(),
+            exit_code=126,
+            stdout="",
+            stderr=str(exc),
+            timeout_seconds=timeout_seconds,
+            artifact_path=str(artifact_path),
+            phase=phase,
+            status="process-error",
         )
     artifact_path.write_text(json.dumps(asdict(record), indent=2), encoding="utf-8")
     return record

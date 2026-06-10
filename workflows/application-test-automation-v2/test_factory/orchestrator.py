@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 import subprocess
 from dataclasses import asdict
 from pathlib import Path
@@ -15,18 +16,15 @@ from .analyzers.coverage_normalizer import (
     parse_lcov_info,
     parse_python_coverage_xml,
 )
-from .analyzers.eligibility import classify_file
-from .analyzers.module_detector import detect_language_and_module
-from .analyzers.mutation_analyzer import mutation_candidates_from_scores
 from .analyzers.repo_inventory import inventory_repo
 from .analyzers.risk_scorer import priority, score_file, weighted_index
-from .analyzers.source_test_mapper import infer_existing_test_files, map_source_to_tests, supporting_files_for_source
+from .analyzers.source_test_mapper import infer_existing_test_files, supporting_files_for_source
 from .analyzers.test_type_recommender import conventions_summary, recommend_test_type
 from .config import load_config
-from .git.branch_manager import create_branch, is_dirty
-from .git.commit_manager import commit_module
+from .git.branch_manager import create_branch
+from .git.commit_manager import changed_files, commit_module, git_head_sha
 from .git.pr_summary import render_pr_summary
-from .models import Config, CoverageRecord, FileRecord, RiskScoreRecord, SourceTestMapRecord, WorkItemRecord
+from .models import CoverageRecord, RiskScoreRecord, SourceTestMapRecord, ValidationRunRecord, WorkItemRecord
 from .reports.json_report import render_json_report
 from .reports.markdown_report import render_final_report
 from .storage import Storage
@@ -78,6 +76,39 @@ def _module_graph(files: list[dict[str, Any]]) -> dict[str, dict[str, int]]:
     return graph
 
 
+def _module_matches_scope(module_scope: str | None, path: str, module_name: str = "") -> bool:
+    if not module_scope:
+        return True
+    scope = module_scope.replace("\\", "/").strip("/")
+    normalized_path = path.replace("\\", "/")
+    normalized_module = module_name.replace("\\", "/").strip("/")
+    return (
+        normalized_path.startswith(f"{scope}/")
+        or f"/{scope}/" in normalized_path
+        or normalized_module == scope
+        or normalized_module.startswith(f"{scope}/")
+    )
+
+
+def _read_text_prefix(path: Path, limit: int) -> str:
+    if not path.exists():
+        return ""
+    try:
+        with path.open("r", encoding="utf-8", errors="ignore") as handle:
+            return handle.read(limit)
+    except OSError:
+        return ""
+
+
+def _parse_mutation_score(stdout: str, stderr: str) -> float | None:
+    pattern = re.compile(r"(?i)(?:mutation(?: score)?|score)\D+(\d+(?:\.\d+)?)")
+    for text in (stdout, stderr):
+        match = pattern.search(text or "")
+        if match:
+            return float(match.group(1))
+    return None
+
+
 class TestFactoryOrchestrator:
     def __init__(self, repo_root: str | Path, out_dir: str | Path, config_path: str | Path | None = None):
         self.repo_root = Path(repo_root).resolve()
@@ -87,15 +118,16 @@ class TestFactoryOrchestrator:
         self.config = load_config(self.repo_root, config_path)
         self.storage = Storage(self.artifacts / "test_factory.sqlite")
         self.adapters = [JavaJUnitAdapter(), JsJestVitestAdapter(), PythonPytestAdapter()]
+        (self.artifacts / "validation_runs").mkdir(parents=True, exist_ok=True)
+        (self.artifacts / "coverage_deltas").mkdir(parents=True, exist_ok=True)
+        (self.artifacts / "mutation").mkdir(parents=True, exist_ok=True)
 
     def close(self) -> None:
         self.storage.close()
 
-    def _file_rows(self) -> list[dict[str, Any]]:
-        return [dict(row) for row in self.storage.fetch_all("files")]
-
-    def _risk_rows(self) -> list[dict[str, Any]]:
-        return [dict(row) for row in self.storage.fetch_all("risk_scores")]
+    def _file_rows(self, module: str | None = None) -> list[dict[str, Any]]:
+        rows = [dict(row) for row in self.storage.fetch_all("files")]
+        return [row for row in rows if _module_matches_scope(module, row["path"], row.get("module", ""))]
 
     def _decode_work_item_row(self, row: dict[str, Any]) -> WorkItemRecord:
         decoded = {key: _decode_json_maybe(value) for key, value in row.items()}
@@ -103,15 +135,6 @@ class TestFactoryOrchestrator:
 
     def _enabled_adapter(self, adapter: Any) -> bool:
         return bool(self.config.language_adapters.get(adapter.language, True))
-
-    def adapter_for_repo(self) -> Any:
-        detections = [adapter.detect(self.repo_root) for adapter in self.adapters if self._enabled_adapter(adapter)]
-        detections.sort(key=lambda item: (-item.confidence, item.adapter))
-        best = detections[0]
-        for adapter in self.adapters:
-            if adapter.language == best.language:
-                return adapter, best
-        return self.adapters[0], best
 
     def adapter_for_language(self, language: str) -> Any:
         lang = language.lower()
@@ -127,7 +150,7 @@ class TestFactoryOrchestrator:
             reports.extend(sorted(self.repo_root.glob(pattern)))
         return reports
 
-    def _collect_coverage_records(self) -> list[CoverageRecord]:
+    def _collect_coverage_records(self, module: str | None = None) -> list[CoverageRecord]:
         coverage: list[CoverageRecord] = []
         for report in self._discover_reports():
             name = report.name.lower()
@@ -139,7 +162,7 @@ class TestFactoryOrchestrator:
                 coverage.extend(parse_coverage_final_json(report))
             elif name == "lcov.info":
                 coverage.extend(parse_lcov_info(report))
-        inventory_paths = [row["path"] for row in self._file_rows()]
+        inventory_paths = [row["path"] for row in self._file_rows(module)]
         return self._merge_coverage_records(coverage, inventory_paths)
 
     def _normalize_coverage_path(self, coverage_path: str, inventory_paths: list[str]) -> str:
@@ -157,6 +180,8 @@ class TestFactoryOrchestrator:
         merged: dict[str, CoverageRecord] = {}
         for record in records:
             normalized_path = self._normalize_coverage_path(record.path, inventory_paths)
+            if inventory_paths and normalized_path not in inventory_paths:
+                continue
             existing = merged.get(normalized_path)
             if existing is None:
                 merged[normalized_path] = CoverageRecord(
@@ -178,8 +203,37 @@ class TestFactoryOrchestrator:
             existing.report_ref = ";".join(sorted(set(filter(None, [existing.report_ref, record.report_ref]))))
         return sorted(merged.values(), key=lambda item: item.path)
 
-    def scan(self) -> dict[str, Any]:
-        files, exclusions = inventory_repo(self.repo_root, self.config)
+    def _git_snapshot(self) -> dict[str, Any]:
+        try:
+            return {
+                "head_sha": git_head_sha(self.repo_root),
+                "changed_files": changed_files(self.repo_root),
+            }
+        except RuntimeError:
+            return {"head_sha": "", "changed_files": []}
+
+    def _adapter_detections(self) -> list[dict[str, Any]]:
+        detections: list[dict[str, Any]] = []
+        for adapter in self.adapters:
+            if not self._enabled_adapter(adapter):
+                continue
+            detections.append(asdict(adapter.detect(self.repo_root)))
+        return sorted(detections, key=lambda item: (item["language"], item["adapter"]))
+
+    def _discovered_commands(self, modules: list[str]) -> list[dict[str, str]]:
+        commands: list[dict[str, str]] = []
+        for adapter in self.adapters:
+            if not self._enabled_adapter(adapter):
+                continue
+            sample_module = next((module for module in modules if module), "root")
+            commands.append({"language": adapter.language, "kind": "test", "command": adapter.discover_test_command(self.repo_root, sample_module).render()})
+            commands.append({"language": adapter.language, "kind": "coverage", "command": adapter.discover_coverage_command(self.repo_root, sample_module).render()})
+            mutation_command = adapter.discover_mutation_command(self.repo_root, sample_module, [])
+            commands.append({"language": adapter.language, "kind": "mutation", "command": mutation_command.render()})
+        return commands
+
+    def scan(self, module: str | None = None) -> dict[str, Any]:
+        files, exclusions = inventory_repo(self.repo_root, self.config, module=module)
         for record in files:
             self.storage.upsert_file(record)
         for exclusion in exclusions:
@@ -187,38 +241,45 @@ class TestFactoryOrchestrator:
         language_stack = _language_stack([asdict(record) for record in files])
         module_graph = _module_graph([asdict(record) for record in files])
         modules = sorted({record.module for record in files})
-        for module in modules:
-            lang = next((record.language for record in files if record.module == module), "unknown")
-            source_count = len([record for record in files if record.module == module and not record.is_test and not record.is_excluded])
-            test_count = len([record for record in files if record.module == module and record.is_test])
-            self.storage.upsert_module(module, lang, source_count, test_count, {"detected": True})
+        for module_name in modules:
+            lang = next((record.language for record in files if record.module == module_name), "unknown")
+            source_count = len([record for record in files if record.module == module_name and not record.is_test and not record.is_excluded])
+            test_count = len([record for record in files if record.module == module_name and record.is_test])
+            self.storage.upsert_module(module_name, lang, source_count, test_count, {"detected": True})
         _dump_json(self.artifacts / "repo_inventory.json", [asdict(record) for record in files])
         _dump_json(self.artifacts / "module_graph.json", module_graph)
         _dump_json(self.artifacts / "language_stack.json", language_stack)
         _dump_json(self.artifacts / "exclusions.json", exclusions)
+        _dump_json(self.artifacts / "adapter_detections.json", self._adapter_detections())
+        _dump_json(self.artifacts / "commands_discovered.json", self._discovered_commands(modules))
         (self.artifacts / "exceptions_register.yaml").write_text(
             "\n".join(f"- path: {e['path']}\n  reason: {e['reason']}\n  rule: {e['rule']}" for e in exclusions),
             encoding="utf-8",
         )
-        return {"inventory": len(files), "exclusions": len(exclusions)}
+        return {"inventory": len(files), "exclusions": len(exclusions), "module_scope": module or "all"}
 
-    def coverage(self) -> list[CoverageRecord]:
-        coverage = self._collect_coverage_records()
+    def coverage(self, module: str | None = None) -> list[CoverageRecord]:
+        coverage = self._collect_coverage_records(module)
         for record in coverage:
             self.storage.upsert_coverage(record)
         _dump_json(self.artifacts / "coverage_baseline.json", [asdict(record) for record in coverage])
         _dump_json(self.artifacts / "coverage_deltas" / "baseline.json", [asdict(record) for record in coverage])
         return coverage
 
-    def score(self) -> list[RiskScoreRecord]:
-        coverage_rows = {row["path"]: CoverageRecord(**{k: row[k] for k in ("path", "line_coverage", "branch_coverage", "uncovered_lines", "uncovered_branches", "report_ref")}) for row in _read_json(self.artifacts / "coverage_baseline.json", [])}
+    def score(self, module: str | None = None) -> list[RiskScoreRecord]:
+        coverage_rows = {
+            row["path"]: CoverageRecord(
+                **{k: row[k] for k in ("path", "line_coverage", "branch_coverage", "uncovered_lines", "uncovered_branches", "report_ref")}
+            )
+            for row in _read_json(self.artifacts / "coverage_baseline.json", [])
+        }
         scores: list[RiskScoreRecord] = []
-        for row in self._file_rows():
+        for row in self._file_rows(module):
             if row.get("is_excluded") or row.get("is_test"):
                 continue
             cov = coverage_rows.get(row["path"])
             source_path = self.repo_root / row["path"]
-            text = source_path.read_text(encoding="utf-8", errors="ignore")[: self.config.max_source_file_chars] if source_path.exists() else ""
+            text = _read_text_prefix(source_path, self.config.max_source_file_chars)
             complexity = sum(text.count(token) for token in ("if ", "for ", "while ", "case ", "catch ", "except "))
             public_api = 1.0 if any(token in text for token in ("public ", "def ", "export ", "class ")) else 0.0
             dependency_fan_in = text.count("import ") + text.count("require(")
@@ -241,14 +302,14 @@ class TestFactoryOrchestrator:
             self.storage.upsert_risk_score(score)
         scores.sort(key=lambda item: (-priority(item), item.path))
         _dump_json(self.artifacts / "risk_scores.json", [asdict(score) for score in scores])
-        _dump_json(self.artifacts / "risk_weighted_coverage.json", {
-            "line_index": weighted_index(scores, use_branch=False),
-            "branch_index": weighted_index(scores, use_branch=True),
-        })
+        _dump_json(
+            self.artifacts / "risk_weighted_coverage.json",
+            {"line_index": weighted_index(scores, use_branch=False), "branch_index": weighted_index(scores, use_branch=True)},
+        )
         return scores
 
-    def queue(self) -> list[dict[str, Any]]:
-        scores = [dict(row) for row in _read_json(self.artifacts / "risk_scores.json", [])]
+    def queue(self, module: str | None = None) -> list[dict[str, Any]]:
+        scores = [item for item in _read_json(self.artifacts / "risk_scores.json", []) if _module_matches_scope(module, item["path"], item.get("module", ""))]
         queue = []
         for item in scores:
             if item.get("coverage_gap", 0) <= 0 and item.get("risk_score", 0) <= 0:
@@ -257,18 +318,20 @@ class TestFactoryOrchestrator:
             queue.append(item)
         queue.sort(key=lambda item: (-item["priority"], item["path"]))
         _dump_json(self.artifacts / "test_gap_queue.json", queue)
-        _dump_json(self.artifacts / "component_test_candidates.json", [item for item in queue if "component" in str(item.get("recommended_test_type", "")) or item.get("risk_score", 0) >= 50])
+        _dump_json(
+            self.artifacts / "component_test_candidates.json",
+            [item for item in queue if "component" in str(item.get("recommended_test_type", "")) or item.get("risk_score", 0) >= 50],
+        )
         return queue
 
-    def workitems(self, limit: int | None = None) -> list[WorkItemRecord]:
-        coverage_records = [CoverageRecord(**item) for item in _read_json(self.artifacts / "coverage_baseline.json", [])]
-        scores = [RiskScoreRecord(**item) for item in _read_json(self.artifacts / "risk_scores.json", [])]
+    def workitems(self, limit: int | None = None, module: str | None = None) -> list[WorkItemRecord]:
+        coverage_records = [CoverageRecord(**item) for item in _read_json(self.artifacts / "coverage_baseline.json", []) if _module_matches_scope(module, item["path"])]
+        scores = [RiskScoreRecord(**item) for item in _read_json(self.artifacts / "risk_scores.json", []) if _module_matches_scope(module, item["path"], item.get("module", ""))]
         source_maps: dict[str, SourceTestMapRecord] = {}
         for score in scores:
             source_file = self.repo_root / score.path
-            source_text = source_file.read_text(encoding="utf-8", errors="ignore")[: self.config.max_source_file_chars] if source_file.exists() else ""
-            language = source_file.suffix.lstrip(".").lower()
-            adapter = self.adapter_for_language(language if language else "javascript")
+            source_text = _read_text_prefix(source_file, self.config.max_source_file_chars)
+            adapter = self.adapter_for_language(source_file.suffix.lstrip(".").lower() or "javascript")
             candidate_tests = infer_existing_test_files(score.path, adapter.language)
             existing_tests = [path for path in candidate_tests if (self.repo_root / path).exists()]
             supporting_files = []
@@ -278,7 +341,7 @@ class TestFactoryOrchestrator:
             source_maps[score.path] = SourceTestMapRecord(
                 source_path=score.path,
                 candidate_tests=existing_tests or candidate_tests,
-                supporting_files=supporting_files,
+                supporting_files=supporting_files[: self.config.max_supporting_files_per_work_item],
                 recommended_test_type=recommend_test_type(score.path, source_text),
                 conventions_summary=conventions_summary(adapter.language, score.path),
             )
@@ -289,6 +352,14 @@ class TestFactoryOrchestrator:
         items_dir.mkdir(parents=True, exist_ok=True)
         serialized = []
         for item in items:
+            existing = self.storage.get_work_item(item.work_item_id)
+            if existing is not None:
+                stored = self._decode_work_item_row(dict(existing))
+                item.status = stored.status
+                item.validated_files = stored.validated_files
+                item.validation_repo_sha = stored.validation_repo_sha
+                item.validation_reason = stored.validation_reason
+                item.validation_report_path = stored.validation_report_path
             item.validation_command = self._validation_command_for(item)
             item.conventions_summary = source_maps.get(item.source_path, SourceTestMapRecord(item.source_path)).conventions_summary
             item.content_path = str(items_dir / f"{item.work_item_id}.md")
@@ -307,11 +378,11 @@ class TestFactoryOrchestrator:
         coverage = {record.path: record for record in self._collect_coverage_records()}
         return coverage.get(path)
 
-    def _validation_failure_reason(self, item: WorkItemRecord, before: RiskScoreRecord, after: CoverageRecord | None, targeted_exit: int, module_exit: int) -> str:
-        if targeted_exit != 0:
-            return "targeted validation failed"
-        if module_exit != 0:
-            return "module validation failed"
+    def _validation_failure_reason(self, item: WorkItemRecord, before: RiskScoreRecord, after: CoverageRecord | None, targeted: ValidationRunRecord, module_run: ValidationRunRecord) -> str:
+        if targeted.exit_code != 0:
+            return f"targeted validation failed ({targeted.status})"
+        if module_run.exit_code != 0:
+            return f"module validation failed ({module_run.status})"
         disallowed = find_disallowed_test_markers(self.repo_root, item.existing_test_files)
         if disallowed:
             return f"disallowed test markers found in {', '.join(disallowed)}"
@@ -320,30 +391,72 @@ class TestFactoryOrchestrator:
         improved, reason = coverage_improved(before, after.line_coverage, after.branch_coverage)
         return reason if not improved else ""
 
+    def _validation_summary_path(self, work_item_id: str) -> Path:
+        return self.artifacts / "validation_runs" / f"{work_item_id}-summary.json"
+
     def validate(self, work_item_id: str) -> dict[str, Any]:
         row = self.storage.get_work_item(work_item_id)
         if not row:
             raise KeyError(work_item_id)
         item = self._decode_work_item_row(dict(row))
-        risk_row = next((RiskScoreRecord(**item_row) for item_row in _read_json(self.artifacts / "risk_scores.json", []) if item_row["path"] == item.source_path), None)
+        risk_row = next((RiskScoreRecord(**payload) for payload in _read_json(self.artifacts / "risk_scores.json", []) if payload["path"] == item.source_path), None)
         if risk_row is None:
             raise RuntimeError(f"missing risk score for {item.source_path}")
         adapter = self.adapter_for_language(item.language)
         targeted_command = adapter.discover_test_command(self.repo_root, item.module)
         module_command = adapter.discover_coverage_command(self.repo_root, item.module)
         validation_dir = self.artifacts / "validation_runs"
+        coverage_delta_path = self.artifacts / "coverage_deltas" / f"{work_item_id}.json"
+        git_snapshot = self._git_snapshot()
         self.storage.update_work_item_status(work_item_id, "running")
         targeted = run_targeted_validation(self.storage, work_item_id, targeted_command, validation_dir, self.config.validation_timeouts.targeted_seconds)
-        module = run_module_validation(self.storage, work_item_id, module_command, validation_dir, self.config.validation_timeouts.module_seconds)
-        after = self._coverage_for_path(item.source_path)
-        failure_reason = self._validation_failure_reason(item, risk_row, after, targeted.exit_code, module.exit_code)
-        if failure_reason:
-            self.storage.update_work_item_status(work_item_id, "failed")
+        if targeted.exit_code == 0:
+            module_run = run_module_validation(self.storage, work_item_id, module_command, validation_dir, self.config.validation_timeouts.module_seconds)
         else:
-            self.storage.update_work_item_status(work_item_id, "passed")
-        result = {"targeted": asdict(targeted), "module": asdict(module), "status": "failed" if failure_reason else "passed"}
+            module_run = ValidationRunRecord(
+                work_item_id=work_item_id,
+                command=module_command.render(),
+                exit_code=125,
+                stdout="",
+                stderr="module validation skipped because targeted validation failed",
+                timeout_seconds=self.config.validation_timeouts.module_seconds,
+                artifact_path=str(validation_dir / f"{work_item_id}-module.json"),
+                phase="module",
+                status="skipped",
+            )
+            Path(module_run.artifact_path).write_text(json.dumps(asdict(module_run), indent=2), encoding="utf-8")
+            self.storage.insert_validation_run(module_run)
+        after = self._coverage_for_path(item.source_path) if module_run.exit_code == 0 else None
+        delta_payload = {
+            "work_item_id": work_item_id,
+            "source_path": item.source_path,
+            "before_line_coverage": risk_row.line_coverage,
+            "before_branch_coverage": risk_row.branch_coverage,
+            "after_line_coverage": after.line_coverage if after else None,
+            "after_branch_coverage": after.branch_coverage if after else None,
+        }
+        _dump_json(coverage_delta_path, delta_payload)
+        failure_reason = self._validation_failure_reason(item, risk_row, after, targeted, module_run)
+        status = "failed" if failure_reason else "passed"
+        self.storage.update_work_item_validation(
+            work_item_id,
+            status=status,
+            validated_files=git_snapshot["changed_files"],
+            validation_repo_sha=git_snapshot["head_sha"],
+            validation_reason=failure_reason,
+            validation_report_path=str(coverage_delta_path),
+        )
+        result = {
+            "targeted": asdict(targeted),
+            "module": asdict(module_run),
+            "status": status,
+            "validated_files": git_snapshot["changed_files"],
+            "validation_repo_sha": git_snapshot["head_sha"],
+            "coverage_delta_path": str(coverage_delta_path),
+        }
         if failure_reason:
             result["reason"] = failure_reason
+        _dump_json(self._validation_summary_path(work_item_id), result)
         return result
 
     def mutate(self, enabled: bool | None = None, high_risk_only: bool | None = None) -> dict[str, Any]:
@@ -355,7 +468,7 @@ class TestFactoryOrchestrator:
         mutation_dir.mkdir(parents=True, exist_ok=True)
         _dump_json(mutation_dir / "mutation_candidates.json", candidates)
         detections: dict[str, dict[str, Any]] = {}
-        commands: list[list[str]] = []
+        command_specs: list[dict[str, Any]] = []
         results: list[dict[str, Any]] = []
         for language in sorted({Path(candidate["path"]).suffix.lower() for candidate in candidates}):
             normalized_language = {
@@ -369,66 +482,133 @@ class TestFactoryOrchestrator:
             adapter = self.adapter_for_language(normalized_language)
             detection = adapter.detect_mutation_tool(self.repo_root, "")
             detections[normalized_language] = asdict(detection)
-            if detection.command and detection.command not in commands:
-                commands.append(detection.command)
+            if detection.command:
+                command_specs.append({"language": normalized_language, "command": detection.command})
         if mutation_enabled:
-            for command in commands:
-                completed = subprocess.run(command, cwd=self.repo_root, capture_output=True, text=True, timeout=self.config.mutation.timeout_seconds)
-                results.append(
-                    {
+            for index, spec in enumerate(command_specs, start=1):
+                command = spec["command"]
+                artifact_path = mutation_dir / f"mutation-run-{index}.json"
+                try:
+                    completed = subprocess.run(
+                        command,
+                        cwd=self.repo_root,
+                        capture_output=True,
+                        text=True,
+                        timeout=self.config.mutation.timeout_seconds,
+                        shell=False,
+                    )
+                    score = _parse_mutation_score(completed.stdout, completed.stderr)
+                    result = {
+                        "path": f"mutation-run-{index}",
+                        "module": spec["language"],
                         "tool": command[0],
                         "command": " ".join(command),
                         "exit_code": completed.returncode,
                         "stdout": completed.stdout,
                         "stderr": completed.stderr,
+                        "score": score,
+                        "status": "completed",
+                        "report_ref": str(artifact_path),
                     }
-                )
+                except subprocess.TimeoutExpired as exc:
+                    result = {
+                        "path": f"mutation-run-{index}",
+                        "module": spec["language"],
+                        "tool": command[0],
+                        "command": " ".join(command),
+                        "exit_code": 124,
+                        "stdout": (exc.stdout or "") if isinstance(exc.stdout, str) else "",
+                        "stderr": (exc.stderr or "") if isinstance(exc.stderr, str) else "timeout",
+                        "score": None,
+                        "status": "timeout",
+                        "report_ref": str(artifact_path),
+                    }
+                except (FileNotFoundError, OSError) as exc:
+                    result = {
+                        "path": f"mutation-run-{index}",
+                        "module": spec["language"],
+                        "tool": command[0],
+                        "command": " ".join(command),
+                        "exit_code": 127,
+                        "stdout": "",
+                        "stderr": str(exc),
+                        "score": None,
+                        "status": "missing-executable",
+                        "report_ref": str(artifact_path),
+                    }
+                _dump_json(artifact_path, result)
+                results.append(result)
         _dump_json(mutation_dir / "mutation_tool_detection.json", detections)
-        _dump_json(mutation_dir / "mutation_commands.json", commands)
+        _dump_json(mutation_dir / "mutation_commands.json", command_specs)
         _dump_json(mutation_dir / "mutation_results.json", results)
+        numeric_scores = [float(result["score"]) for result in results if result.get("score") is not None]
+        below_threshold = (
+            self.config.mutation.fail_under_score is not None
+            and any(score < float(self.config.mutation.fail_under_score) for score in numeric_scores)
+        )
         _dump_json(
             mutation_dir / "mutation_score_summary.json",
-            {"candidates": len(candidates), "tool_available": any(item.get("available") for item in detections.values()), "executed": mutation_enabled, "result_count": len(results)},
+            {
+                "candidates": len(candidates),
+                "tool_available": any(item.get("available") for item in detections.values()),
+                "executed": mutation_enabled,
+                "result_count": len(results),
+                "scores": numeric_scores,
+                "below_threshold": below_threshold,
+            },
         )
         for candidate in candidates:
             self.storage.upsert_mutation_candidate(candidate["path"], candidate["module"], float(candidate["score"]), candidate)
-        for index, result in enumerate(results, start=1):
+        for result in results:
             self.storage.upsert_mutation_result(
-                f"mutation-run-{index}",
-                "global",
+                result["path"],
+                result["module"],
                 result.get("tool", ""),
                 result.get("command", ""),
                 int(result.get("exit_code", 0)),
                 result.get("stdout", ""),
                 result.get("stderr", ""),
+                float(result["score"]) if result.get("score") is not None else 0.0,
+                result.get("report_ref", ""),
             )
-        return {"candidates": len(candidates), "tool_available": any(item.get("available") for item in detections.values()), "executed": mutation_enabled}
+        return {
+            "candidates": len(candidates),
+            "tool_available": any(item.get("available") for item in detections.values()),
+            "executed": mutation_enabled,
+            "below_threshold": below_threshold,
+        }
 
-    def report(self) -> dict[str, str]:
+    def report(self, module: str | None = None) -> dict[str, str]:
         final_report = render_final_report(self.artifacts)
         json_report = render_json_report(self.artifacts)
-        pr_summary = render_pr_summary(self.artifacts)
+        pr_summary = render_pr_summary(self.artifacts, module=module or "")
         (self.artifacts / "final_report.md").write_text(final_report, encoding="utf-8")
         (self.artifacts / "pr_summary.md").write_text(pr_summary, encoding="utf-8")
         (self.artifacts / "final_report.json").write_text(json_report, encoding="utf-8")
         return {"final_report": str(self.artifacts / "final_report.md"), "pr_summary": str(self.artifacts / "pr_summary.md")}
 
-    def run(self, limit: int | None = None, mutation: bool | None = None, mutation_high_risk_only: bool | None = None) -> dict[str, Any]:
-        self.scan()
-        self.coverage()
-        self.score()
-        self.queue()
-        self.workitems(limit=limit)
+    def run(
+        self,
+        limit: int | None = None,
+        mutation: bool | None = None,
+        mutation_high_risk_only: bool | None = None,
+        module: str | None = None,
+    ) -> dict[str, Any]:
+        self.scan(module=module)
+        self.coverage(module=module)
+        self.score(module=module)
+        self.queue(module=module)
+        self.workitems(limit=limit, module=module)
         self.mutate(enabled=mutation, high_risk_only=mutation_high_risk_only)
-        self.report()
-        return {"status": "ok"}
+        self.report(module=module)
+        return {"status": "ok", "module_scope": module or "all"}
 
     def branch(self, module: str, allow_dirty: bool = False) -> dict[str, Any]:
         record = create_branch(self.repo_root, module, self.config.branching.branch_prefix, allow_dirty=allow_dirty or self.config.branching.allow_dirty)
         self.storage.upsert_branch_run(record.branch_name, record.module, record.created, record.dirty, record.sha)
         return asdict(record)
 
-    def commit(self, module: str) -> dict[str, Any]:
+    def commit(self, module: str, allow_dirty: bool = False) -> dict[str, Any]:
         passed_items = [
             self._decode_work_item_row(dict(row))
             for row in self.storage.list_work_items(status="passed")
@@ -436,11 +616,23 @@ class TestFactoryOrchestrator:
         ]
         if not passed_items:
             raise RuntimeError(f"no passed work items recorded for module {module}")
-        record = commit_module(self.repo_root, module)
+        validated_files = sorted({path for item in passed_items for path in item.validated_files if path})
+        if not validated_files:
+            raise RuntimeError(f"no validated file set recorded for module {module}")
+        validation_shas = sorted({item.validation_repo_sha for item in passed_items if item.validation_repo_sha})
+        if len(validation_shas) != 1:
+            raise RuntimeError(f"validated work items for module {module} do not share a single repository baseline")
+        record = commit_module(
+            self.repo_root,
+            module,
+            expected_head_sha=validation_shas[0],
+            files_to_stage=validated_files,
+            allow_dirty=allow_dirty or self.config.branching.allow_dirty,
+        )
         self.storage.upsert_commit(record.module, record.message, record.sha, record.files)
         return asdict(record)
 
-    def pr_summary(self) -> str:
-        summary = render_pr_summary(self.artifacts)
+    def pr_summary(self, module: str | None = None) -> str:
+        summary = render_pr_summary(self.artifacts, module=module or "")
         (self.artifacts / "pr_summary.md").write_text(summary, encoding="utf-8")
         return summary

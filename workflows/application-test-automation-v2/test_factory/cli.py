@@ -34,15 +34,15 @@ def main(argv: list[str] | None = None) -> int:
     orchestrator = TestFactoryOrchestrator(args.repo, args.out, config_path=args.config)
     try:
         if args.command == "scan":
-            result = orchestrator.scan()
+            result = orchestrator.scan(module=args.module or args.scope)
         elif args.command == "coverage":
-            result = [asdict(record) for record in orchestrator.coverage()]
+            result = [asdict(record) for record in orchestrator.coverage(module=args.module or args.scope)]
         elif args.command == "score":
-            result = [asdict(record) for record in orchestrator.score()]
+            result = [asdict(record) for record in orchestrator.score(module=args.module or args.scope)]
         elif args.command == "queue":
-            result = orchestrator.queue()
+            result = orchestrator.queue(module=args.module or args.scope)
         elif args.command == "workitems":
-            result = [asdict(record) for record in orchestrator.workitems(limit=args.limit)]
+            result = [asdict(record) for record in orchestrator.workitems(limit=args.limit, module=args.module or args.scope)]
         elif args.command == "validate":
             if not args.work_item_id:
                 raise SystemExit("--work-item-id is required for validate")
@@ -50,15 +50,20 @@ def main(argv: list[str] | None = None) -> int:
         elif args.command == "mutate":
             result = orchestrator.mutate(enabled=args.mutation, high_risk_only=args.mutation_high_risk_only or None)
         elif args.command == "report":
-            result = orchestrator.report()
+            result = orchestrator.report(module=args.module or args.scope)
         elif args.command == "run":
-            result = orchestrator.run(limit=args.limit, mutation=args.mutation, mutation_high_risk_only=args.mutation_high_risk_only or None)
+            result = orchestrator.run(
+                limit=args.limit,
+                mutation=args.mutation,
+                mutation_high_risk_only=args.mutation_high_risk_only or None,
+                module=args.module or args.scope,
+            )
         elif args.command == "branch":
             result = orchestrator.branch(args.scope or args.module or "root", allow_dirty=args.allow_dirty)
         elif args.command == "commit":
-            result = orchestrator.commit(args.module or "root")
+            result = orchestrator.commit(args.module or "root", allow_dirty=args.allow_dirty)
         elif args.command == "pr-summary":
-            result = orchestrator.pr_summary()
+            result = orchestrator.pr_summary(module=args.module or args.scope)
         else:
             result = {}
         if isinstance(result, str):
