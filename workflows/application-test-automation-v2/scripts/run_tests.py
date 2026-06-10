@@ -1,3 +1,18 @@
+"""Fallback test runner for environments where pytest is not installed.
+
+This script previously lived at ./pytest.py and was a `python -m pytest`
+shim. That placement had a critical bug: when invoked from the v2 source
+dir, the shim's module name `pytest` shadowed the real pytest package,
+so any subprocess call like `python -m pytest --cov ...` (which the v2
+adapter's `discover_test_command` and `discover_coverage_command` both
+issue via subprocess.run) silently ran the shim instead of the real
+pytest. The shim didn't support --cov, so coverage reports were never
+written and the test-factory pipeline would report `no_report_written`.
+
+Moved to scripts/run_tests.py (Bug #5, PR #24). Invoke directly:
+`python scripts/run_tests.py`. For real test runs use `python -m pytest`.
+"""
+
 from __future__ import annotations
 
 import importlib.util

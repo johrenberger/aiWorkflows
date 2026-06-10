@@ -111,6 +111,11 @@ def _parse_mutation_score(stdout: str, stderr: str) -> float | None:
 
 
 class TestFactoryOrchestrator:
+    # Tell the real pytest (>=6) not to try to collect this class as a
+    # test class. The name starts with "Test" for historical reasons —
+    # it's the orchestrator class, not a test. See Bug #5 (PR #24).
+    __test__ = False
+
     def __init__(self, repo_root: str | Path, out_dir: str | Path, config_path: str | Path | None = None):
         self.repo_root = Path(repo_root).resolve()
         self.out_dir = Path(out_dir).resolve()
