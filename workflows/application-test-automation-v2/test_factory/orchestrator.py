@@ -11,6 +11,7 @@ from .adapters.js_jest_vitest import JsJestVitestAdapter
 from .adapters.python_pytest import PythonPytestAdapter
 from .analyzers.coverage_normalizer import (
     parse_coverage_final_json,
+    parse_coverage_py_json,
     parse_jacoco_xml,
     parse_lcov_info,
     parse_python_coverage_xml,
@@ -123,7 +124,19 @@ class TestFactoryOrchestrator:
 
     def _discover_reports(self) -> list[Path]:
         reports: list[Path] = []
-        for pattern in ("**/jacoco.xml", "**/jacocoTestReport.xml", "**/coverage.xml", "**/coverage-final.json", "**/lcov.info"):
+        # Patterns ordered most-specific-first. pytest-cov 7.x writes `coverage.json`
+        # by default; pytest-cov 5.x/6.x wrote `coverage.xml`. v2's self-coverage run
+        # (2026-06-10) was producing only `coverage.json` and the orchestrator was
+        # not picking it up — see PR #22.
+        for pattern in (
+            "**/jacoco.xml",
+            "**/jacocoTestReport.xml",
+            "**/coverage.xml",
+            "**/coverage.json",        # pytest-cov 7.x default
+            "**/.coverage",            # coverage.py raw data file
+            "**/coverage-final.json",  # istanbul / nyc JS coverage
+            "**/lcov.info",
+        ):
             reports.extend(sorted(self.repo_root.glob(pattern)))
         return reports
 
@@ -135,6 +148,24 @@ class TestFactoryOrchestrator:
                 coverage.extend(parse_jacoco_xml(report))
             elif name == "coverage.xml":
                 coverage.extend(parse_python_coverage_xml(report))
+            elif name == "coverage.json":
+                # `coverage.json` is ambiguous: it could be the coverage.py
+                # output (pytest-cov 7.x default) or the istanbul output
+                # (renamed). Distinguish by reading the full file and sniffing
+                # the JSON shape: coverage.py always has a top-level `files`
+                # dict; istanbul files have a per-file `s` (statements) map.
+                # Sniffing is more reliable than name-based dispatch because
+                # both tools emit a file literally named `coverage.json`.
+                # See PR #22.
+                head: dict[str, object] = {}
+                try:
+                    head = json.loads(report.read_text(encoding="utf-8", errors="ignore"))
+                except Exception:
+                    head = {}
+                if isinstance(head, dict) and isinstance(head.get("files"), dict):
+                    coverage.extend(parse_coverage_py_json(report))
+                else:
+                    coverage.extend(parse_coverage_final_json(report))
             elif name == "coverage-final.json":
                 coverage.extend(parse_coverage_final_json(report))
             elif name == "lcov.info":
