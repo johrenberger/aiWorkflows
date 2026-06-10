@@ -49,8 +49,14 @@ class PythonPytestAdapter(BaseAdapter):
         # Same fix as discover_test_command. Emit `coverage.json` (pytest-cov 7.x
         # default) AND `coverage.xml` (legacy / CI tools) so the orchestrator's
         # `_discover_reports` pattern match picks up at least one of them.
+        # Note: pytest-cov 7.x requires `--cov-report=json:<path>` to actually
+        # write a file; `--cov-report=json` without a path is silently ignored.
         return CommandSpec(
-            command=[sys.executable, "-m", "pytest", "--cov", "--cov-report=json", "--cov-report=xml"],
+            command=[
+                sys.executable, "-m", "pytest", "--cov",
+                "--cov-report=json:coverage.json",
+                "--cov-report=xml:coverage.xml",
+            ],
             cwd=str(repo_path),
             description="Run pytest with coverage (json+xml reports)",
         )

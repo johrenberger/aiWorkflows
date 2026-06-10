@@ -27,5 +27,10 @@ def test_adapter_commands_match_fixture_tooling():
     assert JavaJUnitAdapter().discover_coverage_command(FIXTURE, "com/example").render() == "mvn test jacoco:report"
     assert JsJestVitestAdapter().discover_test_command(FIXTURE, "src").render() == "npm test"
     assert JsJestVitestAdapter().discover_coverage_command(FIXTURE, "src").render() == "npm run test:coverage"
-    assert PythonPytestAdapter().discover_test_command(FIXTURE, "package").render() == "pytest"
-    assert PythonPytestAdapter().discover_coverage_command(FIXTURE, "package").render() == "pytest --cov --cov-report=xml"
+    # Python pytest now uses `python -m pytest` so the command resolves to the
+    # current interpreter's pytest, not a globally-installed pytest script in
+    # a different venv. (Bug fix in PR #22; this test was updated to match.)
+    import sys
+    expected_pytest = f"{sys.executable} -m pytest"
+    assert PythonPytestAdapter().discover_test_command(FIXTURE, "package").render() == expected_pytest
+    assert PythonPytestAdapter().discover_coverage_command(FIXTURE, "package").render() == f"{expected_pytest} --cov --cov-report=json:coverage.json --cov-report=xml:coverage.xml"
