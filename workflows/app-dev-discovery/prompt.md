@@ -71,6 +71,20 @@ Rules:
 7. Keep diagrams high-level.
 8. **All GitHub links must be commit-pinned.** The analyzer produces
    commit-pinned URLs in the evidence files; preserve the format.
+   **Concrete rule for the final onboarding document:**
+   - Every backticked filename (`\`Foo.java\``, `\`pom.xml\``, etc.) and
+     every plain-text reference to a repo path that the agent cites in
+     the final document MUST be a markdown link of the form
+     `[name](https://github.com/<owner>/<repo>/blob/<sha>/<path>)`.
+   - The pin prefix is `https://github.com/<owner>/<repo>/blob/$(git rev-parse HEAD)/`.
+     Read `CURRENT_COMMIT` from `00-run-metadata.md` and use it consistently.
+   - This applies to: §4 (reading order, bootstrap table), §5 (component
+     inventory), §6 (flow steps), §7 (schema tables), §10 (mermaid block
+     participants), §11 (testing tables), §14 (risk table), §15 (first-week
+     reading order, debugging entry points, extension points).
+   - **Do not leave bare filenames in §4, §10, §11, §15.** The Phase 17
+     validation gate fails on this check; the prompt alone will not
+     produce it.
 9. Generate one final onboarding document that rolls up the data from all
    evidence sections.
 10. **The 16 evidence files are already on disk** — do not re-create them
@@ -386,7 +400,11 @@ Validate before finalizing:
 
 1. Every required final document section exists.
 2. Every major claim has repository evidence.
-3. All GitHub links are commit-pinned.
+3. All GitHub links are commit-pinned. **Validation gate: at least one
+   `https://github.com/<owner>/<repo>/blob/<sha>/...` URL must appear in
+   the final document. The 2026-06-10 BroadleafCommerce run failed here
+   (0 URLs in the agent-authored final doc, 7 in the prior 2026-06-06
+   doc). See `openclaw-kb/known-errors/agent-dropped-commit-pinned-urls.md`.**
 4. All linked paths exist.
 5. No unsupported technology is listed.
 6. Mermaid diagrams are syntactically plausible.
