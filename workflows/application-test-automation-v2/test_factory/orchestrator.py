@@ -531,7 +531,8 @@ class TestFactoryOrchestrator:
                     supporting_files.append(candidate)
             source_maps[score.path] = SourceTestMapRecord(
                 source_path=score.path,
-                candidate_tests=existing_tests or candidate_tests,
+                candidate_tests=existing_tests,
+                candidate_paths=candidate_tests,
                 supporting_files=supporting_files[: self.config.max_supporting_files_per_work_item],
                 recommended_test_type=recommend_test_type(score.path, source_text),
                 conventions_summary=conventions_summary(adapter.language, score.path),

@@ -59,6 +59,7 @@ CREATE TABLE IF NOT EXISTS risk_scores (
 CREATE TABLE IF NOT EXISTS source_test_map (
   source_path TEXT PRIMARY KEY,
   candidate_tests TEXT NOT NULL DEFAULT '[]',
+  candidate_paths TEXT NOT NULL DEFAULT '[]',
   supporting_files TEXT NOT NULL DEFAULT '[]',
   recommended_test_type TEXT NOT NULL DEFAULT 'unit',
   conventions_summary TEXT NOT NULL DEFAULT ''
@@ -182,6 +183,10 @@ class Storage:
         for column, ddl in WORK_ITEM_EXTRA_COLUMNS:
             if column not in existing_columns:
                 self.conn.execute(f"ALTER TABLE work_items ADD COLUMN {column} {ddl}")
+        # Migrate source_test_map (PR #27 - Bug #7 fix)
+        stm_columns = {row["name"] for row in self.conn.execute("PRAGMA table_info(source_test_map)")}
+        if "candidate_paths" not in stm_columns:
+            self.conn.execute("ALTER TABLE source_test_map ADD COLUMN candidate_paths TEXT NOT NULL DEFAULT '[]'")
 
     def close(self) -> None:
         self.conn.close()
@@ -305,10 +310,11 @@ class Storage:
         data = _to_jsonable(record)
         self.execute(
             """
-            INSERT INTO source_test_map(source_path, candidate_tests, supporting_files, recommended_test_type, conventions_summary)
-            VALUES(?,?,?,?,?)
+            INSERT INTO source_test_map(source_path, candidate_tests, candidate_paths, supporting_files, recommended_test_type, conventions_summary)
+            VALUES(?,?,?,?,?,?)
             ON CONFLICT(source_path) DO UPDATE SET
               candidate_tests=excluded.candidate_tests,
+              candidate_paths=excluded.candidate_paths,
               supporting_files=excluded.supporting_files,
               recommended_test_type=excluded.recommended_test_type,
               conventions_summary=excluded.conventions_summary
@@ -316,6 +322,7 @@ class Storage:
             (
                 data["source_path"],
                 _json(data.get("candidate_tests", [])),
+                _json(data.get("candidate_paths", [])),
                 _json(data.get("supporting_files", [])),
                 data.get("recommended_test_type", "unit"),
                 data.get("conventions_summary", ""),
