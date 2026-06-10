@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "application-test-automation-v2"
+version = "0.1.0"
+description = "Deterministic test automation coverage factory for large repositories"
+requires-python = ">=3.10"
+readme = "README.md"
+license = {text = "MIT"}
+authors = [{name = "OpenAI"}]
+
+[project.scripts]
+test-factory = "test_factory.cli:main"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["test_factory*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+

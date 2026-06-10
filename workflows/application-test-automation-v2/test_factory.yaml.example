@@ -1,0 +1,61 @@
+coverage_threshold_line: 90
+coverage_threshold_branch: 90
+max_supporting_files_per_work_item: 5
+max_ai_work_item_chars: 120000
+max_retries: 3
+
+eligible_source_globs:
+  - "**/*.java"
+  - "**/*.js"
+  - "**/*.jsx"
+  - "**/*.ts"
+  - "**/*.tsx"
+  - "**/*.py"
+
+excluded_globs:
+  - "**/.git/**"
+  - "**/node_modules/**"
+  - "**/target/**"
+  - "**/build/**"
+  - "**/dist/**"
+  - "**/coverage/**"
+  - "**/.venv/**"
+  - "**/venv/**"
+  - "**/__pycache__/**"
+
+generated_file_patterns:
+  - "generated"
+  - "autogen"
+  - ".g.dart"
+
+exclude_simple_dto: false
+exclude_migrations: false
+exclude_config: false
+
+language_adapters:
+  java: true
+  javascript: true
+  python: true
+
+validation_timeouts:
+  targeted_seconds: 300
+  module_seconds: 900
+  full_seconds: 3600
+  mutation_seconds: 900
+
+mutation:
+  enabled: false
+  high_risk_only: true
+  fail_under_score: null
+  tools:
+    java: pitest
+    javascript: stryker
+    python: mutmut
+  timeout_seconds: 900
+
+branching:
+  enabled: false
+  allow_dirty: false
+  commit_granularity: module
+  branch_prefix: test-automation-v2
+
