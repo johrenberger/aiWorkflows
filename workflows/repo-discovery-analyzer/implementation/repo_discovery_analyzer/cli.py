@@ -110,7 +110,10 @@ def main(argv: list[str] | None = None) -> int:
     java_routes = detect_java_spring_routes(cfg.repo_path, owner, repo, cfg.commit, records)
     js_routes = detect_javascript_routes(cfg.repo_path, owner, repo, cfg.commit, records)
     database_schema = detect_database_schema(cfg.repo_path, owner, repo, cfg.commit, records)
-    all_merged_routes = _merge_sorted(java_routes.get("routes", []) + js_routes.get("routes", []))
+    all_merged_routes = _merge_sorted(
+        java_routes.get("routes", []) + js_routes.get("routes", []),
+        key_fields=["source_file", "method", "path"],
+    )
     route_source_truncated = java_routes.get("routes_truncated", False) or js_routes.get("routes_truncated", False)
     merged_routes = all_merged_routes[:DEFAULT_MAX_SUMMARY_ITEMS]
     routes_total = (
@@ -125,7 +128,8 @@ def main(argv: list[str] | None = None) -> int:
         "routes_truncated": route_source_truncated or len(all_merged_routes) > len(merged_routes),
     }
     all_merged_entities = _merge_sorted(
-        java_routes.get("entities", []) + js_routes.get("entities", []) + database_schema.get("entities", [])
+        java_routes.get("entities", []) + js_routes.get("entities", []) + database_schema.get("entities", []),
+        key_fields=["source_file", "name"],
     )
     entity_source_truncated = (
         java_routes.get("entities_truncated", False)
@@ -212,15 +216,47 @@ def main(argv: list[str] | None = None) -> int:
     return 0
 
 
-def _merge_sorted(items: list[dict]) -> list[dict]:
-    seen = set()
-    merged = []
-    for item in items:
-        key = json.dumps(item, sort_keys=True, ensure_ascii=False)
-        if key in seen:
-            continue
-        seen.add(key)
-        merged.append(item)
+def _merge_sorted(
+    items: list[dict],
+    key_fields: list[str] | None = None,
+) -> list[dict]:
+    """Merge items from multiple detector outputs, deduping by a chosen key.
+
+    When `key_fields` is None, the function falls back to the previous
+    behaviour of deduping by the full JSON of the entry (which means two
+    records that differ in any field — including derived fields like
+    `relationships` — are NOT considered duplicates). That was the bug we
+    hit on johrenberger/BroadleafCommerce: 109 files produced two
+    `db_schema.json` entries because the `database` and `java_spring`
+    detectors both extracted the same `@Entity`, but with different
+    `relationships` arrays derived from different lines of the same file.
+
+    When `key_fields` is provided, dedup uses a tuple of the named fields
+    instead, so the two records collapse into one regardless of any other
+    variation. Callers should pick key fields that uniquely identify the
+    discovery across detectors — e.g. `["source_file", "name"]` for
+    entities and `["source_file", "method", "path"]` for routes.
+
+    The order of `items` is preserved on first occurrence; the merged
+    result is then sorted by JSON for deterministic output (matching the
+    previous behaviour).
+    """
+    seen: set = set()
+    merged: list[dict] = []
+    if key_fields is None:
+        for item in items:
+            k = json.dumps(item, sort_keys=True, ensure_ascii=False)
+            if k in seen:
+                continue
+            seen.add(k)
+            merged.append(item)
+    else:
+        for item in items:
+            k = tuple(item.get(f) for f in key_fields)
+            if k in seen:
+                continue
+            seen.add(k)
+            merged.append(item)
     return sorted(merged, key=lambda x: json.dumps(x, sort_keys=True, ensure_ascii=False))
 
 
