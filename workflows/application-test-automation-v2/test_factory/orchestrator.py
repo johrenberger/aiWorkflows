@@ -453,6 +453,23 @@ class TestFactoryOrchestrator:
                             continue
             return found
         pre_reports = _existing_reports()
+        # Preflight: detect pom patterns that will silently produce empty
+        # JaCoCo coverage even when the build succeeds (e.g. Broadleaf-
+        # shaped static surefire <argLine>${...}</argLine>). Surface these
+        # as preflight_findings on the result so the user sees them BEFORE
+        # the multi-minute Maven run, not as a "no_report_written" warning
+        # at the end. Adapter-level detection; the orchestrator just
+        # threads the result through. Bug surfaced 2026-06-11 on
+        # BroadleafCommerce (test-repo PR #13 follow-up).
+        preflight_findings: list[dict[str, str]] = []
+        if hasattr(adapter, "preflight_coverage_pitfalls"):
+            try:
+                preflight_findings = list(adapter.preflight_coverage_pitfalls(self.repo_root))
+            except Exception as exc:  # pragma: no cover - defensive
+                preflight_findings = [{
+                    "kind": "preflight_error",
+                    "message": f"preflight_coverage_pitfalls raised: {exc!r}",
+                }]
         try:
             completed = subprocess.run(
                 command.command,
@@ -470,6 +487,7 @@ class TestFactoryOrchestrator:
                 "stdout": completed.stdout[-4000:],  # cap to avoid blowing up artifacts
                 "stderr": completed.stderr[-4000:],
                 "timeout_seconds": timeout_seconds,
+                "preflight_findings": preflight_findings,
             }
         except subprocess.TimeoutExpired as exc:
             result = {
@@ -479,6 +497,7 @@ class TestFactoryOrchestrator:
                 "stdout": (exc.stdout or "")[-4000:] if isinstance(exc.stdout, str) else "",
                 "stderr": (exc.stderr or "timeout")[-4000:] if isinstance(exc.stderr, (str, bytes)) else "timeout",
                 "timeout_seconds": timeout_seconds,
+                "preflight_findings": preflight_findings,
             }
         except FileNotFoundError as exc:
             result = {
@@ -488,6 +507,7 @@ class TestFactoryOrchestrator:
                 "stdout": "",
                 "stderr": f"command not found: {exc}",
                 "timeout_seconds": timeout_seconds,
+                "preflight_findings": preflight_findings,
             }
         # Post-run check: did the command actually produce a new coverage
         # report? If the subprocess exited 0 but no file was written,
