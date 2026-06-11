@@ -99,6 +99,7 @@ class RiskScoreRecord:
 class SourceTestMapRecord:
     source_path: str
     candidate_tests: list[str] = field(default_factory=list)
+    candidate_paths: list[str] = field(default_factory=list)
     supporting_files: list[str] = field(default_factory=list)
     recommended_test_type: str = "unit"
     conventions_summary: str = ""
