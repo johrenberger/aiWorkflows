@@ -29,6 +29,15 @@ def build_parser() -> argparse.ArgumentParser:
                          help="(run only) Run the primary adapter's discover_coverage_command to "
                               "actually produce a coverage report before parsing. Off by default. "
                               "Mutates the target repo (writes coverage.json/xml).")
+        sub.add_argument("--adapter", default=None,
+                         choices=("python_pytest", "java_junit", "js_jest_vitest"),
+                         help="Force a specific adapter for coverage_generation. "
+                              "Defaults to the adapter with the highest detect() confidence. "
+                              "Useful when the target repo's primary language is ambiguous or "
+                              "the auto-detector picks the wrong adapter (Bug surfaced 2026-06-11 "
+                              "when running v2 against its own workspace: Python-only repo but a "
+                              "stray .java test file from a prior Broadleaf run made java_junit "
+                              "tie on confidence).")
     return parser
 
 
@@ -62,6 +71,7 @@ def main(argv: list[str] | None = None) -> int:
                 mutation_high_risk_only=args.mutation_high_risk_only or None,
                 module=args.module or args.scope,
                 generate_coverage=args.generate_coverage,
+                adapter_name=args.adapter,
             )
         elif args.command == "branch":
             result = orchestrator.branch(args.scope or args.module or "root", allow_dirty=args.allow_dirty)
