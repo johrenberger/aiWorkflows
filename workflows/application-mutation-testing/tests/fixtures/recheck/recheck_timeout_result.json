@@ -1,0 +1,1 @@
+{"tool_name":"mutmut","target_file":"src/sample.py","command":"mutmut run --paths-to-mutate src/sample.py","status":"TIMEOUT","killed":0,"survived":0,"timeout":1,"score":null,"survivors":[]}

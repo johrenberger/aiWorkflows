@@ -1,0 +1,36 @@
+{
+  "files": {
+    "src/math.js": {
+      "mutants": [
+        {
+          "id": "1",
+          "location": {"start": {"line": 3}},
+          "mutatorName": "ConditionalExpression",
+          "replacement": "false",
+          "status": "Killed"
+        },
+        {
+          "id": "2",
+          "location": {"start": {"line": 4}},
+          "mutatorName": "StringLiteral",
+          "replacement": "\"bad\"",
+          "status": "Survived"
+        },
+        {
+          "id": "3",
+          "location": {"start": {"line": 5}},
+          "mutatorName": "BlockStatement",
+          "replacement": "{}",
+          "status": "Timeout"
+        },
+        {
+          "id": "4",
+          "location": {"start": {"line": 6}},
+          "mutatorName": "StringLiteral",
+          "replacement": "\"ignored\"",
+          "status": "Ignored"
+        }
+      ]
+    }
+  }
+}

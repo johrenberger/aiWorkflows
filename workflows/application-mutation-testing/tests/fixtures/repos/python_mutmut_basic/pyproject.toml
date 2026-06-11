@@ -1,0 +1,9 @@
+[project]
+name = "python-mutmut-basic"
+version = "0.1.0"
+
+[project.optional-dependencies]
+test = [
+  "pytest",
+  "mutmut"
+]

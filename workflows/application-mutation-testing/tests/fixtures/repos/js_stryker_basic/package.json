@@ -1,0 +1,6 @@
+{
+  "name": "js-stryker-basic",
+  "devDependencies": {
+    "@stryker-mutator/core": "8.0.0"
+  }
+}

@@ -1,0 +1,1 @@
+{"tool_name":"mutmut","target_file":"src/sample.py","command":"mutmut run --paths-to-mutate src/sample.py","killed":4,"survived":1,"timeout":0,"score":80.0,"survivors":[{"mutant_id":"mutmut-2","source_file":"src/sample.py","line":7,"operator":"string_replacement","original":"\"large\"","mutated":"\"small\"","status":"SURVIVED","evidence":["synthetic recheck"]}]}

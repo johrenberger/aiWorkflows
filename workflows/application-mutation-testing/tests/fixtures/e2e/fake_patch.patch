@@ -1,0 +1,13 @@
+diff --git a/tests/test_sample.py b/tests/test_sample.py
+--- a/tests/test_sample.py
++++ b/tests/test_sample.py
+@@ -4,5 +4,9 @@ from src.sample import is_large, label
+ def test_is_large_returns_true_for_large_value():
+     assert is_large(11) is True
+ 
++
++def test_is_large_returns_false_for_boundary_value():
++    assert is_large(10) is False
++
+ 
+ def test_label_returns_large_for_large_value():

@@ -1,0 +1,13 @@
+{
+  "schema_version": "1.0",
+  "request_id": "llm-req-1",
+  "packet_id": "packet-1",
+  "mutant_id": "mutmut-ambiguous-1",
+  "classification": "Untested branch",
+  "confidence": "medium",
+  "evidence": [],
+  "recommended_action": "Add a test.",
+  "equivalent_candidate": false,
+  "needs_human_review": false,
+  "rationale": "No evidence included."
+}

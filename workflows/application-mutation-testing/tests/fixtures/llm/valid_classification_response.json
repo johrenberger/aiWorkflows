@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "request_id": "llm-req-1",
+  "packet_id": "packet-1",
+  "mutant_id": "mutmut-ambiguous-1",
+  "classification": "Untested branch",
+  "confidence": "medium",
+  "evidence": [
+    "The survivor packet shows tests for the success branch but no assertion for the alternate branch."
+  ],
+  "recommended_action": "Add a focused test covering the alternate branch and assert the observable output.",
+  "equivalent_candidate": false,
+  "needs_human_review": false,
+  "rationale": "The mutation changes branch behavior that should be observable through output."
+}
