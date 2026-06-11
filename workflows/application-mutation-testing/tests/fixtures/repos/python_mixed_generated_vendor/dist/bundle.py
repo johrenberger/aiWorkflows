@@ -1,0 +1,2 @@
+def bundled():
+    return True

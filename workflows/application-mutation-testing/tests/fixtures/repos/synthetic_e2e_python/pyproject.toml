@@ -1,0 +1,10 @@
+[project]
+name = "synthetic-e2e-python"
+version = "0.1.0"
+
+[project.optional-dependencies]
+test = ["pytest", "mutmut"]
+
+[tool.mutmut]
+source_paths = ["src/"]
+pytest_add_cli_args_test_selection = ["tests/"]

@@ -1,0 +1,2 @@
+def vendor():
+    return True

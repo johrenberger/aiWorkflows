@@ -1,0 +1,8 @@
+Mutation testing starting
+Killed: 3
+Survived: 2
+Timeout: 0
+
+Survived mutants:
+- src/sample.py:2 conditional_boundary value > 10 -> value >= 10
+- src/sample.py:7 string_replacement "large" -> "small"

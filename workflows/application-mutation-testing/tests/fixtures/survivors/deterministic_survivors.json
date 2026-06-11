@@ -1,0 +1,32 @@
+[
+  {
+    "mutant_id": "mutmut-boundary-1",
+    "source_file": "src/sample.py",
+    "line": 2,
+    "operator": "conditional_boundary",
+    "original": "value > 10",
+    "mutated": "value >= 10",
+    "status": "SURVIVED",
+    "evidence": ["mutmut_survivors_output.txt"]
+  },
+  {
+    "mutant_id": "mutmut-literal-1",
+    "source_file": "src/sample.py",
+    "line": 7,
+    "operator": "string_replacement",
+    "original": "\"large\"",
+    "mutated": "\"small\"",
+    "status": "SURVIVED",
+    "evidence": ["mutmut_survivors_output.txt"]
+  },
+  {
+    "mutant_id": "mutmut-error-1",
+    "source_file": "src/sample.py",
+    "line": 12,
+    "operator": "exception_removal",
+    "original": "raise ValueError(...)",
+    "mutated": "return None",
+    "status": "SURVIVED",
+    "evidence": ["mutmut_survivors_output.txt"]
+  }
+]

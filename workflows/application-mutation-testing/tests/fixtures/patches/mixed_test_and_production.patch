@@ -1,0 +1,17 @@
+diff --git a/tests/test_sample.py b/tests/test_sample.py
+--- a/tests/test_sample.py
++++ b/tests/test_sample.py
+@@ -3,3 +3,7 @@ from src.sample import is_large
+ 
+ def test_is_large_returns_true_for_large_value():
+     assert is_large(11) is True
++
++def test_boundary():
++    assert is_large(10) is False
+diff --git a/src/sample.py b/src/sample.py
+--- a/src/sample.py
++++ b/src/sample.py
+@@ -1,2 +1,2 @@
+ def is_large(value: int) -> bool:
+-    return value > 10
++    return value >= 10

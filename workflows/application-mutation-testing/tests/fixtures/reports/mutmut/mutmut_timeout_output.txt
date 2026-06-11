@@ -1,0 +1,4 @@
+Mutation testing interrupted
+Killed: 1
+Survived: 1
+Timeout: 2
