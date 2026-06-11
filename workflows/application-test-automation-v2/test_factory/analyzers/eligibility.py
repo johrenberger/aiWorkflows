@@ -19,6 +19,13 @@ def classify_file(path: str, config: Config) -> tuple[bool, str]:
         return False, "excluded-glob"
     if lower.endswith((".min.js", ".min.css")):
         return False, "minified-asset"
+    # Bug #15: vendor / third-party JS/CSS in resources dirs should not be
+    # eligible for test writing. They are bundled libraries, not application code.
+    posix = p.as_posix().lower()
+    if "/vendor/" in posix or "/vendors/" in posix:
+        return False, "vendor-bundle"
+    if "/lib/" in posix and any(posix.endswith(ext) for ext in (".js", ".css")):
+        return False, "vendor-bundle"
     if not _matches_any(path, config.eligible_source_globs):
         return False, "not-source-eligible"
     if config.exclude_simple_dto and any(token in lower for token in ("dto", "record")):
@@ -32,7 +39,14 @@ def classify_file(path: str, config: Config) -> tuple[bool, str]:
 
 def file_is_test(path: str) -> bool:
     lower = path.lower().replace("\\", "/")
-    return "/test/" in lower or lower.endswith((".test.js", ".spec.js", ".test.ts", ".spec.ts", ".test.jsx", ".spec.jsx", ".test.tsx", ".spec.tsx", "test.py")) or "/tests/" in lower or lower.startswith("tests/")
+    if "/test/" in lower or "/tests/" in lower or lower.startswith("tests/"):
+        return True
+    if lower.endswith((".test.js", ".spec.js", ".test.ts", ".spec.ts", ".test.jsx", ".spec.jsx", ".test.tsx", ".spec.tsx", "test.py")):
+        return True
+    # Spock framework: FooSpec.groovy and FooTest.groovy are test files
+    if lower.endswith("spec.groovy") or lower.endswith("test.groovy"):
+        return True
+    return False
 
 
 def record_from_path(path: Path, repo_root: Path, language: str, module: str, size: int) -> FileRecord:

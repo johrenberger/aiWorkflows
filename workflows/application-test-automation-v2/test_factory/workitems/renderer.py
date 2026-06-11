@@ -11,6 +11,11 @@ def render_work_item_markdown(item: WorkItemRecord, config: Config) -> str:
     supporting = "\n".join(f"- {path}" for path in item.supporting_files) or "- none"
     tests = "\n".join(f"- {path}" for path in item.existing_test_files) or "- none"
     criteria = "\n".join(f"- {x}" for x in item.acceptance_criteria)
+    # Bug #9: when no coverage data, surface public signatures as guidance.
+    if item.public_signatures:
+        sigs = ", ".join(item.public_signatures[:30])
+    else:
+        sigs = ""
     body = f"""# Test Work Item {item.work_item_id}
 
 - Source file: `{item.source_path}`
@@ -20,6 +25,7 @@ def render_work_item_markdown(item: WorkItemRecord, config: Config) -> str:
 - Current branch coverage: `{item.current_branch_coverage if item.current_branch_coverage is not None else 'n/a'}`
 - Uncovered lines: {uncovered_lines}
 - Uncovered branches: {uncovered_branches}
+- Public signatures (fallback when no coverage data): {sigs if sigs else 'n/a'}
 - Risk score: `{item.risk_score:.2f}`
 - Risk factors: `{item.risk_factors}`
 - Existing test files:

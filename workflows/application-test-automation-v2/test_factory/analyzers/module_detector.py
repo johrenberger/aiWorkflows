@@ -17,6 +17,12 @@ def detect_language_and_module(repo_root: Path, path: Path) -> tuple[str, str, d
     elif suffix == ".py" or "pyproject.toml" in rel or "requirements.txt" in rel or "setup.py" in rel:
         language = "python"
         evidence["suffix"] = suffix
+    elif suffix == ".groovy" or "build.gradle" in rel:
+        language = "groovy"
+        evidence["suffix"] = suffix
+        stem_lower = path.stem.lower()
+        if any(token in stem_lower for token in ("spec", "test", "spock")):
+            evidence["framework"] = "spock"
     module = _derive_module(repo_root, path, language)
     return language, module, evidence
 
@@ -26,6 +32,12 @@ def _derive_module(repo_root: Path, path: Path, language: str) -> str:
     parts = rel.split("/")
     if language == "java":
         for anchor in ("src/main/java/", "src/test/java/"):
+            if anchor in rel:
+                tail = rel.split(anchor, 1)[1]
+                module = "/".join(tail.split("/")[:-1])
+                return module or "root"
+    if language == "groovy":
+        for anchor in ("src/main/groovy/", "src/test/groovy/"):
             if anchor in rel:
                 tail = rel.split(anchor, 1)[1]
                 module = "/".join(tail.split("/")[:-1])
