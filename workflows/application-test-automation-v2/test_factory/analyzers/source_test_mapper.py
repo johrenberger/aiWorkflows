@@ -9,7 +9,15 @@ def map_source_to_tests(source_path: str, language: str) -> list[str]:
     parent = p.parent.as_posix()
     if language == "java":
         package_dir = parent.replace("src/main/java", "src/test/java")
-        return [f"{package_dir}/{stem}Test.java", f"{package_dir}/{stem}IT.java"]
+        java_candidates = [f"{package_dir}/{stem}Test.java", f"{package_dir}/{stem}IT.java"]
+        # Also include Spock convention for Java sources
+        groovy_dir = parent.replace("src/main/java", "src/test/groovy")
+        java_candidates += [f"{groovy_dir}/{stem}Spec.groovy", f"{groovy_dir}/{stem}Test.groovy"]
+        return java_candidates
+    if language == "groovy":
+        # Groovy source files: Spock convention is FooSpec.groovy
+        package_dir = parent.replace("src/main/groovy", "src/test/groovy")
+        return [f"{package_dir}/{stem}Spec.groovy", f"{package_dir}/{stem}Test.groovy"]
     if language == "javascript":
         candidates = [
             f"{parent}/{stem}.test{p.suffix}",

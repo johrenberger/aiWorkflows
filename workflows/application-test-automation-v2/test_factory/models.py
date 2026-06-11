@@ -41,7 +41,7 @@ class Config:
     max_supporting_files_per_work_item: int = 5
     max_ai_work_item_chars: int = 120000
     max_retries: int = 3
-    eligible_source_globs: list[str] = field(default_factory=lambda: ["**/*.java", "**/*.js", "**/*.jsx", "**/*.ts", "**/*.tsx", "**/*.py"])
+    eligible_source_globs: list[str] = field(default_factory=lambda: ["**/*.java", "**/*.js", "**/*.jsx", "**/*.ts", "**/*.tsx", "**/*.py", "**/*.groovy"])
     excluded_globs: list[str] = field(default_factory=lambda: ["**/.git/**", "**/node_modules/**", "**/target/**", "**/build/**", "**/dist/**", "**/coverage/**", "**/.venv/**", "**/venv/**", "**/__pycache__/**"])
     generated_file_patterns: list[str] = field(default_factory=lambda: ["generated", "autogen", ".g.dart"])
     exclude_simple_dto: bool = False

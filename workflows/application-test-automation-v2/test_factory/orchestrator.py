@@ -70,6 +70,10 @@ def _language_stack(files: list[dict[str, Any]]) -> dict[str, int]:
 def _module_graph(files: list[dict[str, Any]]) -> dict[str, dict[str, int]]:
     graph: dict[str, dict[str, int]] = {}
     for item in files:
+        # Skip excluded files so analyzer-output/app-dev-discovery artifacts
+        # and other noise don't pollute the module graph (Bug #13).
+        if item.get("is_excluded"):
+            continue
         module = item.get("module", "root")
         lang = item.get("language", "unknown")
         bucket = graph.setdefault(module, {})

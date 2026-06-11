@@ -21,6 +21,8 @@ def recommend_test_type(source_path: str, source_text: str = "") -> str:
 def conventions_summary(language: str, source_path: str) -> str:
     if language == "java":
         return "Prefer JUnit 5 with Mockito and AssertJ; follow existing src/test/java package structure."
+    if language == "groovy":
+        return "Prefer Spock framework (Specification / *Spec.groovy) with JUnit 5 runner; follow existing src/test/groovy package structure."
     if language == "javascript":
         return "Prefer Jest or Vitest; co-locate tests with *.test or *.spec naming unless repo conventions say otherwise."
     if language == "python":

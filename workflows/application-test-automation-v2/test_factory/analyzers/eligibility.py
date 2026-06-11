@@ -32,7 +32,14 @@ def classify_file(path: str, config: Config) -> tuple[bool, str]:
 
 def file_is_test(path: str) -> bool:
     lower = path.lower().replace("\\", "/")
-    return "/test/" in lower or lower.endswith((".test.js", ".spec.js", ".test.ts", ".spec.ts", ".test.jsx", ".spec.jsx", ".test.tsx", ".spec.tsx", "test.py")) or "/tests/" in lower or lower.startswith("tests/")
+    if "/test/" in lower or "/tests/" in lower or lower.startswith("tests/"):
+        return True
+    if lower.endswith((".test.js", ".spec.js", ".test.ts", ".spec.ts", ".test.jsx", ".spec.jsx", ".test.tsx", ".spec.tsx", "test.py")):
+        return True
+    # Spock framework: FooSpec.groovy and FooTest.groovy are test files
+    if lower.endswith("spec.groovy") or lower.endswith("test.groovy"):
+        return True
+    return False
 
 
 def record_from_path(path: Path, repo_root: Path, language: str, module: str, size: int) -> FileRecord:

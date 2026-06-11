@@ -9,7 +9,7 @@ from .eligibility import classify_file, file_is_test
 from .module_detector import detect_language_and_module
 
 
-SOURCE_SUFFIXES = {".java", ".js", ".jsx", ".ts", ".tsx", ".py"}
+SOURCE_SUFFIXES = {".java", ".js", ".jsx", ".ts", ".tsx", ".py", ".groovy"}
 
 
 def _matches_glob(path: str, pattern: str) -> bool:
