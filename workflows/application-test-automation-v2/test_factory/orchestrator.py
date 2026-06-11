@@ -105,6 +105,16 @@ def _top_level_module(path: str, language: str) -> str:
     return parts[0] if parts else "root"
 
 
+def _adapter_class_name(adapter_name: str) -> str:
+    """Map a CLI-friendly adapter name (e.g. ``python_pytest``) to the
+    adapter class name (e.g. ``PythonPytestAdapter``). Used by
+    ``_primary_adapter(adapter_name=...)`` to resolve the user's explicit
+    adapter choice.
+    """
+    parts = adapter_name.split("_")
+    return "".join(p.capitalize() for p in parts) + "Adapter"
+
+
 def _module_graph(files: list[dict[str, Any]]) -> dict[str, dict[str, int]]:
     graph: dict[str, dict[str, int]] = {}
     for item in files:
@@ -184,13 +194,27 @@ class TestFactoryOrchestrator:
     def _enabled_adapter(self, adapter: Any) -> bool:
         return bool(self.config.language_adapters.get(adapter.language, True))
 
-    def _primary_adapter(self) -> Any | None:
+    def _primary_adapter(self, adapter_name: str | None = None) -> Any | None:
         """Return the adapter whose `detect()` has the highest confidence
         (i.e. the adapter that actually matches the target repo's primary
         language). Used by coverage_generate() to pick which
         discover_coverage_command to invoke. Falls back to the first enabled
         adapter if no adapter detects the repo at all.
+
+        If `adapter_name` is given (Bug #36 fix), return the adapter with
+        that name regardless of confidence. The caller has signalled they
+        know better than the auto-detector (e.g. when a stray .java test
+        file tips the tie-break toward java_junit on an otherwise Python
+        repo, as happened running v2 against its own workspace).
         """
+        if adapter_name:
+            for adapter in self.adapters:
+                if getattr(adapter, "language", None) == adapter_name.replace("_pytest", "").replace("_junit", "").replace("_jest_vitest", "") or getattr(adapter, "__class__", type(adapter)).__name__ == _adapter_class_name(adapter_name):
+                    if self._enabled_adapter(adapter):
+                        return adapter
+            # Caller asked for a specific adapter but it isn't loaded
+            # or is disabled. Fall through to auto-detect so the call
+            # doesn't silently no-op.
         best: tuple[float, Any] | None = None
         for adapter in self.adapters:
             if not self._enabled_adapter(adapter):
@@ -372,7 +396,7 @@ class TestFactoryOrchestrator:
         _dump_json(self.artifacts / "coverage_deltas" / "baseline.json", [asdict(record) for record in coverage])
         return coverage
 
-    def coverage_generate(self, module: str | None = None) -> dict[str, Any]:
+    def coverage_generate(self, module: str | None = None, adapter_name: str | None = None) -> dict[str, Any]:
         """Run the primary adapter's `discover_coverage_command` to actually
         *generate* a coverage report on disk, then return the parsed records.
 
@@ -385,7 +409,7 @@ class TestFactoryOrchestrator:
         `test-factory run`, because `coverage()` only reads existing reports.
         See PR #23.
         """
-        adapter = self._primary_adapter()
+        adapter = self._primary_adapter(adapter_name=adapter_name)
         if adapter is None:
             return {
                 "status": "skipped",
@@ -856,6 +880,7 @@ class TestFactoryOrchestrator:
         mutation_high_risk_only: bool | None = None,
         module: str | None = None,
         generate_coverage: bool = False,
+        adapter_name: str | None = None,
     ) -> dict[str, Any]:
         self.scan(module=module)
         # Opt-in coverage generation: when generate_coverage is True, run the
@@ -864,9 +889,13 @@ class TestFactoryOrchestrator:
         # step (writes coverage.json / coverage.xml into the target repo), so
         # it is OFF by default. When False (the default), `coverage()` below
         # only reads whatever reports already exist on disk. See PR #23.
+        #
+        # `adapter_name` (Bug #36) lets the caller force a specific adapter
+        # when auto-detect picks the wrong one (e.g. a stray .java test file
+        # tipping the tie-break toward java_junit on an otherwise Python repo).
         coverage_generation: dict[str, Any] | None = None
         if generate_coverage:
-            coverage_generation = self.coverage_generate(module=module)
+            coverage_generation = self.coverage_generate(module=module, adapter_name=adapter_name)
         self.coverage(module=module)
         self.score(module=module)
         self.queue(module=module)
