@@ -9,6 +9,309 @@ from pathlib import Path
 from test_factory.orchestrator import TestFactoryOrchestrator
 
 
+# ---------------------------------------------------------------------------
+# Regression: preflight diagnostic for the Broadleaf-shaped JaCoCo bug
+# ---------------------------------------------------------------------------
+#
+# Bug surfaced 2026-06-11 on BroadleafCommerce (a 13-module Maven monorepo)
+# via the new `release-readiness` / `test-gap-analysis` skills in
+# johrenberger/test-repo PR #13. The root pom hard-codes
+#
+#   <properties>
+#     <surefire.argLine>--add-opens ...</surefire.argLine>
+#   </properties>
+#   <plugin>
+#     <artifactId>maven-surefire-plugin</artifactId>
+#     <configuration>
+#       <argLine>${surefire.argLine}</argLine>   <!-- static -->
+#     </configuration>
+#   </plugin>
+#
+# JaCoCo's `prepare-agent` runs at `initialize` and tries to write
+# `-javaagent:.../jacoco.jar` into the `surefire.argLine` property.
+# But surefire's `<argLine>${surefire.argLine}</argLine>` is statically
+# expanded once when Maven parses the pom, so the test JVM runs without
+# the agent. JaCoCo's `report` goal logs
+#
+#   [INFO] --- jacoco:0.8.13:report (report) @ <module> ---
+#   [INFO] Skipping JaCoCo execution due to missing execution data file.
+#
+# and no .exec is produced. The pipeline correctly emits a
+# `no_report_written` warning at the end (PR #23), but only after a
+# multi-minute Maven build. Pre-flight detection surfaces the issue
+# BEFORE Maven runs.
+#
+# Earlier fix attempt (adding `-DargLine=@{surefire.argLine}` to the
+# mvn CLI) did NOT work. The surefire plugin caches its static argLine
+# at pom-parse time, and the system property override does not flow
+# back into that cached value. The fix must happen in the target
+# repo's pom: change `<argLine>${surefire.argLine}</argLine>` to
+# `<argLine>@{surefire.argLine}</argLine>` (late-binding; surefire
+# >= 2.20).
+#
+# The fix lives in `JavaJUnitAdapter.preflight_coverage_pitfalls`.
+# These tests pin the new contract.
+def test_preflight_detects_static_surefire_argline_in_pom(tmp_path):
+    """`JavaJUnitAdapter.preflight_coverage_pitfalls` must detect the
+    Broadleaf-shaped `<argLine>${...}</argLine>` pattern in any pom.xml
+    under the repo, and return a finding with the pom path, the
+    matched text, and an actionable fix message.
+
+    Without the preflight, a user running `test-factory run
+    --generate-coverage` on a Broadleaf-shaped repo would only see
+    a 'no_report_written' warning at the end of a 5-minute Maven run.
+    The preflight makes the issue visible at the START of the run.
+    """
+    from test_factory.adapters.java_junit import JavaJUnitAdapter
+
+    # A pom that exhibits the bug (static surefire <argLine>).
+    buggy_pom = tmp_path / "pom.xml"
+    buggy_pom.write_text(
+        """<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.example</groupId>
+  <artifactId>buggy</artifactId>
+  <version>1.0.0</version>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <argLine>${surefire.argLine}</argLine>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>
+""",
+        encoding="utf-8",
+    )
+    findings = JavaJUnitAdapter().preflight_coverage_pitfalls(tmp_path)
+    assert len(findings) == 1, f"expected 1 finding, got {findings!r}"
+    f = findings[0]
+    assert f["kind"] == "static_surefire_argline_blocks_jacoco"
+    assert f["pom_path"] == "pom.xml"
+    assert "${surefire.argLine}" in f["match"]
+    # The fix message must name the late-binding alternative.
+    assert "@{surefire.argLine}" in f["fix"]
+    # The fix message must mention the symptom.
+    assert "no coverage" in f["fix"].lower() or "no .exec" in f["fix"].lower() or "Skipping" in f["fix"]
+
+
+def test_preflight_ignores_late_binding_argline_in_pom(tmp_path):
+    """A pom that already uses the late-binding form
+    `<argLine>@{surefire.argLine}</argLine>` (the correct pattern) must
+    NOT trigger the preflight. The user has already fixed the issue.
+    """
+    from test_factory.adapters.java_junit import JavaJUnitAdapter
+
+    fixed_pom = tmp_path / "pom.xml"
+    fixed_pom.write_text(
+        """<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.example</groupId>
+  <artifactId>fixed</artifactId>
+  <version>1.0.0</version>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <argLine>@{surefire.argLine}</argLine>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>
+""",
+        encoding="utf-8",
+    )
+    findings = JavaJUnitAdapter().preflight_coverage_pitfalls(tmp_path)
+    assert findings == [], f"expected no findings on a fixed pom, got {findings!r}"
+
+
+def test_preflight_ignores_literal_argline_in_pom(tmp_path):
+    """A pom that uses a literal `<argLine>--add-opens ...</argLine>`
+    (no property reference) must NOT trigger the preflight. The
+    late-binding form is only one valid pattern; a literal argLine
+    is also acceptable for the purposes of the JaCoCo agent
+    injection (JaCoCo's prepare-agent will append its own agent
+    flag via `argLine` set on a system property, and the literal
+    argLine here just adds --add-opens flags).
+    """
+    from test_factory.adapters.java_junit import JavaJUnitAdapter
+
+    fixed_pom = tmp_path / "pom.xml"
+    fixed_pom.write_text(
+        """<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.example</groupId>
+  <artifactId>literal</artifactId>
+  <version>1.0.0</version>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <argLine>--add-opens java.base/java.lang=ALL-UNNAMED</argLine>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>
+""",
+        encoding="utf-8",
+    )
+    findings = JavaJUnitAdapter().preflight_coverage_pitfalls(tmp_path)
+    assert findings == [], f"expected no findings on a literal-argLine pom, got {findings!r}"
+
+
+def test_preflight_returns_no_findings_on_pomless_repo(tmp_path):
+    """If the repo has no pom.xml at the root, the static-argLine
+    pitfall does not apply (Gradle path is unaffected). The preflight
+    must return an empty list, not crash.
+    """
+    from test_factory.adapters.java_junit import JavaJUnitAdapter
+
+    # tmp_path exists but has no pom.xml inside it.
+    (tmp_path / "build.gradle").write_text("plugins { id 'java' }\n", encoding="utf-8")
+    findings = JavaJUnitAdapter().preflight_coverage_pitfalls(tmp_path)
+    assert findings == []
+
+
+def test_preflight_finds_pattern_in_nested_module_pom(tmp_path):
+    """Multi-module Maven repos can have the static argLine in a
+    child pom, not the root. The preflight must rglob all pom.xml
+    files in the repo, not just the root.
+    """
+    from test_factory.adapters.java_junit import JavaJUnitAdapter
+
+    # Root pom is clean.
+    (tmp_path / "pom.xml").write_text(
+        """<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.example</groupId>
+  <artifactId>parent</artifactId>
+  <version>1.0.0</version>
+  <packaging>pom</packaging>
+  <modules><module>child</module></modules>
+</project>
+""",
+        encoding="utf-8",
+    )
+    # Child pom has the bug.
+    child_dir = tmp_path / "child"
+    child_dir.mkdir()
+    (child_dir / "pom.xml").write_text(
+        """<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>com.example</groupId>
+    <artifactId>parent</artifactId>
+    <version>1.0.0</version>
+  </parent>
+  <artifactId>child</artifactId>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <argLine>${argLine}</argLine>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>
+""",
+        encoding="utf-8",
+    )
+    findings = JavaJUnitAdapter().preflight_coverage_pitfalls(tmp_path)
+    assert len(findings) == 1
+    assert findings[0]["pom_path"] == "child/pom.xml"
+    assert "${argLine}" in findings[0]["match"]
+
+
+def test_coverage_generate_attaches_preflight_findings_to_result(tmp_path):
+    """End-to-end: when `generate_coverage=True` is set on `run()`, the
+    orchestrator must call `preflight_coverage_pitfalls` and attach the
+    findings to the `generation` record. This makes the warnings
+    visible in the artifact JSON and in the final report, BEFORE Maven
+    runs (or at least before the warning is gated on exit code 0).
+    """
+    repo = _copy_fixture_repo(tmp_path)
+    out_dir = tmp_path / "analysis-artifacts"
+    orchestrator = TestFactoryOrchestrator(repo, out_dir)
+    try:
+        from test_factory.adapters.java_junit import JavaJUnitAdapter
+        from test_factory.models import CommandSpec
+
+        # The sample-repo fixture is a Python repo; force the primary
+        # adapter to JavaJUnitAdapter so the preflight (which lives on
+        # JavaJUnitAdapter) is exercised end-to-end. Replace the
+        # sample-repo's pom.xml with a buggy one so the preflight has
+        # something to find.
+        (repo / "pom.xml").write_text(
+            """<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.example</groupId>
+  <artifactId>buggy</artifactId>
+  <version>1.0.0</version>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <argLine>${surefire.argLine}</argLine>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>
+""",
+            encoding="utf-8",
+        )
+        java_adapter = JavaJUnitAdapter()
+        # Patch the orchestrator to use JavaJUnitAdapter as the primary
+        # adapter. We do this by monkey-patching _primary_adapter.
+        original_primary = orchestrator._primary_adapter
+        orchestrator._primary_adapter = lambda adapter_name=None: java_adapter
+        # Patch the adapter to a no-op command so the test doesn't
+        # need real Maven. We only care that preflight_findings is
+        # attached to the result before/after the command.
+        original_command = java_adapter.discover_coverage_command
+        java_adapter.discover_coverage_command = lambda repo_path, module: CommandSpec(
+            command=["true"],
+            cwd=str(repo),
+            description="no-op for preflight test",
+        )
+        try:
+            result = orchestrator.run(limit=1, module="package", generate_coverage=True)
+        finally:
+            java_adapter.discover_coverage_command = original_command
+            orchestrator._primary_adapter = original_primary
+        gen = result["coverage_generation"]
+        assert gen is not None
+        preflight = gen["generation"].get("preflight_findings", [])
+        # The preflight must have run BEFORE the command and found the
+        # static-argLine pattern.
+        assert any(f.get("kind") == "static_surefire_argline_blocks_jacoco" for f in preflight), (
+            f"preflight_findings missing or wrong shape: {preflight!r}"
+        )
+    finally:
+        orchestrator.close()
+
+
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 FIXTURE_REPO = PROJECT_ROOT / "tests" / "fixtures" / "sample-repo"
 
