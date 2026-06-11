@@ -67,6 +67,44 @@ def _language_stack(files: list[dict[str, Any]]) -> dict[str, int]:
     return counts
 
 
+def _top_level_module(path: str, language: str) -> str:
+    """Derive a coarse-grained module key from a file path for the
+    module_graph output. For Java/Groovy, this is the Maven module that
+    owns the file (the path segment before /src/{main,test}/{java,groovy}/);
+    for JavaScript it is the first two path segments; for Python, the
+    directory above the file. This keeps the module_graph useful for
+    navigation (Bug #33) without changing the granular per-file `module`
+    field used in work-items and risk scores.
+    """
+    rel = (path or "").replace("\\", "/").lstrip("/")
+    parts = rel.split("/")
+    if not parts or parts == [""]:
+        return "root"
+    if language in {"java", "groovy"}:
+        # Look for the first /src/{main,test}/{java,groovy}/ anchor and
+        # collapse everything before it. If there is nothing before
+        # `src` (single-module layout), default to "src" so the graph
+        # has a single bucket instead of an empty "root".
+        for i, segment in enumerate(parts):
+            if segment == "src" and i + 2 < len(parts) and parts[i + 1] in {"main", "test"} and parts[i + 2] in {"java", "groovy"}:
+                return "/".join(parts[:i]) or "src"
+        return parts[0]
+    if language == "javascript":
+        # If the path is rooted at a /src/main/resources/ anchor, take the
+        # path segment(s) before it as the Maven module (matches the
+        # Java/Groovy layout). Otherwise fall back to the first two
+        # path segments.
+        for i, segment in enumerate(parts):
+            if segment == "src" and i + 1 < len(parts) and parts[i + 1] in {"main", "test"}:
+                return "/".join(parts[:i]) or "src"
+        if len(parts) >= 2:
+            return "/".join(parts[:2])
+        return "root"
+    if language == "python":
+        return parts[0] if parts else "root"
+    return parts[0] if parts else "root"
+
+
 def _module_graph(files: list[dict[str, Any]]) -> dict[str, dict[str, int]]:
     graph: dict[str, dict[str, int]] = {}
     for item in files:
@@ -74,7 +112,7 @@ def _module_graph(files: list[dict[str, Any]]) -> dict[str, dict[str, int]]:
         # and other noise don't pollute the module graph (Bug #13).
         if item.get("is_excluded"):
             continue
-        module = item.get("module", "root")
+        module = _top_level_module(item.get("path", ""), item.get("language", "unknown"))
         lang = item.get("language", "unknown")
         bucket = graph.setdefault(module, {})
         bucket[lang] = bucket.get(lang, 0) + 1
@@ -515,9 +553,37 @@ class TestFactoryOrchestrator:
         _dump_json(self.artifacts / "test_gap_queue.json", queue)
         _dump_json(
             self.artifacts / "component_test_candidates.json",
-            [item for item in queue if "component" in str(item.get("recommended_test_type", "")) or item.get("risk_score", 0) >= 50],
+            [item for item in queue if self._is_component_candidate(item)],
         )
         return queue
+
+    @staticmethod
+    def _is_component_candidate(item: dict[str, Any]) -> bool:
+        """Heuristic for files that benefit from component/integration tests
+        (controllers, web layer, REST endpoints, JS UI components).
+
+        Bug #34: the previous filter relied on `recommended_test_type`
+        (not set on queue items) OR `risk_score >= 50` (always true for
+        Broadleaf's risk distribution), so every queue item leaked into
+        `component_test_candidates.json`. The new heuristic looks for web
+        layer / controller / REST markers in the path.
+        """
+        path = str(item.get("path", "")).lower()
+        if not path:
+            return False
+        markers = (
+            "/web/",
+            "controller",
+            "/controller/",
+            "endpoint",
+            "/rest/",
+            "/api/",
+            "/resource/",
+            "filter",
+            "servlet",
+            "interceptor",
+        )
+        return any(marker in path for marker in markers)
 
     def workitems(self, limit: int | None = None, module: str | None = None) -> list[WorkItemRecord]:
         coverage_records = [CoverageRecord(**item) for item in _read_json(self.artifacts / "coverage_baseline.json", []) if _module_matches_scope(module, item["path"])]

@@ -39,3 +39,22 @@ def test_module_graph_empty_when_all_excluded():
         {"path": "x.json", "language": "unknown", "module": "x", "is_excluded": True},
     ]
     assert _module_graph(files) == {}
+
+
+def test_module_graph_uses_top_level_maven_module():
+    """Bug #33: module_graph should use the top-level Maven module
+    (path segment before /src/{main,test}/java/), not the Java package
+    path. Otherwise the graph ends up with hundreds of buckets from
+    `org/broadleafcommerce/...` package paths."""
+    files = [
+        {"path": "core/broadleaf-framework/src/main/java/com/example/Foo.java", "language": "java", "is_excluded": False},
+        {"path": "core/broadleaf-framework/src/main/java/com/example/Bar.java", "language": "java", "is_excluded": False},
+        {"path": "common/src/main/java/com/example/util/Baz.java", "language": "java", "is_excluded": False},
+        {"path": "admin/broadleaf-open-admin-platform/src/main/resources/foo.js", "language": "javascript", "is_excluded": False},
+    ]
+    graph = _module_graph(files)
+    # Should have 3 top-level modules, not 4 package paths
+    assert set(graph.keys()) == {"core/broadleaf-framework", "common", "admin/broadleaf-open-admin-platform"}, graph
+    assert graph["core/broadleaf-framework"] == {"java": 2}
+    assert graph["common"] == {"java": 1}
+    assert graph["admin/broadleaf-open-admin-platform"] == {"javascript": 1}

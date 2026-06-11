@@ -69,3 +69,14 @@ def test_conventions_summary_for_groovy():
     summary = conventions_summary("groovy", "src/main/groovy/Foo.groovy")
     assert "Spock" in summary
     assert "*Spec.groovy" in summary
+
+
+def test_groovy_spock_naming_recognizes_framework(tmp_path):
+    """Bug #28: groovy files with 'Spock' in the name (e.g. SpockAdminIntegrationSetup)
+    should also be labeled with framework='spock'."""
+    (tmp_path / "src" / "test" / "groovy" / "com" / "example").mkdir(parents=True)
+    setup = tmp_path / "src" / "test" / "groovy" / "com" / "example" / "SpockAdminIntegrationSetup.groovy"
+    setup.write_text("// setup class")
+    lang, _, evidence = detect_language_and_module(tmp_path, setup)
+    assert lang == "groovy"
+    assert evidence.get("framework") == "spock"

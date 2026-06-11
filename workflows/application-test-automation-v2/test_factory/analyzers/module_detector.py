@@ -20,7 +20,8 @@ def detect_language_and_module(repo_root: Path, path: Path) -> tuple[str, str, d
     elif suffix == ".groovy" or "build.gradle" in rel:
         language = "groovy"
         evidence["suffix"] = suffix
-        if "spec" in path.stem.lower() or "test" in path.stem.lower():
+        stem_lower = path.stem.lower()
+        if any(token in stem_lower for token in ("spec", "test", "spock")):
             evidence["framework"] = "spock"
     module = _derive_module(repo_root, path, language)
     return language, module, evidence

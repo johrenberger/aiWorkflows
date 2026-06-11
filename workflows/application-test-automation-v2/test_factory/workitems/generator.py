@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 from pathlib import Path
 
+from ..analyzers.source_signatures import extract_public_signatures
 from ..models import Config, CoverageRecord, RiskScoreRecord, SourceTestMapRecord, WorkItemRecord
 
 
@@ -39,6 +40,16 @@ def generate_work_items(
         work_item_id = f"wi-{hashlib.sha1(f'{score.module}:{score.path}'.encode('utf-8')).hexdigest()[:10]}"
         coverage = coverage_by_path.get(score.path)
         candidate_tests = map_record.candidate_tests or existing_tests.get(score.path, [])
+        # Bug #9: when no coverage data exists, extract public method signatures
+        # from the source file so the LLM has actionable guidance instead of
+        # 'Uncovered lines: none'.
+        public_signatures: list[str] = []
+        if not coverage or not coverage.uncovered_lines:
+            source_file = repo_root / score.path
+            if source_file.exists():
+                public_signatures = extract_public_signatures(
+                    str(source_file), _language_from_path(score.path)
+                )
         item = WorkItemRecord(
             work_item_id=work_item_id,
             source_path=score.path,
@@ -48,6 +59,7 @@ def generate_work_items(
             current_branch_coverage=coverage.branch_coverage if coverage else score.branch_coverage,
             uncovered_lines=coverage.uncovered_lines if coverage else [],
             uncovered_branches=coverage.uncovered_branches if coverage else [],
+            public_signatures=public_signatures,
             risk_score=score.risk_score,
             risk_factors={
                 "complexity": score.complexity,

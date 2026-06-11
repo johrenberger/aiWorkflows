@@ -84,6 +84,7 @@ class RiskScoreRecord:
     module: str
     line_coverage: float
     branch_coverage: Optional[float]
+    language: str = "unknown"
     complexity: float = 0.0
     churn: float = 0.0
     public_api_exposure: float = 0.0
@@ -121,6 +122,7 @@ class WorkItemRecord:
     recommended_test_type: str = "unit"
     supporting_files: list[str] = field(default_factory=list)
     conventions_summary: str = ""
+    public_signatures: list[str] = field(default_factory=list)
     validation_command: str = ""
     acceptance_criteria: list[str] = field(default_factory=list)
     status: str = "pending"

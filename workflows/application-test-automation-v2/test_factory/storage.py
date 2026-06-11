@@ -45,6 +45,7 @@ CREATE TABLE IF NOT EXISTS risk_scores (
   module TEXT NOT NULL,
   line_coverage REAL NOT NULL DEFAULT 0,
   branch_coverage REAL,
+  language TEXT NOT NULL DEFAULT 'unknown',
   complexity REAL NOT NULL DEFAULT 0,
   churn REAL NOT NULL DEFAULT 0,
   public_api_exposure REAL NOT NULL DEFAULT 0,
@@ -88,7 +89,8 @@ CREATE TABLE IF NOT EXISTS work_items (
   validated_files TEXT NOT NULL DEFAULT '[]',
   validation_repo_sha TEXT NOT NULL DEFAULT '',
   validation_reason TEXT NOT NULL DEFAULT '',
-  validation_report_path TEXT NOT NULL DEFAULT ''
+  validation_report_path TEXT NOT NULL DEFAULT '',
+  public_signatures TEXT NOT NULL DEFAULT '[]'
 );
 
 CREATE TABLE IF NOT EXISTS validation_runs (
@@ -187,6 +189,13 @@ class Storage:
         stm_columns = {row["name"] for row in self.conn.execute("PRAGMA table_info(source_test_map)")}
         if "candidate_paths" not in stm_columns:
             self.conn.execute("ALTER TABLE source_test_map ADD COLUMN candidate_paths TEXT NOT NULL DEFAULT '[]'")
+        # Migrate work_items (PR #29 - Bug #9 fix)
+        if "public_signatures" not in existing_columns:
+            self.conn.execute("ALTER TABLE work_items ADD COLUMN public_signatures TEXT NOT NULL DEFAULT '[]'")
+        # Migrate risk_scores (PR #29 - Bug #32 fix)
+        rs_columns = {row["name"] for row in self.conn.execute("PRAGMA table_info(risk_scores)")}
+        if "language" not in rs_columns:
+            self.conn.execute("ALTER TABLE risk_scores ADD COLUMN language TEXT NOT NULL DEFAULT 'unknown'")
 
     def close(self) -> None:
         self.conn.close()
@@ -273,12 +282,13 @@ class Storage:
         data = _to_jsonable(record)
         self.execute(
             """
-            INSERT INTO risk_scores(path, module, line_coverage, branch_coverage, complexity, churn, public_api_exposure, dependency_fan_in, defect_history, data_or_security_sensitivity, coverage_gap, risk_score, missing_evidence)
-            VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)
+            INSERT INTO risk_scores(path, module, line_coverage, branch_coverage, language, complexity, churn, public_api_exposure, dependency_fan_in, defect_history, data_or_security_sensitivity, coverage_gap, risk_score, missing_evidence)
+            VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)
             ON CONFLICT(path) DO UPDATE SET
               module=excluded.module,
               line_coverage=excluded.line_coverage,
               branch_coverage=excluded.branch_coverage,
+              language=excluded.language,
               complexity=excluded.complexity,
               churn=excluded.churn,
               public_api_exposure=excluded.public_api_exposure,
@@ -294,6 +304,7 @@ class Storage:
                 data["module"],
                 float(data.get("line_coverage", 0)),
                 data.get("branch_coverage"),
+                str(data.get("language", "unknown")),
                 float(data.get("complexity", 0)),
                 float(data.get("churn", 0)),
                 float(data.get("public_api_exposure", 0)),
@@ -350,8 +361,8 @@ class Storage:
                 validation_report_path = existing["validation_report_path"]
         self.execute(
             """
-            INSERT INTO work_items(work_item_id, source_path, language, module, current_line_coverage, current_branch_coverage, uncovered_lines, uncovered_branches, risk_score, risk_factors, existing_test_files, recommended_test_type, supporting_files, conventions_summary, validation_command, acceptance_criteria, status, priority, content_path, validated_files, validation_repo_sha, validation_reason, validation_report_path)
-            VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+            INSERT INTO work_items(work_item_id, source_path, language, module, current_line_coverage, current_branch_coverage, uncovered_lines, uncovered_branches, risk_score, risk_factors, existing_test_files, recommended_test_type, supporting_files, conventions_summary, validation_command, acceptance_criteria, status, priority, content_path, validated_files, validation_repo_sha, validation_reason, validation_report_path, public_signatures)
+            VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
             ON CONFLICT(work_item_id) DO UPDATE SET
               source_path=excluded.source_path,
               language=excluded.language,
@@ -374,7 +385,8 @@ class Storage:
               validated_files=excluded.validated_files,
               validation_repo_sha=excluded.validation_repo_sha,
               validation_reason=excluded.validation_reason,
-              validation_report_path=excluded.validation_report_path
+              validation_report_path=excluded.validation_report_path,
+              public_signatures=excluded.public_signatures
             """,
             (
                 data["work_item_id"],
@@ -400,6 +412,7 @@ class Storage:
                 validation_repo_sha,
                 validation_reason,
                 validation_report_path,
+                _json(data.get("public_signatures", [])),
             ),
         )
 

@@ -19,6 +19,13 @@ def classify_file(path: str, config: Config) -> tuple[bool, str]:
         return False, "excluded-glob"
     if lower.endswith((".min.js", ".min.css")):
         return False, "minified-asset"
+    # Bug #15: vendor / third-party JS/CSS in resources dirs should not be
+    # eligible for test writing. They are bundled libraries, not application code.
+    posix = p.as_posix().lower()
+    if "/vendor/" in posix or "/vendors/" in posix:
+        return False, "vendor-bundle"
+    if "/lib/" in posix and any(posix.endswith(ext) for ext in (".js", ".css")):
+        return False, "vendor-bundle"
     if not _matches_any(path, config.eligible_source_globs):
         return False, "not-source-eligible"
     if config.exclude_simple_dto and any(token in lower for token in ("dto", "record")):
