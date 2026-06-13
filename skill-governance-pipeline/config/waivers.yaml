@@ -1,0 +1,14 @@
+# Default waivers file.
+# Add entries to suppress specific CI-blocking findings.
+# A waiver is a way to acknowledge a known risk and proceed,
+# but it is NOT a fix. Waivers expire.
+#
+# Example:
+# - waiver_id: w-2026-06-13-001
+#   finding_id: benchmark.failed.foo
+#   owner: justin
+#   expiration_date: "2026-09-01"
+#   rationale: "Foo is being rewritten; the new version will pass the benchmark."
+#   approved_by: justin
+
+waivers: []

@@ -1,0 +1,20 @@
+agent_directories:
+- /data/.openclaw/workspace/aiWorkflows
+benchmark_thresholds:
+  default_minimum: 0.7
+ci_blocking_rules: []
+minimax_semantic_scoring_enabled: false
+output_directory: ./output
+overlap_thresholds:
+  blocking: 85
+  warning: 70
+roi_thresholds:
+  deprecate_max: 30
+  keep_min: 70
+  rewrite_min: 50
+runtime_log_paths: []
+skill_directories:
+- /data/.openclaw/workspace/test-repo
+token_thresholds:
+  high_cost: 8000
+waiver_file: ./config/waivers.yaml

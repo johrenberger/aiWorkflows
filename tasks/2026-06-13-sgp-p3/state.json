@@ -1,0 +1,42 @@
+{
+  "task_id": "2026-06-13-sgp-p3",
+  "current_state": "closed",
+  "history": [
+    {
+      "from": "ready",
+      "to": "in_progress",
+      "by": "software-engineer",
+      "at": "2026-06-13T22:22:00Z",
+      "reason": "Phase 2 (2026-06-13-sgp-p2) closed with 38/38 tests passing. Starting Phase 3: ROI scorer (CR 8) with weighted formula, MiniMax semantic scoring interface (mocked; real in Phase 5), recommendation engine (CR 11), and a token cost static integration. Goal: replace Phase 1/2 placeholder scorecards with real per-skill ROI, and produce evidence-backed recommendations that feed the executive report."
+    },
+    {
+      "from": "in_progress",
+      "to": "implementation_done",
+      "by": "software-engineer",
+      "at": "2026-06-13T22:25:00Z",
+      "reason": "Phase 3 implementation complete: roi_scorer (CR 8) with weighted formula, MiniMax semantic scoring interface (mocked), recommendation_engine (CR 11) with evidence-backed recommendations. 51/51 tests pass (+13 from Phase 2). E2E CI produces 126 scorecards (all 'rewrite' due to missing metadata) and 126+ recommendations sorted by priority."
+    },
+    {
+      "from": "implementation_done",
+      "to": "review_done",
+      "by": "software-engineer",
+      "at": "2026-06-13T22:26:00Z",
+      "reason": "Phase 3 review: ROI formula is documented; weights are configurable; mock interface is pluggable; recommendations have all 11 required fields per CR 11."
+    },
+    {
+      "from": "review_done",
+      "to": "testing_done",
+      "by": "software-engineer",
+      "at": "2026-06-13T22:27:00Z",
+      "reason": "Re-ran 51/51 tests: all pass. E2E CI produces evidence-backed recommendations in remediation_backlog.md."
+    },
+    {
+      "from": "testing_done",
+      "to": "closed",
+      "by": "software-engineer",
+      "at": "2026-06-13T22:28:00Z",
+      "reason": "Phase 3 closed. Phase 4 (benchmark runner, rewrite generator) tracked in 2026-06-13-sgp-p4."
+    }
+  ],
+  "updated_at": "2026-06-13T22:28:00Z"
+}

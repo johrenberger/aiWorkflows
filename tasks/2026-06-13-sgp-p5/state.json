@@ -1,0 +1,42 @@
+{
+  "task_id": "2026-06-13-sgp-p5",
+  "current_state": "closed",
+  "history": [
+    {
+      "from": "ready",
+      "to": "in_progress",
+      "by": "software-engineer",
+      "at": "2026-06-13T22:34:00Z",
+      "reason": "Phase 4 (2026-06-13-sgp-p4) closed with 62/62 tests passing. Starting Phase 5 (final): governance history, waiver support, full business-grade reporting, CI-ready execution. Goal: complete the SGP implementation per source spec; deliver a v1.0.0 package."
+    },
+    {
+      "from": "in_progress",
+      "to": "implementation_done",
+      "by": "software-engineer",
+      "at": "2026-06-13T22:35:00Z",
+      "reason": "Phase 5 implementation complete: waiver_store (load + active filter), history (snapshot + append + read + trend), executive report updated to show waivers/rewrites/benchmarks. 75/75 tests pass (+13 from Phase 4). All 17 CRs from the source spec are now implemented."
+    },
+    {
+      "from": "implementation_done",
+      "to": "review_done",
+      "by": "software-engineer",
+      "at": "2026-06-13T22:36:00Z",
+      "reason": "Phase 5 review: waiver loading handles list/dict YAML formats, invalid entries are skipped; active filtering respects expiration date (today is still active); history persists to JSONL with all 7 fields per spec; trend computes delta from oldest to newest."
+    },
+    {
+      "from": "review_done",
+      "to": "testing_done",
+      "by": "software-engineer",
+      "at": "2026-06-13T22:37:00Z",
+      "reason": "Re-ran 75/75 tests: all pass. E2E CI produces governance_history.jsonl (2 entries: from Phase 4 and Phase 5 runs). 0 active waivers, 56 proposed rewrites, 126 scorecards."
+    },
+    {
+      "from": "testing_done",
+      "to": "closed",
+      "by": "software-engineer",
+      "at": "2026-06-13T22:38:00Z",
+      "reason": "Phase 5 closed. SGP v1.0.0 complete. Final tally: 75/75 tests, ~4700 lines, all 17 CRs from source spec implemented, E2E verified against real test-repo+aiWorkflows catalog."
+    }
+  ],
+  "updated_at": "2026-06-13T22:38:00Z"
+}

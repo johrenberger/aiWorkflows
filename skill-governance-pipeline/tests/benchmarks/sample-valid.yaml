@@ -1,0 +1,23 @@
+artifact_name: skills/valid
+benchmark_name: valid-skill-must-have-metadata
+input_context:
+  expected: pass
+expected_outputs:
+  - format: json
+    fields:
+      - result
+scoring_rules:
+  - field: name
+    expected: valid-skill
+    weight: 2.0
+  - field: artifact_type
+    expected: skill
+    weight: 2.0
+  - field: purpose
+    expected: coverage
+    weight: 3.0
+  - field: outputs
+    expected: format
+    weight: 2.0
+minimum_score: 0.7
+edge_cases: []
