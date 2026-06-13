@@ -105,6 +105,12 @@ def build_parser() -> argparse.ArgumentParser:
                               "default. Use for fast / read-only smoke runs. The resulting "
                               "risk_scores.json will have line_coverage=0.0 everywhere "
                               "(see story 019 for that fall-back's downstream effect).")
+        sub.add_argument("--coverage-out", default=None,
+                         help="(run only, story 025) When set with --generate-coverage, "
+                              "the freshly-written reports are copied to this directory. "
+                              "The target repo is still mutated by the build tool, but the "
+                              "user gets a clean copy under their chosen dir. Defaults to "
+                              "the target repo (legacy behavior).")
         sub.add_argument("--adapter", default=None,
                          choices=("python_pytest", "java_junit", "js_jest_vitest"),
                          help="Force a specific adapter for coverage_generation. "
@@ -161,6 +167,7 @@ def main(argv: list[str] | None = None) -> int:
                 generate_coverage=generate_coverage,
                 adapter_name=args.adapter,
                 zero_coverage_only=args.zero_coverage_only,
+                coverage_out_dir=args.coverage_out,
             )
         elif args.command == "branch":
             result = orchestrator.branch(args.scope or args.module or "root", allow_dirty=args.allow_dirty)
