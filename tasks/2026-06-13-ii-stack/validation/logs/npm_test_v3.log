@@ -1,0 +1,91 @@
+
+> petclinic-proxy@0.1.0 test
+> jest --runInBand
+
+PASS tests/uc2.test.js
+  ● Console
+
+    console.log
+      {"ts":"2026-06-13T21:10:11.812Z","level":"info","event":"downstream.ok","correlationId":"0f687728-63a1-47b0-8569-ba803d148693","status":201,"attempt":1,"latencyMs":22}
+
+      at log (src/server.js:46:13)
+
+    console.log
+      {"ts":"2026-06-13T21:10:11.845Z","level":"info","event":"downstream.ok","correlationId":"test-cid-1781385011835","status":201,"attempt":1,"latencyMs":9}
+
+      at log (src/server.js:46:13)
+
+    console.log
+      {"ts":"2026-06-13T21:10:11.856Z","level":"info","event":"downstream.ok","correlationId":"3ac82894-7bfa-495e-a72c-6539843b04c4","status":201,"attempt":1,"latencyMs":8}
+
+      at log (src/server.js:46:13)
+
+    console.log
+      {"ts":"2026-06-13T21:10:11.866Z","level":"info","event":"downstream.ok","correlationId":"c879572a-5451-4fb5-b661-235b19dc5703","status":201,"attempt":1,"latencyMs":7}
+
+      at log (src/server.js:46:13)
+
+    console.log
+      {"ts":"2026-06-13T21:10:11.872Z","level":"warn","event":"downstream.err","correlationId":"cid-1","status":503,"attempt":1,"latencyMs":0}
+
+      at log (src/server.js:46:13)
+
+    console.log
+      {"ts":"2026-06-13T21:10:11.974Z","level":"warn","event":"downstream.err","correlationId":"cid-1","status":503,"attempt":2,"latencyMs":1}
+
+      at log (src/server.js:46:13)
+
+    console.log
+      {"ts":"2026-06-13T21:10:12.175Z","level":"info","event":"downstream.ok","correlationId":"cid-1","status":201,"attempt":3,"latencyMs":0}
+
+      at log (src/server.js:46:13)
+
+    console.log
+      {"ts":"2026-06-13T21:10:12.176Z","level":"warn","event":"downstream.err","correlationId":"cid-2","status":400,"attempt":1,"latencyMs":0}
+
+      at log (src/server.js:46:13)
+
+    console.log
+      {"ts":"2026-06-13T21:10:12.177Z","level":"warn","event":"downstream.err","correlationId":"cid-3","status":503,"attempt":1,"latencyMs":0}
+
+      at log (src/server.js:46:13)
+
+    console.log
+      {"ts":"2026-06-13T21:10:12.278Z","level":"warn","event":"downstream.err","correlationId":"cid-3","status":503,"attempt":2,"latencyMs":0}
+
+      at log (src/server.js:46:13)
+
+    console.log
+      {"ts":"2026-06-13T21:10:12.478Z","level":"warn","event":"downstream.err","correlationId":"cid-3","status":503,"attempt":3,"latencyMs":0}
+
+      at log (src/server.js:46:13)
+
+PASS tests/uc1.test.js
+  ● Console
+
+    console.log
+      {"ts":"2026-06-13T21:10:12.564Z","level":"info","event":"downstream.ok","correlationId":"f1cdd34c-147d-4ae3-a5ef-30bc13ca9b1d","status":200,"attempt":1,"latencyMs":9}
+
+      at log (src/server.js:46:13)
+
+    console.log
+      {"ts":"2026-06-13T21:10:12.580Z","level":"info","event":"downstream.ok","correlationId":"8b7322fb-3748-4bc2-afd4-8c1333d843b5","status":200,"attempt":1,"latencyMs":10}
+
+      at log (src/server.js:46:13)
+
+    console.log
+      {"ts":"2026-06-13T21:10:12.591Z","level":"info","event":"downstream.ok","correlationId":"4e781820-c7e0-44ea-9964-f403288fd6f3","status":200,"attempt":1,"latencyMs":8}
+
+      at log (src/server.js:46:13)
+
+    console.log
+      {"ts":"2026-06-13T21:10:12.605Z","level":"info","event":"downstream.ok","correlationId":"8fd4f7eb-9d20-4e3b-af02-019901c09d06","status":200,"attempt":1,"latencyMs":11}
+
+      at log (src/server.js:46:13)
+
+
+Test Suites: 2 passed, 2 total
+Tests:       22 passed, 22 total
+Snapshots:   0 total
+Time:        1.166 s, estimated 2 s
+Ran all test suites.

@@ -1,0 +1,42 @@
+{
+  "task_id": "2026-06-13-fi-stack",
+  "current_state": "closed",
+  "updated_at": "2026-06-13T23:41:00Z",
+  "history": [
+    {
+      "from": "ready",
+      "to": "in_progress",
+      "by": "software-engineer",
+      "at": "2026-06-13T23:32:00Z",
+      "reason": "Calibration exercise: frontend-implementation skill against a React 18 + Vite UI for the PetClinic proxy. UC1 (no skill baseline): PetVisitList component that fetches and renders visits."
+    },
+    {
+      "from": "in_progress",
+      "to": "implementation_done",
+      "by": "software-engineer",
+      "at": "2026-06-13T23:38:00Z",
+      "reason": "UC1 (no skill baseline) and UC2/UC3 (with frontend-implementation skill) complete. 24/24 tests pass, npm_test validation passed. Implementation report + handoff packet + calibration reproducer + calibration report produced."
+    },
+    {
+      "from": "implementation_done",
+      "to": "review_done",
+      "by": "software-engineer",
+      "at": "2026-06-13T23:39:00Z",
+      "reason": "Calibration reproducer passes (36/36 checks). PR #47 opened on johrenberger/test-repo."
+    },
+    {
+      "from": "review_done",
+      "to": "testing_done",
+      "by": "software-engineer",
+      "at": "2026-06-13T23:40:00Z",
+      "reason": "Reproducer re-run; all 24/24 tests pass; validation log captured."
+    },
+    {
+      "from": "testing_done",
+      "to": "closed",
+      "by": "software-engineer",
+      "at": "2026-06-13T23:41:00Z",
+      "reason": "PR #47 merged into test-repo main. frontend-implementation is now 'usable'. Catalog closed (0 draft skills)."
+    }
+  ]
+}

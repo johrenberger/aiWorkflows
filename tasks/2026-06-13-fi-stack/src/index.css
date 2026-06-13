@@ -1,0 +1,112 @@
+/* Minimal, accessible CSS — matches the static-ui profile's
+   preference for "match the repo's existing styling." */
+:root {
+    --color-bg: #ffffff;
+    --color-fg: #1a1a1a;
+    --color-muted: #6b7280;
+    --color-border: #d1d5db;
+    --color-accent: #2563eb;
+    --color-error: #dc2626;
+    --space-xs: 0.25rem;
+    --space-sm: 0.5rem;
+    --space-md: 1rem;
+    --space-lg: 1.5rem;
+    --radius: 4px;
+    font-family: system-ui, -apple-system, sans-serif;
+}
+
+body {
+    margin: 0;
+    padding: var(--space-lg);
+    color: var(--color-fg);
+    background: var(--color-bg);
+    line-height: 1.5;
+}
+
+h1, h2, h3 {
+    margin: 0 0 var(--space-md) 0;
+}
+
+button {
+    padding: var(--space-sm) var(--space-md);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    background: var(--color-bg);
+    color: var(--color-fg);
+    cursor: pointer;
+    font: inherit;
+}
+button:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+}
+button[type="submit"], button.primary {
+    background: var(--color-accent);
+    color: white;
+    border-color: var(--color-accent);
+}
+
+input, select, textarea {
+    padding: var(--space-sm);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    font: inherit;
+    width: 100%;
+    box-sizing: border-box;
+}
+input:focus-visible, select:focus-visible, textarea:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 1px;
+    border-color: var(--color-accent);
+}
+
+label {
+    display: block;
+    margin-bottom: var(--space-xs);
+    font-weight: 500;
+}
+
+.field {
+    margin-bottom: var(--space-md);
+}
+
+.error {
+    color: var(--color-error);
+    font-size: 0.875rem;
+    margin-top: var(--space-xs);
+}
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+table {
+    border-collapse: collapse;
+    width: 100%;
+    margin-top: var(--space-md);
+}
+th, td {
+    text-align: left;
+    padding: var(--space-sm);
+    border-bottom: 1px solid var(--color-border);
+}
+th {
+    background: #f3f4f6;
+}
+
+ul.pet-list {
+    list-style: none;
+    padding: 0;
+}
+ul.pet-list li {
+    padding: var(--space-sm);
+    border-bottom: 1px solid var(--color-border);
+}

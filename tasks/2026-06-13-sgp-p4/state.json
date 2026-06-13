@@ -1,0 +1,42 @@
+{
+  "task_id": "2026-06-13-sgp-p4",
+  "current_state": "closed",
+  "history": [
+    {
+      "from": "ready",
+      "to": "in_progress",
+      "by": "software-engineer",
+      "at": "2026-06-13T22:29:00Z",
+      "reason": "Phase 3 (2026-06-13-sgp-p3) closed with 51/51 tests passing. Starting Phase 4: benchmark_runner (CR 9) with fixture loading and scoring, rewrite_generator (CR 10) producing proposed rewrites for weak artifacts. Goal: turn the 'rewrite' decision into an actual rewrite proposal on disk."
+    },
+    {
+      "from": "in_progress",
+      "to": "implementation_done",
+      "by": "software-engineer",
+      "at": "2026-06-13T22:30:00Z",
+      "reason": "Phase 4 implementation complete: benchmark_runner (CR 9) with YAML fixture loading + scoring + CI-blocking failure mode, rewrite_generator (CR 10) producing evidence-backed rewrite proposals with all 10 required sections per spec. 62/62 tests pass (+11 from Phase 3). E2E CI produces 126 proposed_rewrites/*.rewrite.md files."
+    },
+    {
+      "from": "implementation_done",
+      "to": "review_done",
+      "by": "software-engineer",
+      "at": "2026-06-13T22:31:00Z",
+      "reason": "Phase 4 review: benchmark fixtures load + score; failure mode is CI-blocking; rewrites include all required sections (improved metadata, tighter purpose, explicit inputs, explicit outputs, reduced redundancy, token-efficient instructions, clear boundaries, validation expectations, compatibility notes, migration notes)."
+    },
+    {
+      "from": "review_done",
+      "to": "testing_done",
+      "by": "software-engineer",
+      "at": "2026-06-13T22:32:00Z",
+      "reason": "Re-ran 62/62 tests: all pass. E2E CI produces real rewrite files; the file for 'README' is well-structured with metadata block, triggers, changes, original excerpt, and migration notes."
+    },
+    {
+      "from": "testing_done",
+      "to": "closed",
+      "by": "software-engineer",
+      "at": "2026-06-13T22:33:00Z",
+      "reason": "Phase 4 closed. Phase 5 (governance history, waiver support, full reporting) tracked in 2026-06-13-sgp-p5."
+    }
+  ],
+  "updated_at": "2026-06-13T22:33:00Z"
+}

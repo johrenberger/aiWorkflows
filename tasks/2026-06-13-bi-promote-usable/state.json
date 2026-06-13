@@ -1,0 +1,42 @@
+{
+  "task_id": "2026-06-13-bi-promote-usable",
+  "current_state": "closed",
+  "updated_at": "2026-06-13T22:50:00Z",
+  "history": [
+    {
+      "from": "ready",
+      "to": "in_progress",
+      "by": "software-engineer",
+      "at": "2026-06-13T22:40:00Z",
+      "reason": "Promote backend-implementation from 'draft' to 'usable' based on 3 use-case exercises (UC2, UC3, UC4) on the spring-petclinic-rest fork."
+    },
+    {
+      "from": "in_progress",
+      "to": "implementation_done",
+      "by": "software-engineer",
+      "at": "2026-06-13T22:42:00Z",
+      "reason": "Calibration reproducer passes (3/3 use cases). PR #45 opened. Handoff packet saved."
+    },
+    {
+      "from": "implementation_done",
+      "to": "review_done",
+      "by": "software-engineer",
+      "at": "2026-06-13T22:44:00Z",
+      "reason": "Code-change-review: the promotion is a 1-line README change, the substantive work is the calibration report. No code review findings."
+    },
+    {
+      "from": "review_done",
+      "to": "testing_done",
+      "by": "software-engineer",
+      "at": "2026-06-13T22:45:00Z",
+      "reason": "Reproducer re-run; task-state linter validates state machine transitions."
+    },
+    {
+      "from": "testing_done",
+      "to": "closed",
+      "by": "software-engineer",
+      "at": "2026-06-13T22:50:00Z",
+      "reason": "PR #45 merged into test-repo main. backend-implementation is now 'usable'."
+    }
+  ]
+}

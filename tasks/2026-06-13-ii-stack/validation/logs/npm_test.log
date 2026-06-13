@@ -1,0 +1,139 @@
+
+> petclinic-proxy@0.1.0 test
+> jest --runInBand
+
+PASS tests/uc2.test.js
+  ● Console
+
+    console.log
+      {"ts":"2026-06-13T21:11:39.157Z","level":"info","event":"downstream.ok","correlationId":"a1ff54d0-62d5-4785-ba0d-872719178949","status":201,"attempt":1,"latencyMs":21}
+
+      at log (src/server.js:46:13)
+
+    console.log
+      {"ts":"2026-06-13T21:11:39.191Z","level":"info","event":"downstream.ok","correlationId":"test-cid-1781385099181","status":201,"attempt":1,"latencyMs":9}
+
+      at log (src/server.js:46:13)
+
+    console.log
+      {"ts":"2026-06-13T21:11:39.203Z","level":"info","event":"downstream.ok","correlationId":"dee04ad6-b5c4-4ca6-9ac0-6cf629e81595","status":201,"attempt":1,"latencyMs":8}
+
+      at log (src/server.js:46:13)
+
+    console.log
+      {"ts":"2026-06-13T21:11:39.215Z","level":"info","event":"downstream.ok","correlationId":"17882cd7-0a42-438e-8041-2263744ab399","status":201,"attempt":1,"latencyMs":9}
+
+      at log (src/server.js:46:13)
+
+    console.log
+      {"ts":"2026-06-13T21:11:39.220Z","level":"warn","event":"downstream.err","correlationId":"cid-1","status":503,"attempt":1,"latencyMs":0}
+
+      at log (src/server.js:46:13)
+
+    console.log
+      {"ts":"2026-06-13T21:11:39.322Z","level":"warn","event":"downstream.err","correlationId":"cid-1","status":503,"attempt":2,"latencyMs":0}
+
+      at log (src/server.js:46:13)
+
+    console.log
+      {"ts":"2026-06-13T21:11:39.523Z","level":"info","event":"downstream.ok","correlationId":"cid-1","status":201,"attempt":3,"latencyMs":0}
+
+      at log (src/server.js:46:13)
+
+    console.log
+      {"ts":"2026-06-13T21:11:39.524Z","level":"warn","event":"downstream.err","correlationId":"cid-2","status":400,"attempt":1,"latencyMs":0}
+
+      at log (src/server.js:46:13)
+
+    console.log
+      {"ts":"2026-06-13T21:11:39.530Z","level":"warn","event":"downstream.err","correlationId":"cid-3","status":503,"attempt":1,"latencyMs":0}
+
+      at log (src/server.js:46:13)
+
+    console.log
+      {"ts":"2026-06-13T21:11:39.631Z","level":"warn","event":"downstream.err","correlationId":"cid-3","status":503,"attempt":2,"latencyMs":0}
+
+      at log (src/server.js:46:13)
+
+    console.log
+      {"ts":"2026-06-13T21:11:39.832Z","level":"warn","event":"downstream.err","correlationId":"cid-3","status":503,"attempt":3,"latencyMs":0}
+
+      at log (src/server.js:46:13)
+
+PASS tests/uc3.test.js
+  ● Console
+
+    console.log
+      {"ts":"2026-06-13T21:11:39.919Z","level":"info","event":"downstream.ok","correlationId":"6f9d6769-9b55-4fe2-86f4-da89fd6a0d3f","status":200,"attempt":1,"latencyMs":11}
+
+      at log (src/server.js:46:13)
+
+    console.log
+      {"ts":"2026-06-13T21:11:39.936Z","level":"info","event":"downstream.ok","correlationId":"42f160d4-4bf2-4e14-bedc-933a19344a96","status":200,"attempt":1,"latencyMs":10}
+
+      at log (src/server.js:46:13)
+
+    console.log
+      {"ts":"2026-06-13T21:11:39.948Z","level":"info","event":"downstream.ok","correlationId":"4899c661-7d24-402d-bf2c-d2bf79049f87","status":200,"attempt":1,"latencyMs":8}
+
+      at log (src/server.js:46:13)
+
+    console.log
+      {"ts":"2026-06-13T21:11:39.960Z","level":"info","event":"downstream.ok","correlationId":"e933dfda-d18b-4b77-9506-cc0578c1a3e1","status":200,"attempt":1,"latencyMs":8}
+
+      at log (src/server.js:46:13)
+
+    console.log
+      {"ts":"2026-06-13T21:11:39.974Z","level":"info","event":"downstream.ok","correlationId":"f4efa8f3-602f-488a-88d0-eee8e79a50d2","status":200,"attempt":1,"latencyMs":9}
+
+      at log (src/server.js:46:13)
+
+    console.log
+      {"ts":"2026-06-13T21:11:39.993Z","level":"info","event":"downstream.ok","correlationId":"0447d0b4-ecad-4515-b263-4db2334ed7f9","status":200,"attempt":1,"latencyMs":11}
+
+      at log (src/server.js:46:13)
+
+    console.log
+      {"ts":"2026-06-13T21:11:40.005Z","level":"info","event":"downstream.ok","correlationId":"160e2d2f-c039-458f-ae38-e8d85910f178","status":201,"attempt":1,"latencyMs":7}
+
+      at log (src/server.js:46:13)
+
+    console.log
+      {"ts":"2026-06-13T21:11:40.016Z","level":"info","event":"downstream.ok","correlationId":"e6b9006a-fe9f-4120-a14b-865dea34d34e","status":200,"attempt":1,"latencyMs":9}
+
+      at log (src/server.js:46:13)
+
+    console.log
+      {"ts":"2026-06-13T21:11:40.034Z","level":"info","event":"downstream.ok","correlationId":"06d35146-6ffa-4214-818b-b1cc5a8f9b9c","status":200,"attempt":1,"latencyMs":9}
+
+      at log (src/server.js:46:13)
+
+PASS tests/uc1.test.js
+  ● Console
+
+    console.log
+      {"ts":"2026-06-13T21:11:40.119Z","level":"info","event":"downstream.ok","correlationId":"21a22cc3-c824-41e2-8cde-1c705d1f4a41","status":200,"attempt":1,"latencyMs":8}
+
+      at log (src/server.js:46:13)
+
+    console.log
+      {"ts":"2026-06-13T21:11:40.130Z","level":"info","event":"downstream.ok","correlationId":"d67fbdab-2001-4998-aea7-2f3381bc5be7","status":200,"attempt":1,"latencyMs":7}
+
+      at log (src/server.js:46:13)
+
+    console.log
+      {"ts":"2026-06-13T21:11:40.139Z","level":"info","event":"downstream.ok","correlationId":"dafb7454-a42e-4b87-a1a3-fcc9863e0cae","status":200,"attempt":1,"latencyMs":6}
+
+      at log (src/server.js:46:13)
+
+    console.log
+      {"ts":"2026-06-13T21:11:40.148Z","level":"info","event":"downstream.ok","correlationId":"58fcc71a-d853-4acb-879c-bd46292c53d2","status":200,"attempt":1,"latencyMs":6}
+
+      at log (src/server.js:46:13)
+
+
+Test Suites: 3 passed, 3 total
+Tests:       31 passed, 31 total
+Snapshots:   0 total
+Time:        1.445 s, estimated 2 s
+Ran all test suites.

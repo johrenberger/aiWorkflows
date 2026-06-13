@@ -1,0 +1,16 @@
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.pytest_cache/
+build/
+dist/
+output/*.json
+output/*.jsonl
+output/*.md
+output/proposed_rewrites/
+!output/.gitkeep
+!output/executive_report.md
+!output/technical_report.md
+!output/remediation_backlog.md
+!output/governance_history.jsonl

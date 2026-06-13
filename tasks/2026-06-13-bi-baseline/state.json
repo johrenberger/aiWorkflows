@@ -1,0 +1,23 @@
+{
+  "task_id": "2026-06-13-bi-baseline",
+  "owner": "software-engineer",
+  "current_state": "implementation_done",
+  "created_at": "2026-06-13T21:17:00Z",
+  "updated_at": "2026-06-13T19:24:00Z",
+  "history": [
+    {
+      "from": "ready",
+      "to": "in_progress",
+      "by": "software-engineer",
+      "at": "2026-06-13T21:17:00Z",
+      "reason": "Starting baseline exercise: use case #1 (GET /api/pets/{petId}/visits with date filtering) WITHOUT the backend-implementation skill. Will record metrics for later comparison with a with-skill attempt."
+    },
+    {
+      "from": "in_progress",
+      "to": "implementation_done",
+      "by": "software-engineer",
+      "at": "2026-06-13T19:24:00Z",
+      "reason": "Baseline complete. Use case #1 implemented WITHOUT the backend-implementation skill. 5 min 36 sec, 210 lines, 2/2 new tests pass, 237/237 prior tests still pass (239/239 total). Metrics recorded in metrics.md."
+    }
+  ]
+}

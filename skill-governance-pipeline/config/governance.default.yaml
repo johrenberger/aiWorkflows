@@ -1,0 +1,47 @@
+# Default governance configuration.
+# Override any of these in a custom YAML and pass via
+# `--config path/to/custom.yaml`.
+
+skill_directories:
+  - ./skills
+  - ../test-repo/skills
+
+agent_directories:
+  - ./agents
+  - ../test-repo/.openclaw
+
+output_directory: ./output
+
+token_thresholds:
+  high_cost: 8000
+
+overlap_thresholds:
+  blocking: 85
+  warning: 70
+
+roi_thresholds:
+  keep_min: 70
+  rewrite_min: 50
+  deprecate_max: 30
+
+benchmark_thresholds:
+  default_minimum: 0.7
+
+ci_blocking_rules:
+  - missing_required_metadata
+  - missing_input_output_contracts
+  - missing_dependency
+  - circular_dependency
+  - benchmark_failure
+  - high_overlap_duplicate
+  - critical_low_roi
+  - invalid_proposed_new_skill
+  - malformed_configuration
+
+minimax_semantic_scoring_enabled: true
+
+waiver_file: ./config/waivers.yaml
+
+runtime_log_paths:
+  - ./logs/skill-invocations.jsonl
+  - ~/.openclaw/logs/skill-invocations.jsonl
