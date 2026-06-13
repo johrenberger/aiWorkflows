@@ -111,13 +111,36 @@ class JavaJUnitAdapter(BaseAdapter):
             r"<argLine>\s*\$\{[^}]+\}\s*</argLine>",
             re.MULTILINE,
         )
+        # Story 021: also annotate findings with the profile id when the
+        # static argLine lives inside a `<profile>`. Without this, the
+        # user fixes the non-profile surefire config and wonders why
+        # the warning persists.
+        profile_id_re = re.compile(
+            r"<profile>\s*<id>([^<]+)</id>",
+            re.MULTILINE,
+        )
         for pom in repo_path.rglob("pom.xml"):
             try:
                 text = pom.read_text(encoding="utf-8", errors="replace")
             except OSError:
                 continue
             for match in static_argline_re.finditer(text):
-                findings.append({
+                # Find the enclosing profile (if any). The match is
+                # inside the pom text; we look at the text BEFORE the
+                # match and find the most recent `<profile><id>...</id>`
+                # open tag whose `<profile>` has not yet been closed.
+                preceding = text[: match.start()]
+                enclosing_profile: str | None = None
+                for prof_match in profile_id_re.finditer(preceding):
+                    open_pos = preceding.rfind("<profile>", 0, prof_match.end())
+                    if open_pos < 0:
+                        continue
+                    close_pos = preceding.find("</profile>", prof_match.end())
+                    if close_pos != -1 and close_pos > open_pos:
+                        # Already closed before the match.
+                        continue
+                    enclosing_profile = prof_match.group(1).strip()
+                finding: dict[str, str] = {
                     "kind": "static_surefire_argline_blocks_jacoco",
                     "pom_path": str(pom.relative_to(repo_path)),
                     "match": match.group(0),
@@ -130,7 +153,10 @@ class JavaJUnitAdapter(BaseAdapter):
                         "Without this change, mvn test jacoco:report exits 0 but "
                         "produces no coverage report."
                     ),
-                })
+                }
+                if enclosing_profile is not None:
+                    finding["profile"] = enclosing_profile
+                findings.append(finding)
         return findings
 
     def parse_coverage(self, report_paths: Sequence[str | Path]) -> list[CoverageRecord]:
