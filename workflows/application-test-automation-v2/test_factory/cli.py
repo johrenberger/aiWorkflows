@@ -3,11 +3,64 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import sys
 from dataclasses import asdict
 from pathlib import Path
 
 from .logging_config import configure_logging
 from .orchestrator import TestFactoryOrchestrator
+
+# Story 023: sentinel value for --module/--scope that means
+# "no module filter" (ingest the whole repo). For filter-style
+# subcommands (scan, coverage, score, queue, workitems, report,
+# run, pr-summary) this is equivalent to omitting --module
+# entirely. For target-style subcommands (branch, commit) the
+# sentinel is rejected because "auto" is not a valid module name.
+MODULE_AUTO = "auto"
+
+# Subcommands that take --module/--scope as a *filter* (None
+# means "no filter"). Other subcommands take --module as a
+# *target* (a concrete module name is required) and reject the
+# sentinel.
+_FILTER_STYLE_SUBCOMMANDS = frozenset({
+    "scan", "coverage", "score", "queue", "workitems",
+    "report", "run", "pr-summary",
+})
+
+_TARGET_STYLE_SUBCOMMANDS = frozenset({"branch", "commit"})
+
+
+def _resolve_module_arg(value: str | None) -> str | None:
+    """Map a `--module`/`--scope` value to the orchestrator's
+    expected form. The MODULE_AUTO sentinel becomes None (no
+    filter); other values pass through unchanged.
+    """
+    if value is None:
+        return None
+    if value == MODULE_AUTO:
+        return None
+    return value
+
+
+def _filter_module_arg(args: argparse.Namespace) -> str | None:
+    """Combine `--module` and `--scope` for filter-style
+    subcommands. Either may carry the MODULE_AUTO sentinel;
+    the first non-sentinel value wins (and "auto" means None).
+    """
+    return _resolve_module_arg(args.module) or _resolve_module_arg(args.scope)
+
+
+def _reject_auto_for_target(args: argparse.Namespace) -> None:
+    """For subcommands that take `--module` as a target (branch,
+    commit), reject the MODULE_AUTO sentinel with a clear error.
+    """
+    if args.module == MODULE_AUTO or args.scope == MODULE_AUTO:
+        print(
+            f"error: --module {MODULE_AUTO!r} is not valid for the "
+            f"{args.command!r} subcommand. Specify a concrete module name.",
+            file=sys.stderr,
+        )
+        raise SystemExit(2)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -20,8 +73,13 @@ def build_parser() -> argparse.ArgumentParser:
         sub.add_argument("--out", default="analysis-artifacts")
         sub.add_argument("--limit", type=int, default=None)
         sub.add_argument("--work-item-id", default=None)
-        sub.add_argument("--module", default=None)
-        sub.add_argument("--scope", default=None)
+        sub.add_argument("--module", default=None,
+                         help=("Maven module name to filter by (or '" + MODULE_AUTO +
+                               "' for no filter on filter-style subcommands). "
+                               "For branch/commit, must be a concrete module name."))
+        sub.add_argument("--scope", default=None,
+                         help=("Alias for --module (e.g. '" + MODULE_AUTO +
+                               "' for no filter). Kept for backward compat."))
         sub.add_argument("--zero-coverage-only", action="store_true",
                          help="Story 024: when set, restrict queue/workitems/run output to "
                               "files with zero test coverage (line_coverage==0.0 and "
@@ -64,16 +122,21 @@ def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     orchestrator = TestFactoryOrchestrator(args.repo, args.out, config_path=args.config)
     try:
+        if args.command in _TARGET_STYLE_SUBCOMMANDS:
+            _reject_auto_for_target(args)
+        # Filter-style subcommands: pass the resolved (None for
+        # "auto") module value to the orchestrator.
+        module = _filter_module_arg(args) if args.command in _FILTER_STYLE_SUBCOMMANDS else None
         if args.command == "scan":
-            result = orchestrator.scan(module=args.module or args.scope)
+            result = orchestrator.scan(module=module)
         elif args.command == "coverage":
-            result = [asdict(record) for record in orchestrator.coverage(module=args.module or args.scope)]
+            result = [asdict(record) for record in orchestrator.coverage(module=module)]
         elif args.command == "score":
-            result = [asdict(record) for record in orchestrator.score(module=args.module or args.scope)]
+            result = [asdict(record) for record in orchestrator.score(module=module)]
         elif args.command == "queue":
-            result = orchestrator.queue(module=args.module or args.scope, zero_coverage_only=args.zero_coverage_only)
+            result = orchestrator.queue(module=module, zero_coverage_only=args.zero_coverage_only)
         elif args.command == "workitems":
-            result = [asdict(record) for record in orchestrator.workitems(limit=args.limit, module=args.module or args.scope, zero_coverage_only=args.zero_coverage_only)]
+            result = [asdict(record) for record in orchestrator.workitems(limit=args.limit, module=module, zero_coverage_only=args.zero_coverage_only)]
         elif args.command == "validate":
             if not args.work_item_id:
                 raise SystemExit("--work-item-id is required for validate")
@@ -81,7 +144,7 @@ def main(argv: list[str] | None = None) -> int:
         elif args.command == "mutate":
             result = orchestrator.mutate(enabled=args.mutation, high_risk_only=args.mutation_high_risk_only or None)
         elif args.command == "report":
-            result = orchestrator.report(module=args.module or args.scope)
+            result = orchestrator.report(module=module)
         elif args.command == "run":
             # Story 020: coverage generation is ON by default. The CLI flag
             # is `--no-generate-coverage` (opt-out), not `--generate-coverage`
@@ -94,7 +157,7 @@ def main(argv: list[str] | None = None) -> int:
                 limit=args.limit,
                 mutation=args.mutation,
                 mutation_high_risk_only=args.mutation_high_risk_only or None,
-                module=args.module or args.scope,
+                module=module,
                 generate_coverage=generate_coverage,
                 adapter_name=args.adapter,
                 zero_coverage_only=args.zero_coverage_only,
@@ -104,7 +167,7 @@ def main(argv: list[str] | None = None) -> int:
         elif args.command == "commit":
             result = orchestrator.commit(args.module or "root", allow_dirty=args.allow_dirty)
         elif args.command == "pr-summary":
-            result = orchestrator.pr_summary(module=args.module or args.scope)
+            result = orchestrator.pr_summary(module=module)
         else:
             result = {}
         if isinstance(result, str):
