@@ -6,7 +6,7 @@ import shutil
 import subprocess
 from dataclasses import asdict
 from pathlib import Path
-from typing import Any
+from typing import Any, TypedDict
 
 from .adapters.java_junit import JavaJUnitAdapter
 from .adapters.js_jest_vitest import JsJestVitestAdapter
@@ -169,6 +169,69 @@ def _parse_mutation_score(stdout: str, stderr: str) -> float | None:
         if match:
             return float(match.group(1))
     return None
+
+
+# ---------------------------------------------------------------------------
+# Story 032: TypedDict contracts for orchestrator return values
+# ---------------------------------------------------------------------------
+# These TypedDicts document the shape of the dicts the orchestrator
+# returns. They are NOT a migration to dataclasses — at runtime, the
+# methods still return `dict` instances, and `isinstance(result, dict)`
+# is still True. The TypedDicts exist for:
+#   1. IDE/mypy autocomplete on `result["foo"]` access
+#   2. Documentation in code (no need to read the implementation
+#      to know what fields are available)
+#   3. Field-set verification in tests (see test_032)
+#
+# Stories 020-031 added fields to these results over time. The TypedDict
+# is the durable record of "what's in the result" at the time of story 032.
+# Subsequent stories that add fields should update the TypedDict here.
+
+class CoverageGenerateResult(TypedDict, total=False):
+    """Return type of `coverage_generate()`.
+
+    The `total=False` means all fields are optional in the type
+    sense (a given result may or may not have each one), but in
+    practice after story 029 the three `coverage_out_*` fields are
+    ALWAYS set (story 029 contract flatten). The `total=False` is
+    used so that the type checker accepts the various early-return
+    paths (e.g. `status="skipped"` doesn't set `coverage_out_dir`).
+    """
+    status: str  # "completed" | "timeout" | "missing_binary" | "skipped" | "no_report_written"
+    command: str | None  # rendered command line
+    exit_code: int | None  # subprocess return code
+    stdout: str
+    stderr: str
+    timeout_seconds: int
+    preflight_findings: list[dict[str, str]]
+    new_reports: list[str]  # post-run mtime-detected reports
+    warning: str | None  # set when status="no_report_written"
+    reason: str | None  # set when status="skipped"
+    # Story 029: these three are always present (None / [] / None when not requested)
+    coverage_out_dir: str | None
+    coverage_out_copied: list[str]
+    coverage_out_error: str | None
+
+
+class CoverageGenerateOutput(TypedDict, total=False):
+    """Outer wrapper of `coverage_generate()`'s return value.
+
+    The orchestrator wraps the CoverageGenerateResult under a
+    "generation" key and adds the parsed records under "records".
+    The outer shape is: `{"generation": CoverageGenerateResult,
+    "records": list[dict]}`.
+    """
+    generation: CoverageGenerateResult
+    records: list[dict[str, Any]]
+
+
+class RunResult(TypedDict, total=False):
+    """Return type of `run()`."""
+    status: str  # always "ok" in the current implementation
+    module_scope: str
+    coverage_generation: CoverageGenerateOutput | None
+    # Story 029: top-level coverage_out_dir matches coverage_generation
+    coverage_out_dir: str | None
 
 
 class TestFactoryOrchestrator:
@@ -405,7 +468,7 @@ class TestFactoryOrchestrator:
         _dump_json(self.artifacts / "coverage_deltas" / "baseline.json", [asdict(record) for record in coverage])
         return coverage
 
-    def coverage_generate(self, module: str | None = None, adapter_name: str | None = None, coverage_out_dir: str | Path | None = None) -> dict[str, Any]:
+    def coverage_generate(self, module: str | None = None, adapter_name: str | None = None, coverage_out_dir: str | Path | None = None) -> CoverageGenerateOutput:
         """Run the primary adapter's `discover_coverage_command` to actually
         *generate* a coverage report on disk, then return the parsed records.
 
@@ -1016,7 +1079,7 @@ class TestFactoryOrchestrator:
         zero_coverage_only: bool = False,
         unmeasurable_only: bool = False,
         coverage_out_dir: str | Path | None = None,
-    ) -> dict[str, Any]:
+    ) -> RunResult:
         self.scan(module=module)
         # Story 020: coverage generation is now ON by default. The CLI surfaces
         # this as `--no-generate-coverage` (opt-out) since `--generate-coverage`
