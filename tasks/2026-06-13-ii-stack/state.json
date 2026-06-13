@@ -1,0 +1,42 @@
+{
+  "task_id": "2026-06-13-ii-stack",
+  "current_state": "closed",
+  "updated_at": "2026-06-13T21:15:00Z",
+  "history": [
+    {
+      "from": "ready",
+      "to": "in_progress",
+      "by": "software-engineer",
+      "at": "2026-06-13T21:05:00Z",
+      "reason": "Calibration exercise: integration-implementation skill against a Node/Express proxy that calls johrenberger/spring-petclinic-rest as downstream. UC1: GET /proxy/pets/:id/visits with date filtering."
+    },
+    {
+      "from": "in_progress",
+      "to": "implementation_done",
+      "by": "software-engineer",
+      "at": "2026-06-13T21:10:00Z",
+      "reason": "UC1 (no skill baseline) and UC2 (with integration-implementation skill) complete. 22/22 tests pass, npm_test validation passed. Implementation report + handoff packet produced."
+    },
+    {
+      "from": "implementation_done",
+      "to": "review_done",
+      "by": "software-engineer",
+      "at": "2026-06-13T21:13:00Z",
+      "reason": "Implementation report and handoff packet produced; calibration reproducer passes (24/24 checks)."
+    },
+    {
+      "from": "review_done",
+      "to": "testing_done",
+      "by": "software-engineer",
+      "at": "2026-06-13T21:14:00Z",
+      "reason": "Reproducer re-run; all 31/31 tests pass; validation log captured."
+    },
+    {
+      "from": "testing_done",
+      "to": "closed",
+      "by": "software-engineer",
+      "at": "2026-06-13T21:15:00Z",
+      "reason": "PR #46 merged into test-repo main. integration-implementation is now 'usable'."
+    }
+  ]
+}

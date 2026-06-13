@@ -1,0 +1,22 @@
+{
+  "name": "petclinic-proxy",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Node/Express proxy for PetClinic-REST, exercising integration-implementation skill",
+  "type": "commonjs",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "jest --runInBand"
+  },
+  "dependencies": {
+    "axios": "^1.7.9",
+    "express": "^4.21.2"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "supertest": "^7.0.0"
+  }
+}
