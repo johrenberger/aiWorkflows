@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import xml.etree.ElementTree as ET
+from dataclasses import replace
 from pathlib import Path
 
 from ..models import CoverageRecord
@@ -9,6 +10,107 @@ from ..models import CoverageRecord
 
 def _pct(covered: int, total: int) -> float:
     return round((covered / total) * 100, 2) if total else 0.0
+
+
+# Layouts tried in order when resolving a JaCoCo record to an
+# inventory path. The first candidate that exists on disk is used.
+# Story 022: kept conservative (java + kotlin); Groovy/Scala could
+# be added when we have a Gradle target repo to test against.
+_JACOCO_LAYOUTS: tuple[str, ...] = (
+    "src/main/java",
+    "src/main/kotlin",
+    "src/main/groovy",
+    "src/main/scala",
+)
+
+
+def _find_module_roots(repo_root: Path) -> list[Path]:
+    """Return the set of directories under `repo_root` that contain
+    a `pom.xml` (Maven) or `build.gradle*` (Gradle). Each is a
+    candidate module root for path resolution. The result is
+    de-duplicated (a sub-module with its own pom under a parent
+    pom appears once).
+
+    Story 022: this is the set of `<module>` prefixes the resolver
+    will try. v2's inventory `module` field is the *java package*
+    (used for module-scope filtering), not the Maven module name;
+    the only reliable way to find Maven module roots is to look
+    for poms/build files on disk.
+    """
+    if not repo_root.is_dir():
+        return []
+    roots: set[Path] = set()
+    for build_file_glob in ("pom.xml", "build.gradle", "build.gradle.kts"):
+        for build_file in repo_root.rglob(build_file_glob):
+            # Skip anything inside a `target/` (build output) or `node_modules/`.
+            parts = build_file.parts
+            if any(p in {"target", "node_modules", ".gradle", "build"} for p in parts):
+                continue
+            roots.add(build_file.parent)
+    return sorted(roots)
+
+
+def _resolve_jacoco_path(
+    record_path: str,
+    repo_root: Path,
+    module_roots: list[Path],
+) -> str | None:
+    """Map a JaCoCo record's `path` (dot-package-slash form) to a
+    v2 inventory path (Maven module-relative form), or return None
+    if no candidate resolves to a file on disk.
+
+    JaCoCo's record paths look like
+    `org/broadleafcommerce/common/i18n/domain/TranslationImpl.java`.
+    v2's inventory paths look like
+    `common/src/main/java/org/broadleafcommerce/common/i18n/domain/TranslationImpl.java`.
+
+    Strategy: try every combination of (module_root, layout,
+    record_path). The first combo whose
+    `<repo>/<module_root>/<layout>/<record_path>` exists on disk
+    wins.
+    """
+    for module_root in module_roots:
+        for layout in _JACOCO_LAYOUTS:
+            candidate = module_root / layout / record_path
+            if candidate.is_file():
+                return candidate.relative_to(repo_root).as_posix()
+    # Fallback: try `<repo>/<layout>/<record_path>` (no module
+    # prefix). This handles single-module repos where the source
+    # tree is at the repo root and there is no enclosing module
+    # directory.
+    for layout in _JACOCO_LAYOUTS:
+        candidate = repo_root / layout / record_path
+        if candidate.is_file():
+            return candidate.relative_to(repo_root).as_posix()
+    return None
+
+
+def resolve_jacoco_paths(
+    coverage_records: list[CoverageRecord],
+    repo_root: str | Path,
+    inventory: list[dict] | None = None,
+) -> list[CoverageRecord]:
+    """Rewrite each `CoverageRecord.path` from JaCoCo's
+    dot-package-slash form to v2's inventory path form (if
+    resolvable). Records that cannot be resolved to an inventory
+    path are returned unchanged — the score step treats them as
+    "no coverage data", which the v2 risk formula already
+    handles as a full gap.
+
+    The `inventory` argument is currently unused (kept for
+    API stability; the resolver derives module roots from the
+    repo's on-disk `pom.xml` / `build.gradle` files instead).
+    """
+    repo = Path(repo_root)
+    module_roots = _find_module_roots(repo)
+    resolved: list[CoverageRecord] = []
+    for rec in coverage_records:
+        new_path = _resolve_jacoco_path(rec.path, repo, module_roots)
+        if new_path is None:
+            resolved.append(rec)
+        else:
+            resolved.append(replace(rec, path=new_path))
+    return resolved
 
 
 def parse_jacoco_xml(report_path: str | Path) -> list[CoverageRecord]:
