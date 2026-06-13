@@ -146,3 +146,58 @@ def test_given_too_many_targets_when_policy_checked_then_execution_blocked(tmp_p
     )
     assert decision.allowed is False
     assert "selected target count exceeds the safety cap" in decision.reasons
+
+
+# --------------------------------------------------------------------------
+# Story 030: clarify the chained command + test-classpath assumption
+# --------------------------------------------------------------------------
+
+
+def test_given_real_pit_when_command_built_then_command_does_not_chain_process_test_resources_explicitly(
+    tmp_path: Path,
+) -> None:
+    """Story 030: the policy's Maven command should NOT explicitly
+    chain process-test-resources. Maven's lifecycle runs it as part
+    of test-compile. This test documents the intent and prevents a
+    well-meaning future contributor from "fixing" it by adding
+    the explicit phase.
+    """
+    policy = RealToolPolicy(allow_real_tools=True, allow_pit=True)
+    decision = evaluate_real_pit_policy(
+        policy, tmp_path, [_java_target()], executable_found=True, dirty=False
+    )
+    assert decision.allowed is True
+    cmd_str = " ".join(decision.command)
+    # The command should contain test-compile (the chained phase) but
+    # NOT process-test-resources (it's included implicitly in
+    # Maven's lifecycle, not chained explicitly).
+    assert "test-compile" in cmd_str
+    assert "process-test-resources" not in cmd_str, (
+        "process-test-resources is part of Maven's lifecycle and runs "
+        "automatically before test-compile. Don't chain it explicitly."
+    )
+
+
+def test_given_real_pit_when_decision_built_then_decision_documents_test_classpath_assumption(
+    tmp_path: Path,
+) -> None:
+    """Story 030: the decision's reasons list should include a
+    note about test classpath / resources. This makes the policy
+    self-documenting for downstream consumers and prevents the
+    "but I need process-test-resources" question from being
+    re-asked every release.
+    """
+    policy = RealToolPolicy(allow_real_tools=True, allow_pit=True)
+    decision = evaluate_real_pit_policy(
+        policy, tmp_path, [_java_target()], executable_found=True, dirty=False
+    )
+    assert decision.allowed is True
+    reasons_text = " ".join(decision.reasons)
+    assert "process-test-resources" in reasons_text, (
+        "Decision reasons should explain that process-test-resources "
+        "is included implicitly in test-compile (Maven lifecycle)."
+    )
+    assert "test classpath" in reasons_text.lower() or "test resources" in reasons_text.lower(), (
+        "Decision reasons should mention test classpath or test "
+        "resources so consumers know what assumption is being made."
+    )
