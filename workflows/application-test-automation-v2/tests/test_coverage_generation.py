@@ -322,24 +322,36 @@ def _copy_fixture_repo(tmp_path: Path) -> Path:
     return repo
 
 
-def test_coverage_generate_is_off_by_default_in_run(tmp_path):
-    """Regression for PR #23: by default, `run()` should not invoke
-    `discover_coverage_command`. The previous behavior was that the
-    coverage() step only *reads* existing reports; the user had to
-    manually run `coverage run -m pytest && coverage json` before
-    `test-factory run`. We preserve that behavior by default; the new
-    opt-in `generate_coverage=True` flag triggers the generation step.
+def test_coverage_generate_is_on_by_default_in_run_story020(tmp_path):
+    """Story 020: `run()` now invokes `discover_coverage_command` by
+    default. The PR #23 contract was "off by default, opt-in via
+    generate_coverage=True"; story 020 flips that to "on by default,
+    opt-out via generate_coverage=False". This test pins the new
+    default. The explicit opt-in path is covered by
+    `test_coverage_generate_runs_adapter_command_when_enabled`
+    below (which passes generate_coverage=True); the explicit opt-out
+    path is covered by `test_no_generate_coverage_flag_skips_generation`
+    in `test_020_v2_default_generate_coverage.py`.
     """
     repo = _copy_fixture_repo(tmp_path)
     out_dir = tmp_path / "analysis-artifacts"
     orchestrator = TestFactoryOrchestrator(repo, out_dir)
     try:
         result = orchestrator.run(limit=2, module="package")
-        # generate_coverage not requested, so coverage_generation is None
-        assert result["coverage_generation"] is None
-        # The coverage_runs/ artifact dir should NOT have been created
-        # (orchestrator.coverage_generate was not called).
-        assert not (out_dir / "coverage_runs").exists()
+        # Story 020: coverage_generation is now a real dict by default,
+        # not None. Status may be 'ok', 'no_report_written', 'error', or
+        # 'skipped' — any of those means generation was ATTEMPTED.
+        # Shape: {"generation": {"status": ..., ...}, "records": [...]}
+        assert result["coverage_generation"] is not None, (
+            "Story 020 default is ON: coverage_generation must be a dict, not None"
+        )
+        gen_inner = result["coverage_generation"].get("generation", result["coverage_generation"])
+        assert gen_inner.get("status") in {
+            "ok", "no_report_written", "error", "failed", "skipped"
+        }, f"unexpected coverage_generation status: {result['coverage_generation']!r}"
+        # The coverage_runs/ artifact dir SHOULD now exist (orchestrator
+        # called coverage_generate).
+        assert (out_dir / "coverage_runs").exists()
     finally:
         orchestrator.close()
 

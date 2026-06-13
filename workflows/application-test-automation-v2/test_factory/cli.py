@@ -25,10 +25,23 @@ def build_parser() -> argparse.ArgumentParser:
         sub.add_argument("--allow-dirty", action="store_true")
         sub.add_argument("--mutation", action="store_true")
         sub.add_argument("--mutation-high-risk-only", action="store_true")
-        sub.add_argument("--generate-coverage", action="store_true",
-                         help="(run only) Run the primary adapter's discover_coverage_command to "
-                              "actually produce a coverage report before parsing. Off by default. "
+        # Story 020: coverage generation is now ON by default for `test-factory run`.
+        # `--generate-coverage` is kept for explicit-opt-in (backward compat with
+        # scripts/CI that pass it). `--no-generate-coverage` is the new opt-out.
+        # The two are mutually exclusive — the `add_mutually_exclusive_group()`
+        # below makes argparse reject both. Generation mutates the target repo
+        # (writes coverage.json/xml) and adds 5-30 min per run, so the opt-out
+        # exists for fast / read-only smoke runs.
+        gen = sub.add_mutually_exclusive_group()
+        gen.add_argument("--generate-coverage", action="store_true",
+                         help="(run only) Force-enable coverage generation (the default "
+                              "since story 020). Kept for explicit-opt-in in CI scripts. "
                               "Mutates the target repo (writes coverage.json/xml).")
+        gen.add_argument("--no-generate-coverage", action="store_true",
+                         help="(run only) Skip coverage generation even though it's on by "
+                              "default. Use for fast / read-only smoke runs. The resulting "
+                              "risk_scores.json will have line_coverage=0.0 everywhere "
+                              "(see story 019 for that fall-back's downstream effect).")
         sub.add_argument("--adapter", default=None,
                          choices=("python_pytest", "java_junit", "js_jest_vitest"),
                          help="Force a specific adapter for coverage_generation. "
@@ -65,12 +78,19 @@ def main(argv: list[str] | None = None) -> int:
         elif args.command == "report":
             result = orchestrator.report(module=args.module or args.scope)
         elif args.command == "run":
+            # Story 020: coverage generation is ON by default. The CLI flag
+            # is `--no-generate-coverage` (opt-out), not `--generate-coverage`
+            # (opt-in). `--generate-coverage` is still accepted for explicit
+            # opt-in (backward compat). argparse already rejected the case
+            # where both are set, so we just compute the effective value:
+            # generate iff not (no_generate_coverage is True).
+            generate_coverage = not args.no_generate_coverage
             result = orchestrator.run(
                 limit=args.limit,
                 mutation=args.mutation,
                 mutation_high_risk_only=args.mutation_high_risk_only or None,
                 module=args.module or args.scope,
-                generate_coverage=args.generate_coverage,
+                generate_coverage=generate_coverage,
                 adapter_name=args.adapter,
             )
         elif args.command == "branch":
