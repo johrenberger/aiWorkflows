@@ -1,7 +1,7 @@
 {
   "task_id": "2026-06-13-bi-promote-usable",
-  "current_state": "testing_done",
-  "updated_at": "2026-06-13T22:45:00Z",
+  "current_state": "closed",
+  "updated_at": "2026-06-13T22:50:00Z",
   "history": [
     {
       "from": "ready",
@@ -30,6 +30,13 @@
       "by": "software-engineer",
       "at": "2026-06-13T22:45:00Z",
       "reason": "Reproducer re-run; task-state linter validates state machine transitions."
+    },
+    {
+      "from": "testing_done",
+      "to": "closed",
+      "by": "software-engineer",
+      "at": "2026-06-13T22:50:00Z",
+      "reason": "PR #45 merged into test-repo main. backend-implementation is now 'usable'."
     }
   ]
 }
