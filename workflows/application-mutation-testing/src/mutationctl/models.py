@@ -573,6 +573,7 @@ class EndToEndSyntheticResult:
 class RealToolPolicy:
     allow_real_tools: bool = False
     allow_mutmut: bool = False
+    allow_pit: bool = False
     allow_dependency_install: bool = False
     allow_network: bool = False
     require_clean_tree: bool = True
