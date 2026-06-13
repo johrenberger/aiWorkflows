@@ -6,7 +6,7 @@ import shutil
 import subprocess
 from dataclasses import asdict
 from pathlib import Path
-from typing import Any
+from typing import Any, TypedDict
 
 from .adapters.java_junit import JavaJUnitAdapter
 from .adapters.js_jest_vitest import JsJestVitestAdapter
@@ -19,7 +19,15 @@ from .analyzers.coverage_normalizer import (
     parse_python_coverage_xml,
 )
 from .analyzers.repo_inventory import inventory_repo
-from .analyzers.risk_scorer import is_zero_coverage, priority, score_file, weighted_index
+from .analyzers.risk_scorer import (
+    COVERAGE_STATUS_MEASURED_ZERO,
+    COVERAGE_STATUS_UNMEASURABLE,
+    coverage_status,
+    is_zero_coverage,
+    priority,
+    score_file,
+    weighted_index,
+)
 from .analyzers.source_test_mapper import infer_existing_test_files, supporting_files_for_source
 from .analyzers.test_type_recommender import conventions_summary, recommend_test_type
 from .config import load_config
@@ -161,6 +169,69 @@ def _parse_mutation_score(stdout: str, stderr: str) -> float | None:
         if match:
             return float(match.group(1))
     return None
+
+
+# ---------------------------------------------------------------------------
+# Story 032: TypedDict contracts for orchestrator return values
+# ---------------------------------------------------------------------------
+# These TypedDicts document the shape of the dicts the orchestrator
+# returns. They are NOT a migration to dataclasses — at runtime, the
+# methods still return `dict` instances, and `isinstance(result, dict)`
+# is still True. The TypedDicts exist for:
+#   1. IDE/mypy autocomplete on `result["foo"]` access
+#   2. Documentation in code (no need to read the implementation
+#      to know what fields are available)
+#   3. Field-set verification in tests (see test_032)
+#
+# Stories 020-031 added fields to these results over time. The TypedDict
+# is the durable record of "what's in the result" at the time of story 032.
+# Subsequent stories that add fields should update the TypedDict here.
+
+class CoverageGenerateResult(TypedDict, total=False):
+    """Return type of `coverage_generate()`.
+
+    The `total=False` means all fields are optional in the type
+    sense (a given result may or may not have each one), but in
+    practice after story 029 the three `coverage_out_*` fields are
+    ALWAYS set (story 029 contract flatten). The `total=False` is
+    used so that the type checker accepts the various early-return
+    paths (e.g. `status="skipped"` doesn't set `coverage_out_dir`).
+    """
+    status: str  # "completed" | "timeout" | "missing_binary" | "skipped" | "no_report_written"
+    command: str | None  # rendered command line
+    exit_code: int | None  # subprocess return code
+    stdout: str
+    stderr: str
+    timeout_seconds: int
+    preflight_findings: list[dict[str, str]]
+    new_reports: list[str]  # post-run mtime-detected reports
+    warning: str | None  # set when status="no_report_written"
+    reason: str | None  # set when status="skipped"
+    # Story 029: these three are always present (None / [] / None when not requested)
+    coverage_out_dir: str | None
+    coverage_out_copied: list[str]
+    coverage_out_error: str | None
+
+
+class CoverageGenerateOutput(TypedDict, total=False):
+    """Outer wrapper of `coverage_generate()`'s return value.
+
+    The orchestrator wraps the CoverageGenerateResult under a
+    "generation" key and adds the parsed records under "records".
+    The outer shape is: `{"generation": CoverageGenerateResult,
+    "records": list[dict]}`.
+    """
+    generation: CoverageGenerateResult
+    records: list[dict[str, Any]]
+
+
+class RunResult(TypedDict, total=False):
+    """Return type of `run()`."""
+    status: str  # always "ok" in the current implementation
+    module_scope: str
+    coverage_generation: CoverageGenerateOutput | None
+    # Story 029: top-level coverage_out_dir matches coverage_generation
+    coverage_out_dir: str | None
 
 
 class TestFactoryOrchestrator:
@@ -397,7 +468,7 @@ class TestFactoryOrchestrator:
         _dump_json(self.artifacts / "coverage_deltas" / "baseline.json", [asdict(record) for record in coverage])
         return coverage
 
-    def coverage_generate(self, module: str | None = None, adapter_name: str | None = None, coverage_out_dir: str | Path | None = None) -> dict[str, Any]:
+    def coverage_generate(self, module: str | None = None, adapter_name: str | None = None, coverage_out_dir: str | Path | None = None) -> CoverageGenerateOutput:
         """Run the primary adapter's `discover_coverage_command` to actually
         *generate* a coverage report on disk, then return the parsed records.
 
@@ -537,13 +608,32 @@ class TestFactoryOrchestrator:
                 new_reports.append(path)
         new_reports = sorted(new_reports)
         result["new_reports"] = [str(p) for p in new_reports]
-        # Story 025: if the user passed --coverage-out, copy the freshly-
-        # written reports there. The target repo is still mutated by the
-        # build tool (we can't easily avoid that for Gradle etc.) but the
-        # user gets a clean copy under their `--out` tree that doesn't
-        # depend on the repo state.
-        if coverage_out_dir is not None:
+        # Story 025 + 029: if the user passed --coverage-out, copy the
+        # freshly-written reports there. The target repo is still mutated
+        # by the build tool (we can't easily avoid that for Gradle etc.)
+        # but the user gets a clean copy under their `--out` tree that
+        # doesn't depend on the repo state.
+        #
+        # Story 029 (contract flatten): the result ALWAYS carries all
+        # three of these keys, regardless of whether the user requested
+        # --coverage-out. Semantics:
+        #   coverage_out_dir    str | None  resolved path, or None
+        #   coverage_out_copied list[str]   paths to copied files, or []
+        #   coverage_out_error  str | None  non-fatal warning, or None
+        # Consumers can rely on all three being present and typed
+        # consistently. Before story 029, the keys were set
+        # conditionally, which made "key absent" ambiguous (could mean
+        # "not requested", "mkdir failed", or "no new reports" depending
+        # on the key).
+        if coverage_out_dir is None:
+            result["coverage_out_dir"] = None
+            result["coverage_out_copied"] = []
+            result["coverage_out_error"] = None
+        else:
             out = Path(coverage_out_dir).resolve()
+            result["coverage_out_dir"] = str(out)
+            result["coverage_out_copied"] = []
+            result["coverage_out_error"] = None
             try:
                 out.mkdir(parents=True, exist_ok=True)
             except OSError as exc:
@@ -551,18 +641,15 @@ class TestFactoryOrchestrator:
                     f"could not create --coverage-out directory {out}: {exc}"
                 )
             else:
-                result["coverage_out_dir"] = str(out)
                 if new_reports:
-                    copied: list[Path] = []
                     copy_errors: list[str] = []
                     for src in new_reports:
                         try:
                             dst = out / src.name
                             shutil.copy2(src, dst)
-                            copied.append(dst)
+                            result["coverage_out_copied"].append(str(dst))
                         except OSError as exc:
                             copy_errors.append(f"{src.name}: {exc}")
-                    result["coverage_out_copied"] = [str(p) for p in copied]
                     if copy_errors:
                         result["coverage_out_error"] = "; ".join(copy_errors)
         if result["status"] == "completed" and not new_reports:
@@ -623,7 +710,7 @@ class TestFactoryOrchestrator:
         )
         return scores
 
-    def queue(self, module: str | None = None, zero_coverage_only: bool = False) -> list[dict[str, Any]]:
+    def queue(self, module: str | None = None, zero_coverage_only: bool = False, unmeasurable_only: bool = False) -> list[dict[str, Any]]:
         scores = [item for item in _read_json(self.artifacts / "risk_scores.json", []) if _module_matches_scope(module, item["path"], item.get("module", ""))]
         queue = []
         for item in scores:
@@ -638,6 +725,16 @@ class TestFactoryOrchestrator:
                 float(item.get("line_coverage", 0.0) or 0.0),
                 item.get("branch_coverage"),
             )
+            # Story 031: also annotate with the three-state
+            # coverage_status. Downstream code that wants to
+            # distinguish "really untested" from "couldn't be
+            # analyzed" should use this field. The `zero_coverage`
+            # bool is preserved for backward compat with story 024
+            # consumers.
+            item["coverage_status"] = coverage_status(
+                float(item.get("line_coverage", 0.0) or 0.0),
+                item.get("branch_coverage"),
+            )
             queue.append(item)
         queue.sort(key=lambda item: (-item["priority"], item["path"]))
         _dump_json(self.artifacts / "test_gap_queue.json", queue)
@@ -645,15 +742,28 @@ class TestFactoryOrchestrator:
             self.artifacts / "component_test_candidates.json",
             [item for item in queue if self._is_component_candidate(item)],
         )
-        # Story 024: separate artifact for zero-coverage-only items,
-        # sorted by risk_score (the priority formula collapses to
-        # risk_score * 180 for all of them, so risk_score is the
-        # meaningful axis). Path is the deterministic tiebreak.
+        # Story 024 + 031: separate artifacts. Story 024 wrote a
+        # single `zero_coverage_queue.json` that conflated measured
+        # zero and unmeasurable. Story 031 splits it:
+        #   - `zero_coverage_queue.json` = measured_zero only
+        #     (the user's real priority for new tests)
+        #   - `unmeasurable_queue.json` = unmeasurable only
+        #     (the user needs to investigate the build, not tests)
+        # Both sorted by risk_score (the priority formula collapses
+        # to risk_score * 180 for zero-coverage items). Path is the
+        # deterministic tiebreak.
         zero_coverage_queue = sorted(
-            [item for item in queue if item.get("zero_coverage")],
+            [item for item in queue if item.get("coverage_status") == COVERAGE_STATUS_MEASURED_ZERO],
+            key=lambda item: (-float(item.get("risk_score", 0.0)), item["path"]),
+        )
+        unmeasurable_queue = sorted(
+            [item for item in queue if item.get("coverage_status") == COVERAGE_STATUS_UNMEASURABLE],
             key=lambda item: (-float(item.get("risk_score", 0.0)), item["path"]),
         )
         _dump_json(self.artifacts / "zero_coverage_queue.json", zero_coverage_queue)
+        _dump_json(self.artifacts / "unmeasurable_queue.json", unmeasurable_queue)
+        if unmeasurable_only:
+            return unmeasurable_queue
         if zero_coverage_only:
             return zero_coverage_queue
         return queue
@@ -686,13 +796,17 @@ class TestFactoryOrchestrator:
         )
         return any(marker in path for marker in markers)
 
-    def workitems(self, limit: int | None = None, module: str | None = None, zero_coverage_only: bool = False) -> list[WorkItemRecord]:
+    def workitems(self, limit: int | None = None, module: str | None = None, zero_coverage_only: bool = False, unmeasurable_only: bool = False) -> list[WorkItemRecord]:
         coverage_records = [CoverageRecord(**item) for item in _read_json(self.artifacts / "coverage_baseline.json", []) if _module_matches_scope(module, item["path"])]
         scores = [RiskScoreRecord(**item) for item in _read_json(self.artifacts / "risk_scores.json", []) if _module_matches_scope(module, item["path"], item.get("module", ""))]
-        # Story 024: when --zero-coverage-only is set, restrict the
-        # generated work items to files with no test coverage.
+        # Story 024 + 031: when --zero-coverage-only is set, restrict
+        # the generated work items to files with no test coverage.
+        # Story 031 adds --unmeasurable-only for the unmeasurable
+        # bucket (see coverage_status() in risk_scorer.py).
         if zero_coverage_only:
             scores = [s for s in scores if is_zero_coverage(s.line_coverage, s.branch_coverage)]
+        elif unmeasurable_only:
+            scores = [s for s in scores if coverage_status(s.line_coverage, s.branch_coverage) == COVERAGE_STATUS_UNMEASURABLE]
         source_maps: dict[str, SourceTestMapRecord] = {}
         for score in scores:
             source_file = self.repo_root / score.path
@@ -963,8 +1077,9 @@ class TestFactoryOrchestrator:
         generate_coverage: bool = True,
         adapter_name: str | None = None,
         zero_coverage_only: bool = False,
+        unmeasurable_only: bool = False,
         coverage_out_dir: str | Path | None = None,
-    ) -> dict[str, Any]:
+    ) -> RunResult:
         self.scan(module=module)
         # Story 020: coverage generation is now ON by default. The CLI surfaces
         # this as `--no-generate-coverage` (opt-out) since `--generate-coverage`
@@ -983,15 +1098,25 @@ class TestFactoryOrchestrator:
             )
         self.coverage(module=module)
         self.score(module=module)
-        self.queue(module=module, zero_coverage_only=zero_coverage_only)
-        self.workitems(limit=limit, module=module, zero_coverage_only=zero_coverage_only)
+        self.queue(module=module, zero_coverage_only=zero_coverage_only, unmeasurable_only=unmeasurable_only)
+        self.workitems(limit=limit, module=module, zero_coverage_only=zero_coverage_only, unmeasurable_only=unmeasurable_only)
         self.mutate(enabled=mutation, high_risk_only=mutation_high_risk_only)
         self.report(module=module)
         return {
             "status": "ok",
             "module_scope": module or "all",
             "coverage_generation": coverage_generation,
-            "coverage_out_dir": str(coverage_out_dir) if coverage_out_dir else None,
+            # Story 029: read the resolved path from coverage_generation
+            # so the top-level field always matches the nested one.
+            # Before story 029, the top-level was the user-supplied path
+            # (could be relative) and the nested was the resolved path.
+            # When generate_coverage is False, coverage_generation is
+            # None and we fall back to the user-supplied path (or None).
+            "coverage_out_dir": (
+                coverage_generation.get("generation", {}).get("coverage_out_dir")
+                if coverage_generation is not None
+                else (str(Path(coverage_out_dir).resolve()) if coverage_out_dir else None)
+            ),
         }
 
     def branch(self, module: str, allow_dirty: bool = False) -> dict[str, Any]:

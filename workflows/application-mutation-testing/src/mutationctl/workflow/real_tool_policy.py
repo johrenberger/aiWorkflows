@@ -126,8 +126,19 @@ def evaluate_real_pit_policy(
         # phase on its own — it needs the classes on disk. We chain
         # `test-compile` (NOT `test`, which would run all tests) so
         # the project is built but we don't double-execute tests.
-        # Users who want a fresh test pass before mutating can add
-        # `verify` to the front themselves.
+        #
+        # Maven's lifecycle runs ALL phases up to and including the
+        # named goal, so `mvn test-compile` already includes
+        # `process-test-resources` (which copies src/test/resources/*
+        # to target/test-classes/). We do NOT chain it explicitly —
+        # the user shouldn't have to.
+        #
+        # If the user needs a fresh test pass before mutating (e.g.
+        # fixtures change between runs), they can add `test` to the
+        # front of the command — this re-runs the entire test suite
+        # (2-5x slowdown) so use it only when you trust the test
+        # results are stale. Do NOT add `verify` — that runs
+        # `integration-test` which PIT can't mutate.
         command = [
             "mvn",
             "test-compile",
@@ -136,6 +147,11 @@ def evaluate_real_pit_policy(
         ]
     reasons.append("PIT is invoked via Maven, no fork requirement")
     reasons.append("Dependency installation is not performed by mutationctl")
+    reasons.append(
+        "Test resources are processed by Maven's lifecycle "
+        "(process-test-resources is included in test-compile); "
+        "user need not chain it explicitly"
+    )
     if target:
         reasons.append(f"Scoped selected target: {target.source_file}")
     reasons.extend(blockers)
