@@ -30,8 +30,6 @@ changes, then either accept them or refine the rewrite.
 
 ## Why this rewrite was triggered
 
-- `missing-metadata`
-- `vague-contracts`
 - `roi-decision-rewrite`
 
 ## What changed
@@ -44,7 +42,7 @@ changes, then either accept them or refine the rewrite.
 
 ## Token efficiency
 
-- Original estimated tokens: 2302
+- Original estimated tokens: 12
 - Rewrite target: keep under 2,000 tokens for a single-purpose skill.
 - If you need more, this is a sign that the skill is over-broad (consider splitting).
 
@@ -58,18 +56,10 @@ changes, then either accept them or refine the rewrite.
 ## Original excerpt
 
 ```
-# johrenberger/test-repo
+# Fixture
+[bad](does-not-exist.md)
+[good](self.md)
 
-The OpenClaw / MiniMax **agent and skill registry**. This repo defines the
-contracts (markdown specs, helper scripts, and templates) that downstream
-runtimes and tooling parse and dispatch to.
-
-## What this repo contains
-
-- **Agent specs** — markdown contracts describing a role, its purpose, its
-  capabilities, and its collaboration protocol.
-- **Skill specs** — markdown contracts describing a reusable capability any
-  agent can invoke, plus safe helper scripts and temp
 ```
 
 ## Compatibility and migration

@@ -1,282 +1,328 @@
 # Technical Report — Skill Governance Pipeline
 
-Started: 2026-06-13T22:26:05Z
-Finished: 2026-06-13T22:26:06Z
+Started: 2026-06-13T23:44:13Z
+Finished: 2026-06-13T23:44:13Z
 CI: FAIL
 
 ## Inventory
 
 | Name | Type | Tokens | Version | Owner |
 | --- | --- | --- | --- | --- |
-| README | unknown | 2302 | - | - |
-| adr-index | unknown | 864 | - | - |
-| agents/ARCHITECT_AGENT | agent | 1158 | - | - |
-| agents/CLOUD_SECURITY_AGENT | agent | 2671 | - | - |
-| agents/CODE_REVIEW_AGENT | agent | 898 | - | - |
-| agents/COMMUNICATIONS_MANAGER_AGENT | agent | 927 | - | - |
-| agents/CREATIVE_DIRECTOR_AGENT | agent | 991 | - | - |
-| agents/DATA_ANALYST_AGENT | agent | 976 | - | - |
-| agents/DEVOPS_AGENT | agent | 876 | - | - |
-| agents/DOCUMENTATION_AGENT | agent | 905 | - | - |
-| agents/EXECUTIVE_ASSISTANT_AGENT | agent | 959 | - | - |
-| agents/FINANCIAL_ANALYST_AGENT | agent | 881 | - | - |
-| agents/KNOWLEDGE_MANAGER_AGENT | agent | 1116 | - | - |
-| agents/LEGAL_COMPLIANCE_AGENT | agent | 888 | - | - |
-| agents/MONITORING_AGENT | agent | 1105 | - | - |
-| agents/PEN_TESTING_AGENT | agent | 1819 | - | - |
-| agents/PRODUCT_MANAGER_AGENT | agent | 1061 | - | - |
-| agents/PROJECT_COORDINATOR_AGENT | agent | 1092 | - | - |
-| agents/README | agent | 2288 | - | - |
-| agents/RESEARCH_ANALYST_AGENT | agent | 643 | - | - |
-| agents/SECURITY_ANALYST_AGENT | agent | 1188 | - | - |
-| agents/SOFTWARE_ENGINEER_AGENT | agent | 649 | - | - |
-| agents/TEST_AUTOMATION_AGENT | agent | 930 | - | - |
-| approval-gate | unknown | 790 | - | - |
-| findings-severity | unknown | 816 | - | - |
-| go-no-go-summary | unknown | 798 | - | - |
-| incident-summary | unknown | 992 | - | - |
-| operational-risk-register | unknown | 1101 | - | - |
-| risk-register | unknown | 944 | - | - |
-| skills/README | skill | 3684 | - | - |
-| skills/architecture-decision | skill | 3581 | - | - |
-| skills/architecture-review | skill | 3127 | - | - |
-| skills/backend-implementation | skill | 3815 | - | - |
-| skills/code-change-review | skill | 1363 | - | - |
-| skills/database-migration-safety | skill | 1417 | - | - |
-| skills/dependency-change-review | skill | 1471 | - | - |
-| skills/documentation-update | skill | 2694 | - | - |
-| skills/frontend-implementation | skill | 3365 | - | - |
-| skills/handoff-packet | skill | 1502 | - | - |
-| skills/implementation-orchestrator | skill | 3536 | - | - |
-| skills/incident-triage | skill | 3147 | - | - |
-| skills/integration-implementation | skill | 4370 | - | - |
-| skills/observability-review | skill | 2752 | - | - |
-| skills/profiles | skill | 550 | - | - |
-| skills/profiles | skill | 458 | - | - |
-| skills/profiles | skill | 822 | - | - |
-| skills/profiles | skill | 845 | - | - |
-| skills/profiles | skill | 574 | - | - |
-| skills/profiles | skill | 583 | - | - |
-| skills/profiles | skill | 1202 | - | - |
-| skills/profiles | skill | 1691 | - | - |
-| skills/profiles | skill | 1212 | - | - |
-| skills/profiles | skill | 1079 | - | - |
-| skills/profiles | skill | 1102 | - | - |
-| skills/profiles | skill | 1774 | - | - |
-| skills/profiles | skill | 1551 | - | - |
-| skills/profiles | skill | 1780 | - | - |
-| skills/profiles | skill | 1707 | - | - |
-| skills/profiles | skill | 1606 | - | - |
-| skills/references | skill | 1096 | - | - |
-| skills/references | skill | 1119 | - | - |
-| skills/references | skill | 1031 | - | - |
-| skills/references | skill | 814 | - | - |
-| skills/references | skill | 1085 | - | - |
-| skills/references | skill | 1353 | - | - |
-| skills/references | skill | 1153 | - | - |
-| skills/references | skill | 1219 | - | - |
-| skills/references | skill | 1187 | - | - |
-| skills/references | skill | 1403 | - | - |
-| skills/references | skill | 1246 | - | - |
-| skills/references | skill | 1174 | - | - |
-| skills/references | skill | 864 | - | - |
-| skills/references | skill | 1200 | - | - |
-| skills/references | skill | 892 | - | - |
-| skills/references | skill | 876 | - | - |
-| skills/references | skill | 671 | - | - |
-| skills/references | skill | 702 | - | - |
-| skills/references | skill | 687 | - | - |
-| skills/references | skill | 964 | - | - |
-| skills/references | skill | 679 | - | - |
-| skills/release-readiness | skill | 3227 | - | - |
-| skills/repo-discovery | skill | 1741 | - | - |
-| skills/runbook-authoring | skill | 3135 | - | - |
-| skills/security-review | skill | 1417 | - | - |
-| skills/task-state-management | skill | 2443 | - | - |
-| skills/templates | skill | 1239 | - | - |
-| skills/templates | skill | 1378 | - | - |
-| skills/templates | skill | 1520 | - | - |
-| skills/templates | skill | 636 | - | - |
-| skills/templates | skill | 542 | - | - |
-| skills/templates | skill | 801 | - | - |
-| skills/templates | skill | 595 | - | - |
-| skills/templates | skill | 960 | - | - |
-| skills/templates | skill | 1157 | - | - |
-| skills/templates | skill | 1004 | - | - |
-| skills/templates | skill | 1111 | - | - |
-| skills/templates | skill | 474 | - | - |
-| skills/templates | skill | 1273 | - | - |
-| skills/templates | skill | 508 | - | - |
-| skills/templates | skill | 1650 | - | - |
-| skills/templates | skill | 787 | - | - |
-| skills/templates | skill | 1569 | - | - |
-| skills/templates | skill | 1256 | - | - |
-| skills/templates | skill | 845 | - | - |
-| skills/templates | skill | 1268 | - | - |
-| skills/templates | skill | 1747 | - | - |
-| skills/templates | skill | 1108 | - | - |
-| skills/templates | skill | 564 | - | - |
-| skills/templates | skill | 1110 | - | - |
-| skills/templates | skill | 1409 | - | - |
-| skills/templates | skill | 929 | - | - |
-| skills/templates | skill | 592 | - | - |
-| skills/templates | skill | 105 | - | - |
-| skills/templates | skill | 133 | - | - |
-| skills/templates | skill | 98 | - | - |
-| skills/templates | skill | 134 | - | - |
-| skills/templates | skill | 543 | - | - |
-| skills/templates | skill | 468 | - | - |
-| skills/templates | skill | 389 | - | - |
-| skills/test-gap-analysis | skill | 2286 | - | - |
-| skills/test-generation | skill | 1641 | - | - |
-| skills/test_fixtures | skill | 12 | - | - |
-| skills/test_fixtures | skill | 1 | - | - |
-| skills/test_fixtures | skill | 119 | - | - |
-| skills/validation-runner | skill | 2707 | - | - |
-| task-spec-packet | unknown | 1294 | - | - |
+| README | unknown | 3687 | - | - |
+| README | unknown | 12 | - | - |
+| SKILL | skill | 3736 | - | - |
+| SKILL | skill | 3127 | - | - |
+| SKILL | skill | 3815 | - | - |
+| SKILL | skill | 1363 | - | - |
+| SKILL | skill | 1417 | - | - |
+| SKILL | skill | 1471 | - | - |
+| SKILL | skill | 2694 | - | - |
+| SKILL | skill | 3365 | - | - |
+| SKILL | skill | 1502 | - | - |
+| SKILL | skill | 2524 | - | - |
+| SKILL | skill | 3147 | - | - |
+| SKILL | skill | 4370 | - | - |
+| SKILL | skill | 2752 | - | - |
+| SKILL | skill | 3227 | - | - |
+| SKILL | skill | 1741 | - | - |
+| SKILL | skill | 3135 | - | - |
+| SKILL | skill | 1417 | - | - |
+| SKILL | skill | 2443 | - | - |
+| SKILL | skill | 2286 | - | - |
+| SKILL | skill | 1641 | - | - |
+| SKILL | skill | 2707 | - | - |
+| action-item | unknown | 508 | - | - |
+| adr | unknown | 1239 | - | - |
+| angular | unknown | 1202 | - | - |
+| api-doc-update-checklist | unknown | 960 | - | - |
+| architecture-options-analysis | unknown | 1378 | - | - |
+| architecture-review-report | unknown | 1520 | - | - |
+| architecture-risk-checklist | unknown | 1119 | - | - |
+| async-messaging | unknown | 1774 | - | - |
+| authz-review-checklist | unknown | 864 | - | - |
+| backend-implementation-report | unknown | 636 | - | - |
+| blocker | unknown | 105 | - | - |
+| code-review-report | unknown | 542 | - | - |
+| contract-testing | unknown | 1551 | - | - |
+| decision-log | unknown | 133 | - | - |
+| decision-quality-checklist | unknown | 1096 | - | - |
+| dependency-change-report | unknown | 595 | - | - |
+| dependency-risk-checklist | unknown | 1153 | - | - |
+| distributed-systems-checklist | unknown | 1031 | - | - |
+| doc-source-of-truth | unknown | 1219 | - | - |
+| documentation-impact-report | unknown | 1157 | - | - |
+| dotnet | unknown | 550 | - | - |
+| dotnet-testing | unknown | 671 | - | - |
+| file-batch | unknown | 1780 | - | - |
+| frontend-implementation-report | unknown | 1111 | - | - |
+| go | unknown | 458 | - | - |
+| go-no-go-checklist | unknown | 1268 | - | - |
+| go-testing | unknown | 702 | - | - |
+| handoff-and-forbidden | unknown | 559 | - | - |
+| handoff-packet | unknown | 474 | - | - |
+| implementation-routing-report | unknown | 1273 | - | - |
+| incident-severity-guide | unknown | 1187 | - | - |
+| incident-triage-report | unknown | 1650 | - | - |
+| integration-implementation-report | unknown | 1569 | - | - |
+| java-spring | unknown | 822 | - | - |
+| jest-vitest | unknown | 687 | - | - |
+| junit-spring | unknown | 964 | - | - |
+| latency-spike | unknown | 119 | - | - |
+| logging-metrics-tracing-checklist | unknown | 1403 | - | - |
+| migration-risk-checklist | unknown | 1353 | - | - |
+| migration-safety-report | unknown | 801 | - | - |
+| mixed-monolith | unknown | 845 | - | - |
+| modular-monolith-checklist | unknown | 814 | - | - |
+| nextjs | unknown | 1691 | - | - |
+| node-typescript | unknown | 574 | - | - |
+| observability-review-report | unknown | 1256 | - | - |
+| owasp-checklist | unknown | 1200 | - | - |
+| pytest-unittest | unknown | 679 | - | - |
+| python | unknown | 583 | - | - |
+| react | unknown | 1212 | - | - |
+| readme-update-checklist | unknown | 1004 | - | - |
+| release-gate-checklist | unknown | 1246 | - | - |
+| release-readiness-report | unknown | 1747 | - | - |
+| release-risk-register | unknown | 1108 | - | - |
+| repo-discovery-report | unknown | 564 | - | - |
+| rest-api | unknown | 1707 | - | - |
+| review-severity | unknown | 1085 | - | - |
+| risk-weighting | unknown | 876 | - | - |
+| runbook | unknown | 1409 | - | - |
+| runbook-authoring-report | unknown | 1110 | - | - |
+| runbook-quality-checklist | unknown | 1174 | - | - |
+| secrets-review-checklist | unknown | 892 | - | - |
+| security-review-report | unknown | 592 | - | - |
+| self | unknown | 1 | - | - |
+| slo-review | unknown | 845 | - | - |
+| state | unknown | 98 | - | - |
+| static-ui | unknown | 1079 | - | - |
+| stop-and-validation | unknown | 371 | - | - |
+| task | unknown | 134 | - | - |
+| test-gap-report | unknown | 543 | - | - |
+| test-generation-report | unknown | 468 | - | - |
+| timeline | unknown | 787 | - | - |
+| troubleshooting-guide | unknown | 929 | - | - |
+| validation-report | unknown | 389 | - | - |
+| vue | unknown | 1102 | - | - |
+| webhook | unknown | 1606 | - | - |
+| workflow | unknown | 1243 | - | - |
 
 ## Findings
 
 | Severity | Artifact | Category | Message |
 | --- | --- | --- | --- |
-| blocking | README | metadata | Missing required metadata fields: name, artifact_type, purpose, category, owner, version, inputs, outputs, dependencies, intended_consumers, quality_level, last_reviewed |
-| warning | README | metadata | Purpose is missing or too short / vague. |
-| blocking | README | contract | Inputs contract is missing or unstructured. |
-| blocking | README | contract | Outputs contract is missing or unstructured. |
-| blocking | README | contract | Outputs contract is vague (e.g. 'a report', 'analysis', 'summary'). |
-| warning | README | contract | Outputs do not declare a structured format hint (json/markdown/yaml/...). |
-| blocking | agents/ARCHITECT_AGENT | discovery | Path does not exist: agents/ARCHITECT_AGENT.md |
-| blocking | agents/CLOUD_SECURITY_AGENT | discovery | Path does not exist: agents/CLOUD_SECURITY_AGENT.md |
-| blocking | agents/CODE_REVIEW_AGENT | discovery | Path does not exist: agents/CODE_REVIEW_AGENT.md |
-| blocking | agents/COMMUNICATIONS_MANAGER_AGENT | discovery | Path does not exist: agents/COMMUNICATIONS_MANAGER_AGENT.md |
-| blocking | agents/CREATIVE_DIRECTOR_AGENT | discovery | Path does not exist: agents/CREATIVE_DIRECTOR_AGENT.md |
-| blocking | agents/DATA_ANALYST_AGENT | discovery | Path does not exist: agents/DATA_ANALYST_AGENT.md |
-| blocking | agents/DEVOPS_AGENT | discovery | Path does not exist: agents/DEVOPS_AGENT.md |
-| blocking | agents/DOCUMENTATION_AGENT | discovery | Path does not exist: agents/DOCUMENTATION_AGENT.md |
-| blocking | agents/EXECUTIVE_ASSISTANT_AGENT | discovery | Path does not exist: agents/EXECUTIVE_ASSISTANT_AGENT.md |
-| blocking | agents/FINANCIAL_ANALYST_AGENT | discovery | Path does not exist: agents/FINANCIAL_ANALYST_AGENT.md |
-| blocking | agents/KNOWLEDGE_MANAGER_AGENT | discovery | Path does not exist: agents/KNOWLEDGE_MANAGER_AGENT.md |
-| blocking | agents/LEGAL_COMPLIANCE_AGENT | discovery | Path does not exist: agents/LEGAL_COMPLIANCE_AGENT.md |
-| blocking | agents/MONITORING_AGENT | discovery | Path does not exist: agents/MONITORING_AGENT.md |
-| blocking | agents/PEN_TESTING_AGENT | discovery | Path does not exist: agents/PEN_TESTING_AGENT.md |
-| blocking | agents/PRODUCT_MANAGER_AGENT | discovery | Path does not exist: agents/PRODUCT_MANAGER_AGENT.md |
-| blocking | agents/PROJECT_COORDINATOR_AGENT | discovery | Path does not exist: agents/PROJECT_COORDINATOR_AGENT.md |
-| blocking | agents/README | discovery | Path does not exist: agents/README.md |
-| blocking | agents/RESEARCH_ANALYST_AGENT | discovery | Path does not exist: agents/RESEARCH_ANALYST_AGENT.md |
-| blocking | agents/SECURITY_ANALYST_AGENT | discovery | Path does not exist: agents/SECURITY_ANALYST_AGENT.md |
-| blocking | agents/SOFTWARE_ENGINEER_AGENT | discovery | Path does not exist: agents/SOFTWARE_ENGINEER_AGENT.md |
-| blocking | agents/TEST_AUTOMATION_AGENT | discovery | Path does not exist: agents/TEST_AUTOMATION_AGENT.md |
-| blocking | skills/README | discovery | Path does not exist: skills/README.md |
-| blocking | skills/architecture-decision | discovery | Path does not exist: skills/architecture-decision/SKILL.md |
-| blocking | skills/references | discovery | Path does not exist: skills/architecture-decision/references/decision-quality-checklist.md |
-| blocking | skills/templates | discovery | Path does not exist: skills/architecture-decision/templates/adr.md |
-| blocking | skills/templates | discovery | Path does not exist: skills/architecture-decision/templates/architecture-options-analysis.md |
-| blocking | skills/architecture-review | discovery | Path does not exist: skills/architecture-review/SKILL.md |
-| blocking | skills/references | discovery | Path does not exist: skills/architecture-review/references/architecture-risk-checklist.md |
-| blocking | skills/references | discovery | Path does not exist: skills/architecture-review/references/distributed-systems-checklist.md |
-| blocking | skills/references | discovery | Path does not exist: skills/architecture-review/references/modular-monolith-checklist.md |
-| blocking | skills/templates | discovery | Path does not exist: skills/architecture-review/templates/architecture-review-report.md |
-| blocking | skills/backend-implementation | discovery | Path does not exist: skills/backend-implementation/SKILL.md |
-| blocking | skills/profiles | discovery | Path does not exist: skills/backend-implementation/references/profiles/dotnet.md |
-| blocking | skills/profiles | discovery | Path does not exist: skills/backend-implementation/references/profiles/go.md |
-| blocking | skills/profiles | discovery | Path does not exist: skills/backend-implementation/references/profiles/java-spring.md |
-| blocking | skills/profiles | discovery | Path does not exist: skills/backend-implementation/references/profiles/mixed-monolith.md |
-| blocking | skills/profiles | discovery | Path does not exist: skills/backend-implementation/references/profiles/node-typescript.md |
-| blocking | skills/profiles | discovery | Path does not exist: skills/backend-implementation/references/profiles/python.md |
-| blocking | skills/templates | discovery | Path does not exist: skills/backend-implementation/templates/backend-implementation-report.md |
-| blocking | skills/code-change-review | discovery | Path does not exist: skills/code-change-review/SKILL.md |
-| blocking | skills/references | discovery | Path does not exist: skills/code-change-review/references/review-severity.md |
-| blocking | skills/templates | discovery | Path does not exist: skills/code-change-review/templates/code-review-report.md |
-| blocking | skills/database-migration-safety | discovery | Path does not exist: skills/database-migration-safety/SKILL.md |
-| blocking | skills/references | discovery | Path does not exist: skills/database-migration-safety/references/migration-risk-checklist.md |
-| blocking | skills/templates | discovery | Path does not exist: skills/database-migration-safety/templates/migration-safety-report.md |
-| blocking | skills/dependency-change-review | discovery | Path does not exist: skills/dependency-change-review/SKILL.md |
-| blocking | skills/references | discovery | Path does not exist: skills/dependency-change-review/references/dependency-risk-checklist.md |
-| blocking | skills/templates | discovery | Path does not exist: skills/dependency-change-review/templates/dependency-change-report.md |
-| blocking | skills/documentation-update | discovery | Path does not exist: skills/documentation-update/SKILL.md |
-| blocking | skills/references | discovery | Path does not exist: skills/documentation-update/references/doc-source-of-truth.md |
-| blocking | skills/test_fixtures | discovery | Path does not exist: skills/documentation-update/scripts/documentation-update-scripts/test_fixtures/README.md |
-| blocking | skills/test_fixtures | discovery | Path does not exist: skills/documentation-update/scripts/documentation-update-scripts/test_fixtures/self.md |
-| blocking | skills/templates | discovery | Path does not exist: skills/documentation-update/templates/api-doc-update-checklist.md |
-| blocking | skills/templates | discovery | Path does not exist: skills/documentation-update/templates/documentation-impact-report.md |
-| blocking | skills/templates | discovery | Path does not exist: skills/documentation-update/templates/readme-update-checklist.md |
-| blocking | skills/frontend-implementation | discovery | Path does not exist: skills/frontend-implementation/SKILL.md |
-| blocking | skills/profiles | discovery | Path does not exist: skills/frontend-implementation/references/profiles/angular.md |
-| blocking | skills/profiles | discovery | Path does not exist: skills/frontend-implementation/references/profiles/nextjs.md |
-| blocking | skills/profiles | discovery | Path does not exist: skills/frontend-implementation/references/profiles/react.md |
-| blocking | skills/profiles | discovery | Path does not exist: skills/frontend-implementation/references/profiles/static-ui.md |
-| blocking | skills/profiles | discovery | Path does not exist: skills/frontend-implementation/references/profiles/vue.md |
-| blocking | skills/templates | discovery | Path does not exist: skills/frontend-implementation/templates/frontend-implementation-report.md |
-| blocking | skills/handoff-packet | discovery | Path does not exist: skills/handoff-packet/SKILL.md |
-| blocking | skills/templates | discovery | Path does not exist: skills/handoff-packet/templates/handoff-packet.md |
-| blocking | skills/implementation-orchestrator | discovery | Path does not exist: skills/implementation-orchestrator/SKILL.md |
-| blocking | skills/templates | discovery | Path does not exist: skills/implementation-orchestrator/templates/implementation-routing-report.md |
-| blocking | skills/incident-triage | discovery | Path does not exist: skills/incident-triage/SKILL.md |
-| blocking | skills/references | discovery | Path does not exist: skills/incident-triage/references/incident-severity-guide.md |
-| blocking | skills/templates | discovery | Path does not exist: skills/incident-triage/templates/action-item.md |
-| blocking | skills/templates | discovery | Path does not exist: skills/incident-triage/templates/incident-triage-report.md |
-| blocking | skills/templates | discovery | Path does not exist: skills/incident-triage/templates/timeline.md |
-| blocking | skills/integration-implementation | discovery | Path does not exist: skills/integration-implementation/SKILL.md |
-| blocking | skills/profiles | discovery | Path does not exist: skills/integration-implementation/references/profiles/async-messaging.md |
-| blocking | skills/profiles | discovery | Path does not exist: skills/integration-implementation/references/profiles/contract-testing.md |
-| blocking | skills/profiles | discovery | Path does not exist: skills/integration-implementation/references/profiles/file-batch.md |
-| blocking | skills/profiles | discovery | Path does not exist: skills/integration-implementation/references/profiles/rest-api.md |
-| blocking | skills/profiles | discovery | Path does not exist: skills/integration-implementation/references/profiles/webhook.md |
-| blocking | skills/templates | discovery | Path does not exist: skills/integration-implementation/templates/integration-implementation-report.md |
-| blocking | skills/observability-review | discovery | Path does not exist: skills/observability-review/SKILL.md |
-| blocking | skills/references | discovery | Path does not exist: skills/observability-review/references/logging-metrics-tracing-checklist.md |
-| blocking | skills/templates | discovery | Path does not exist: skills/observability-review/templates/observability-review-report.md |
-| blocking | skills/templates | discovery | Path does not exist: skills/observability-review/templates/slo-review.md |
-| blocking | skills/release-readiness | discovery | Path does not exist: skills/release-readiness/SKILL.md |
-| blocking | skills/references | discovery | Path does not exist: skills/release-readiness/references/release-gate-checklist.md |
-| blocking | skills/templates | discovery | Path does not exist: skills/release-readiness/templates/go-no-go-checklist.md |
-| blocking | skills/templates | discovery | Path does not exist: skills/release-readiness/templates/release-readiness-report.md |
-| blocking | skills/templates | discovery | Path does not exist: skills/release-readiness/templates/release-risk-register.md |
-| blocking | skills/repo-discovery | discovery | Path does not exist: skills/repo-discovery/SKILL.md |
-| blocking | skills/templates | discovery | Path does not exist: skills/repo-discovery/templates/repo-discovery-report.md |
-| blocking | skills/runbook-authoring | discovery | Path does not exist: skills/runbook-authoring/SKILL.md |
-| blocking | skills/references | discovery | Path does not exist: skills/runbook-authoring/references/runbook-quality-checklist.md |
-| blocking | skills/test_fixtures | discovery | Path does not exist: skills/runbook-authoring/scripts/runbook-authoring-scripts/test_fixtures/latency-spike.md |
-| blocking | skills/templates | discovery | Path does not exist: skills/runbook-authoring/templates/runbook-authoring-report.md |
-| blocking | skills/templates | discovery | Path does not exist: skills/runbook-authoring/templates/runbook.md |
-| blocking | skills/templates | discovery | Path does not exist: skills/runbook-authoring/templates/troubleshooting-guide.md |
-| blocking | skills/security-review | discovery | Path does not exist: skills/security-review/SKILL.md |
-| blocking | skills/references | discovery | Path does not exist: skills/security-review/references/authz-review-checklist.md |
-| blocking | skills/references | discovery | Path does not exist: skills/security-review/references/owasp-checklist.md |
-| blocking | skills/references | discovery | Path does not exist: skills/security-review/references/secrets-review-checklist.md |
-| blocking | skills/templates | discovery | Path does not exist: skills/security-review/templates/security-review-report.md |
-| blocking | skills/task-state-management | discovery | Path does not exist: skills/task-state-management/SKILL.md |
-| blocking | skills/templates | discovery | Path does not exist: skills/task-state-management/templates/blocker.md |
-| blocking | skills/templates | discovery | Path does not exist: skills/task-state-management/templates/decision-log.md |
-| blocking | skills/templates | discovery | Path does not exist: skills/task-state-management/templates/state.json |
-| blocking | skills/templates | discovery | Path does not exist: skills/task-state-management/templates/task.md |
-| blocking | skills/test-gap-analysis | discovery | Path does not exist: skills/test-gap-analysis/SKILL.md |
-| blocking | skills/references | discovery | Path does not exist: skills/test-gap-analysis/references/risk-weighting.md |
-| blocking | skills/templates | discovery | Path does not exist: skills/test-gap-analysis/templates/test-gap-report.md |
-| blocking | skills/test-generation | discovery | Path does not exist: skills/test-generation/SKILL.md |
-| blocking | skills/references | discovery | Path does not exist: skills/test-generation/references/dotnet-testing.md |
-| blocking | skills/references | discovery | Path does not exist: skills/test-generation/references/go-testing.md |
-| blocking | skills/references | discovery | Path does not exist: skills/test-generation/references/jest-vitest.md |
-| blocking | skills/references | discovery | Path does not exist: skills/test-generation/references/junit-spring.md |
-| blocking | skills/references | discovery | Path does not exist: skills/test-generation/references/pytest-unittest.md |
-| blocking | skills/templates | discovery | Path does not exist: skills/test-generation/templates/test-generation-report.md |
-| blocking | skills/validation-runner | discovery | Path does not exist: skills/validation-runner/SKILL.md |
-| blocking | skills/templates | discovery | Path does not exist: skills/validation-runner/templates/validation-report.md |
-| blocking | adr-index | discovery | Path does not exist: templates/adr-index.md |
-| blocking | approval-gate | discovery | Path does not exist: templates/approval-gate.md |
-| blocking | findings-severity | discovery | Path does not exist: templates/findings-severity.md |
-| blocking | go-no-go-summary | discovery | Path does not exist: templates/go-no-go-summary.md |
-| blocking | incident-summary | discovery | Path does not exist: templates/incident-summary.md |
-| blocking | operational-risk-register | discovery | Path does not exist: templates/operational-risk-register.md |
-| blocking | risk-register | discovery | Path does not exist: templates/risk-register.md |
-| blocking | task-spec-packet | discovery | Path does not exist: templates/task-spec-packet.md |
-| blocking | skills/architecture-decision | dependency | Circular dependency: skills/architecture-decision -> skills/architecture-review -> skills/architecture-decision |
-| blocking | skills/backend-implementation | dependency | Circular dependency: skills/backend-implementation -> skills/implementation-orchestrator -> skills/backend-implementation |
-| blocking | skills/frontend-implementation | dependency | Circular dependency: skills/frontend-implementation -> skills/implementation-orchestrator -> skills/frontend-implementation |
-| blocking | skills/test-gap-analysis | dependency | Circular dependency: skills/test-gap-analysis -> skills/test-generation -> skills/test-gap-analysis |
+| warning | README | discovery | Artifact 'README' is not a skill or agent (path: README.md). Skipping contract validation. |
+| blocking | SKILL | metadata | Missing required metadata fields: name, artifact_type, purpose, category, owner, version, inputs, outputs, dependencies, intended_consumers, quality_level, last_reviewed |
+| warning | SKILL | metadata | Purpose is missing or too short / vague. |
+| blocking | SKILL | contract | Inputs contract is missing or unstructured. |
+| blocking | SKILL | contract | Outputs contract is missing or unstructured. |
+| blocking | SKILL | contract | Outputs contract is vague (e.g. 'a report', 'analysis', 'summary'). |
+| warning | SKILL | contract | Outputs do not declare a structured format hint (json/markdown/yaml/...). |
+| warning | decision-quality-checklist | discovery | Artifact 'decision-quality-checklist' is not a skill or agent (path: architecture-decision/references/decision-quality-checklist.md). Skipping contract validation. |
+| warning | adr | discovery | Artifact 'adr' is not a skill or agent (path: architecture-decision/templates/adr.md). Skipping contract validation. |
+| warning | architecture-options-analysis | discovery | Artifact 'architecture-options-analysis' is not a skill or agent (path: architecture-decision/templates/architecture-options-analysis.md). Skipping contract validation. |
+| blocking | SKILL | metadata | Missing required metadata fields: name, artifact_type, purpose, category, owner, version, inputs, outputs, dependencies, intended_consumers, quality_level, last_reviewed |
+| warning | SKILL | metadata | Purpose is missing or too short / vague. |
+| blocking | SKILL | contract | Inputs contract is missing or unstructured. |
+| blocking | SKILL | contract | Outputs contract is missing or unstructured. |
+| blocking | SKILL | contract | Outputs contract is vague (e.g. 'a report', 'analysis', 'summary'). |
+| warning | SKILL | contract | Outputs do not declare a structured format hint (json/markdown/yaml/...). |
+| warning | architecture-risk-checklist | discovery | Artifact 'architecture-risk-checklist' is not a skill or agent (path: architecture-review/references/architecture-risk-checklist.md). Skipping contract validation. |
+| warning | distributed-systems-checklist | discovery | Artifact 'distributed-systems-checklist' is not a skill or agent (path: architecture-review/references/distributed-systems-checklist.md). Skipping contract validation. |
+| warning | modular-monolith-checklist | discovery | Artifact 'modular-monolith-checklist' is not a skill or agent (path: architecture-review/references/modular-monolith-checklist.md). Skipping contract validation. |
+| warning | architecture-review-report | discovery | Artifact 'architecture-review-report' is not a skill or agent (path: architecture-review/templates/architecture-review-report.md). Skipping contract validation. |
+| blocking | SKILL | metadata | Missing required metadata fields: name, artifact_type, purpose, category, owner, version, inputs, outputs, dependencies, intended_consumers, quality_level, last_reviewed |
+| warning | SKILL | metadata | Purpose is missing or too short / vague. |
+| blocking | SKILL | contract | Inputs contract is missing or unstructured. |
+| blocking | SKILL | contract | Outputs contract is missing or unstructured. |
+| blocking | SKILL | contract | Outputs contract is vague (e.g. 'a report', 'analysis', 'summary'). |
+| warning | SKILL | contract | Outputs do not declare a structured format hint (json/markdown/yaml/...). |
+| warning | dotnet | discovery | Artifact 'dotnet' is not a skill or agent (path: backend-implementation/references/profiles/dotnet.md). Skipping contract validation. |
+| warning | go | discovery | Artifact 'go' is not a skill or agent (path: backend-implementation/references/profiles/go.md). Skipping contract validation. |
+| warning | java-spring | discovery | Artifact 'java-spring' is not a skill or agent (path: backend-implementation/references/profiles/java-spring.md). Skipping contract validation. |
+| warning | mixed-monolith | discovery | Artifact 'mixed-monolith' is not a skill or agent (path: backend-implementation/references/profiles/mixed-monolith.md). Skipping contract validation. |
+| warning | node-typescript | discovery | Artifact 'node-typescript' is not a skill or agent (path: backend-implementation/references/profiles/node-typescript.md). Skipping contract validation. |
+| warning | python | discovery | Artifact 'python' is not a skill or agent (path: backend-implementation/references/profiles/python.md). Skipping contract validation. |
+| warning | backend-implementation-report | discovery | Artifact 'backend-implementation-report' is not a skill or agent (path: backend-implementation/templates/backend-implementation-report.md). Skipping contract validation. |
+| blocking | SKILL | metadata | Missing required metadata fields: name, artifact_type, purpose, category, owner, version, inputs, outputs, dependencies, intended_consumers, quality_level, last_reviewed |
+| warning | SKILL | metadata | Purpose is missing or too short / vague. |
+| blocking | SKILL | contract | Inputs contract is missing or unstructured. |
+| blocking | SKILL | contract | Outputs contract is missing or unstructured. |
+| blocking | SKILL | contract | Outputs contract is vague (e.g. 'a report', 'analysis', 'summary'). |
+| warning | SKILL | contract | Outputs do not declare a structured format hint (json/markdown/yaml/...). |
+| warning | review-severity | discovery | Artifact 'review-severity' is not a skill or agent (path: code-change-review/references/review-severity.md). Skipping contract validation. |
+| warning | code-review-report | discovery | Artifact 'code-review-report' is not a skill or agent (path: code-change-review/templates/code-review-report.md). Skipping contract validation. |
+| blocking | SKILL | metadata | Missing required metadata fields: name, artifact_type, purpose, category, owner, version, inputs, outputs, dependencies, intended_consumers, quality_level, last_reviewed |
+| warning | SKILL | metadata | Purpose is missing or too short / vague. |
+| blocking | SKILL | contract | Inputs contract is missing or unstructured. |
+| blocking | SKILL | contract | Outputs contract is missing or unstructured. |
+| blocking | SKILL | contract | Outputs contract is vague (e.g. 'a report', 'analysis', 'summary'). |
+| warning | SKILL | contract | Outputs do not declare a structured format hint (json/markdown/yaml/...). |
+| warning | migration-risk-checklist | discovery | Artifact 'migration-risk-checklist' is not a skill or agent (path: database-migration-safety/references/migration-risk-checklist.md). Skipping contract validation. |
+| warning | migration-safety-report | discovery | Artifact 'migration-safety-report' is not a skill or agent (path: database-migration-safety/templates/migration-safety-report.md). Skipping contract validation. |
+| blocking | SKILL | metadata | Missing required metadata fields: name, artifact_type, purpose, category, owner, version, inputs, outputs, dependencies, intended_consumers, quality_level, last_reviewed |
+| warning | SKILL | metadata | Purpose is missing or too short / vague. |
+| blocking | SKILL | contract | Inputs contract is missing or unstructured. |
+| blocking | SKILL | contract | Outputs contract is missing or unstructured. |
+| blocking | SKILL | contract | Outputs contract is vague (e.g. 'a report', 'analysis', 'summary'). |
+| warning | SKILL | contract | Outputs do not declare a structured format hint (json/markdown/yaml/...). |
+| warning | dependency-risk-checklist | discovery | Artifact 'dependency-risk-checklist' is not a skill or agent (path: dependency-change-review/references/dependency-risk-checklist.md). Skipping contract validation. |
+| warning | dependency-change-report | discovery | Artifact 'dependency-change-report' is not a skill or agent (path: dependency-change-review/templates/dependency-change-report.md). Skipping contract validation. |
+| blocking | SKILL | metadata | Missing required metadata fields: name, artifact_type, purpose, category, owner, version, inputs, outputs, dependencies, intended_consumers, quality_level, last_reviewed |
+| warning | SKILL | metadata | Purpose is missing or too short / vague. |
+| blocking | SKILL | contract | Inputs contract is missing or unstructured. |
+| blocking | SKILL | contract | Outputs contract is missing or unstructured. |
+| blocking | SKILL | contract | Outputs contract is vague (e.g. 'a report', 'analysis', 'summary'). |
+| warning | SKILL | contract | Outputs do not declare a structured format hint (json/markdown/yaml/...). |
+| warning | doc-source-of-truth | discovery | Artifact 'doc-source-of-truth' is not a skill or agent (path: documentation-update/references/doc-source-of-truth.md). Skipping contract validation. |
+| warning | README | discovery | Artifact 'README' is not a skill or agent (path: documentation-update/scripts/test_fixtures/README.md). Skipping contract validation. |
+| warning | self | discovery | Artifact 'self' is not a skill or agent (path: documentation-update/scripts/test_fixtures/self.md). Skipping contract validation. |
+| warning | api-doc-update-checklist | discovery | Artifact 'api-doc-update-checklist' is not a skill or agent (path: documentation-update/templates/api-doc-update-checklist.md). Skipping contract validation. |
+| warning | documentation-impact-report | discovery | Artifact 'documentation-impact-report' is not a skill or agent (path: documentation-update/templates/documentation-impact-report.md). Skipping contract validation. |
+| warning | readme-update-checklist | discovery | Artifact 'readme-update-checklist' is not a skill or agent (path: documentation-update/templates/readme-update-checklist.md). Skipping contract validation. |
+| blocking | SKILL | metadata | Missing required metadata fields: name, artifact_type, purpose, category, owner, version, inputs, outputs, dependencies, intended_consumers, quality_level, last_reviewed |
+| warning | SKILL | metadata | Purpose is missing or too short / vague. |
+| blocking | SKILL | contract | Inputs contract is missing or unstructured. |
+| blocking | SKILL | contract | Outputs contract is missing or unstructured. |
+| blocking | SKILL | contract | Outputs contract is vague (e.g. 'a report', 'analysis', 'summary'). |
+| warning | SKILL | contract | Outputs do not declare a structured format hint (json/markdown/yaml/...). |
+| warning | angular | discovery | Artifact 'angular' is not a skill or agent (path: frontend-implementation/references/profiles/angular.md). Skipping contract validation. |
+| warning | nextjs | discovery | Artifact 'nextjs' is not a skill or agent (path: frontend-implementation/references/profiles/nextjs.md). Skipping contract validation. |
+| warning | react | discovery | Artifact 'react' is not a skill or agent (path: frontend-implementation/references/profiles/react.md). Skipping contract validation. |
+| warning | static-ui | discovery | Artifact 'static-ui' is not a skill or agent (path: frontend-implementation/references/profiles/static-ui.md). Skipping contract validation. |
+| warning | vue | discovery | Artifact 'vue' is not a skill or agent (path: frontend-implementation/references/profiles/vue.md). Skipping contract validation. |
+| warning | frontend-implementation-report | discovery | Artifact 'frontend-implementation-report' is not a skill or agent (path: frontend-implementation/templates/frontend-implementation-report.md). Skipping contract validation. |
+| blocking | SKILL | metadata | Missing required metadata fields: name, artifact_type, purpose, category, owner, version, inputs, outputs, dependencies, intended_consumers, quality_level, last_reviewed |
+| warning | SKILL | metadata | Purpose is missing or too short / vague. |
+| blocking | SKILL | contract | Inputs contract is missing or unstructured. |
+| blocking | SKILL | contract | Outputs contract is missing or unstructured. |
+| blocking | SKILL | contract | Outputs contract is vague (e.g. 'a report', 'analysis', 'summary'). |
+| warning | SKILL | contract | Outputs do not declare a structured format hint (json/markdown/yaml/...). |
+| warning | handoff-packet | discovery | Artifact 'handoff-packet' is not a skill or agent (path: handoff-packet/templates/handoff-packet.md). Skipping contract validation. |
+| blocking | SKILL | metadata | Missing required metadata fields: name, artifact_type, purpose, category, owner, version, inputs, outputs, dependencies, intended_consumers, quality_level, last_reviewed |
+| warning | SKILL | metadata | Purpose is missing or too short / vague. |
+| blocking | SKILL | contract | Inputs contract is missing or unstructured. |
+| blocking | SKILL | contract | Outputs contract is missing or unstructured. |
+| blocking | SKILL | contract | Outputs contract is vague (e.g. 'a report', 'analysis', 'summary'). |
+| warning | SKILL | contract | Outputs do not declare a structured format hint (json/markdown/yaml/...). |
+| warning | handoff-and-forbidden | discovery | Artifact 'handoff-and-forbidden' is not a skill or agent (path: implementation-orchestrator/references/handoff-and-forbidden.md). Skipping contract validation. |
+| warning | stop-and-validation | discovery | Artifact 'stop-and-validation' is not a skill or agent (path: implementation-orchestrator/references/stop-and-validation.md). Skipping contract validation. |
+| warning | workflow | discovery | Artifact 'workflow' is not a skill or agent (path: implementation-orchestrator/references/workflow.md). Skipping contract validation. |
+| warning | implementation-routing-report | discovery | Artifact 'implementation-routing-report' is not a skill or agent (path: implementation-orchestrator/templates/implementation-routing-report.md). Skipping contract validation. |
+| blocking | SKILL | metadata | Missing required metadata fields: name, artifact_type, purpose, category, owner, version, inputs, outputs, dependencies, intended_consumers, quality_level, last_reviewed |
+| warning | SKILL | metadata | Purpose is missing or too short / vague. |
+| blocking | SKILL | contract | Inputs contract is missing or unstructured. |
+| blocking | SKILL | contract | Outputs contract is missing or unstructured. |
+| blocking | SKILL | contract | Outputs contract is vague (e.g. 'a report', 'analysis', 'summary'). |
+| warning | SKILL | contract | Outputs do not declare a structured format hint (json/markdown/yaml/...). |
+| warning | incident-severity-guide | discovery | Artifact 'incident-severity-guide' is not a skill or agent (path: incident-triage/references/incident-severity-guide.md). Skipping contract validation. |
+| warning | action-item | discovery | Artifact 'action-item' is not a skill or agent (path: incident-triage/templates/action-item.md). Skipping contract validation. |
+| warning | incident-triage-report | discovery | Artifact 'incident-triage-report' is not a skill or agent (path: incident-triage/templates/incident-triage-report.md). Skipping contract validation. |
+| warning | timeline | discovery | Artifact 'timeline' is not a skill or agent (path: incident-triage/templates/timeline.md). Skipping contract validation. |
+| blocking | SKILL | metadata | Missing required metadata fields: name, artifact_type, purpose, category, owner, version, inputs, outputs, dependencies, intended_consumers, quality_level, last_reviewed |
+| warning | SKILL | metadata | Purpose is missing or too short / vague. |
+| blocking | SKILL | contract | Inputs contract is missing or unstructured. |
+| blocking | SKILL | contract | Outputs contract is missing or unstructured. |
+| blocking | SKILL | contract | Outputs contract is vague (e.g. 'a report', 'analysis', 'summary'). |
+| warning | SKILL | contract | Outputs do not declare a structured format hint (json/markdown/yaml/...). |
+| warning | async-messaging | discovery | Artifact 'async-messaging' is not a skill or agent (path: integration-implementation/references/profiles/async-messaging.md). Skipping contract validation. |
+| warning | contract-testing | discovery | Artifact 'contract-testing' is not a skill or agent (path: integration-implementation/references/profiles/contract-testing.md). Skipping contract validation. |
+| warning | file-batch | discovery | Artifact 'file-batch' is not a skill or agent (path: integration-implementation/references/profiles/file-batch.md). Skipping contract validation. |
+| warning | rest-api | discovery | Artifact 'rest-api' is not a skill or agent (path: integration-implementation/references/profiles/rest-api.md). Skipping contract validation. |
+| warning | webhook | discovery | Artifact 'webhook' is not a skill or agent (path: integration-implementation/references/profiles/webhook.md). Skipping contract validation. |
+| warning | integration-implementation-report | discovery | Artifact 'integration-implementation-report' is not a skill or agent (path: integration-implementation/templates/integration-implementation-report.md). Skipping contract validation. |
+| blocking | SKILL | metadata | Missing required metadata fields: name, artifact_type, purpose, category, owner, version, inputs, outputs, dependencies, intended_consumers, quality_level, last_reviewed |
+| warning | SKILL | metadata | Purpose is missing or too short / vague. |
+| blocking | SKILL | contract | Inputs contract is missing or unstructured. |
+| blocking | SKILL | contract | Outputs contract is missing or unstructured. |
+| blocking | SKILL | contract | Outputs contract is vague (e.g. 'a report', 'analysis', 'summary'). |
+| warning | SKILL | contract | Outputs do not declare a structured format hint (json/markdown/yaml/...). |
+| warning | logging-metrics-tracing-checklist | discovery | Artifact 'logging-metrics-tracing-checklist' is not a skill or agent (path: observability-review/references/logging-metrics-tracing-checklist.md). Skipping contract validation. |
+| warning | observability-review-report | discovery | Artifact 'observability-review-report' is not a skill or agent (path: observability-review/templates/observability-review-report.md). Skipping contract validation. |
+| warning | slo-review | discovery | Artifact 'slo-review' is not a skill or agent (path: observability-review/templates/slo-review.md). Skipping contract validation. |
+| blocking | SKILL | metadata | Missing required metadata fields: name, artifact_type, purpose, category, owner, version, inputs, outputs, dependencies, intended_consumers, quality_level, last_reviewed |
+| warning | SKILL | metadata | Purpose is missing or too short / vague. |
+| blocking | SKILL | contract | Inputs contract is missing or unstructured. |
+| blocking | SKILL | contract | Outputs contract is missing or unstructured. |
+| blocking | SKILL | contract | Outputs contract is vague (e.g. 'a report', 'analysis', 'summary'). |
+| warning | SKILL | contract | Outputs do not declare a structured format hint (json/markdown/yaml/...). |
+| warning | release-gate-checklist | discovery | Artifact 'release-gate-checklist' is not a skill or agent (path: release-readiness/references/release-gate-checklist.md). Skipping contract validation. |
+| warning | go-no-go-checklist | discovery | Artifact 'go-no-go-checklist' is not a skill or agent (path: release-readiness/templates/go-no-go-checklist.md). Skipping contract validation. |
+| warning | release-readiness-report | discovery | Artifact 'release-readiness-report' is not a skill or agent (path: release-readiness/templates/release-readiness-report.md). Skipping contract validation. |
+| warning | release-risk-register | discovery | Artifact 'release-risk-register' is not a skill or agent (path: release-readiness/templates/release-risk-register.md). Skipping contract validation. |
+| blocking | SKILL | metadata | Missing required metadata fields: name, artifact_type, purpose, category, owner, version, inputs, outputs, dependencies, intended_consumers, quality_level, last_reviewed |
+| warning | SKILL | metadata | Purpose is missing or too short / vague. |
+| blocking | SKILL | contract | Inputs contract is missing or unstructured. |
+| blocking | SKILL | contract | Outputs contract is missing or unstructured. |
+| blocking | SKILL | contract | Outputs contract is vague (e.g. 'a report', 'analysis', 'summary'). |
+| warning | SKILL | contract | Outputs do not declare a structured format hint (json/markdown/yaml/...). |
+| warning | repo-discovery-report | discovery | Artifact 'repo-discovery-report' is not a skill or agent (path: repo-discovery/templates/repo-discovery-report.md). Skipping contract validation. |
+| blocking | SKILL | metadata | Missing required metadata fields: name, artifact_type, purpose, category, owner, version, inputs, outputs, dependencies, intended_consumers, quality_level, last_reviewed |
+| warning | SKILL | metadata | Purpose is missing or too short / vague. |
+| blocking | SKILL | contract | Inputs contract is missing or unstructured. |
+| blocking | SKILL | contract | Outputs contract is missing or unstructured. |
+| blocking | SKILL | contract | Outputs contract is vague (e.g. 'a report', 'analysis', 'summary'). |
+| warning | SKILL | contract | Outputs do not declare a structured format hint (json/markdown/yaml/...). |
+| warning | runbook-quality-checklist | discovery | Artifact 'runbook-quality-checklist' is not a skill or agent (path: runbook-authoring/references/runbook-quality-checklist.md). Skipping contract validation. |
+| warning | latency-spike | discovery | Artifact 'latency-spike' is not a skill or agent (path: runbook-authoring/scripts/test_fixtures/latency-spike.md). Skipping contract validation. |
+| warning | runbook-authoring-report | discovery | Artifact 'runbook-authoring-report' is not a skill or agent (path: runbook-authoring/templates/runbook-authoring-report.md). Skipping contract validation. |
+| warning | runbook | discovery | Artifact 'runbook' is not a skill or agent (path: runbook-authoring/templates/runbook.md). Skipping contract validation. |
+| warning | troubleshooting-guide | discovery | Artifact 'troubleshooting-guide' is not a skill or agent (path: runbook-authoring/templates/troubleshooting-guide.md). Skipping contract validation. |
+| blocking | SKILL | metadata | Missing required metadata fields: name, artifact_type, purpose, category, owner, version, inputs, outputs, dependencies, intended_consumers, quality_level, last_reviewed |
+| warning | SKILL | metadata | Purpose is missing or too short / vague. |
+| blocking | SKILL | contract | Inputs contract is missing or unstructured. |
+| blocking | SKILL | contract | Outputs contract is missing or unstructured. |
+| blocking | SKILL | contract | Outputs contract is vague (e.g. 'a report', 'analysis', 'summary'). |
+| warning | SKILL | contract | Outputs do not declare a structured format hint (json/markdown/yaml/...). |
+| warning | authz-review-checklist | discovery | Artifact 'authz-review-checklist' is not a skill or agent (path: security-review/references/authz-review-checklist.md). Skipping contract validation. |
+| warning | owasp-checklist | discovery | Artifact 'owasp-checklist' is not a skill or agent (path: security-review/references/owasp-checklist.md). Skipping contract validation. |
+| warning | secrets-review-checklist | discovery | Artifact 'secrets-review-checklist' is not a skill or agent (path: security-review/references/secrets-review-checklist.md). Skipping contract validation. |
+| warning | security-review-report | discovery | Artifact 'security-review-report' is not a skill or agent (path: security-review/templates/security-review-report.md). Skipping contract validation. |
+| blocking | SKILL | metadata | Missing required metadata fields: name, artifact_type, purpose, category, owner, version, inputs, outputs, dependencies, intended_consumers, quality_level, last_reviewed |
+| warning | SKILL | metadata | Purpose is missing or too short / vague. |
+| blocking | SKILL | contract | Inputs contract is missing or unstructured. |
+| blocking | SKILL | contract | Outputs contract is missing or unstructured. |
+| blocking | SKILL | contract | Outputs contract is vague (e.g. 'a report', 'analysis', 'summary'). |
+| warning | SKILL | contract | Outputs do not declare a structured format hint (json/markdown/yaml/...). |
+| warning | blocker | discovery | Artifact 'blocker' is not a skill or agent (path: task-state-management/templates/blocker.md). Skipping contract validation. |
+| warning | decision-log | discovery | Artifact 'decision-log' is not a skill or agent (path: task-state-management/templates/decision-log.md). Skipping contract validation. |
+| warning | state | discovery | Artifact 'state' is not a skill or agent (path: task-state-management/templates/state.json). Skipping contract validation. |
+| warning | task | discovery | Artifact 'task' is not a skill or agent (path: task-state-management/templates/task.md). Skipping contract validation. |
+| blocking | SKILL | metadata | Missing required metadata fields: name, artifact_type, purpose, category, owner, version, inputs, outputs, dependencies, intended_consumers, quality_level, last_reviewed |
+| warning | SKILL | metadata | Purpose is missing or too short / vague. |
+| blocking | SKILL | contract | Inputs contract is missing or unstructured. |
+| blocking | SKILL | contract | Outputs contract is missing or unstructured. |
+| blocking | SKILL | contract | Outputs contract is vague (e.g. 'a report', 'analysis', 'summary'). |
+| warning | SKILL | contract | Outputs do not declare a structured format hint (json/markdown/yaml/...). |
+| warning | risk-weighting | discovery | Artifact 'risk-weighting' is not a skill or agent (path: test-gap-analysis/references/risk-weighting.md). Skipping contract validation. |
+| warning | test-gap-report | discovery | Artifact 'test-gap-report' is not a skill or agent (path: test-gap-analysis/templates/test-gap-report.md). Skipping contract validation. |
+| blocking | SKILL | metadata | Missing required metadata fields: name, artifact_type, purpose, category, owner, version, inputs, outputs, dependencies, intended_consumers, quality_level, last_reviewed |
+| warning | SKILL | metadata | Purpose is missing or too short / vague. |
+| blocking | SKILL | contract | Inputs contract is missing or unstructured. |
+| blocking | SKILL | contract | Outputs contract is missing or unstructured. |
+| blocking | SKILL | contract | Outputs contract is vague (e.g. 'a report', 'analysis', 'summary'). |
+| warning | SKILL | contract | Outputs do not declare a structured format hint (json/markdown/yaml/...). |
+| warning | dotnet-testing | discovery | Artifact 'dotnet-testing' is not a skill or agent (path: test-generation/references/dotnet-testing.md). Skipping contract validation. |
+| warning | go-testing | discovery | Artifact 'go-testing' is not a skill or agent (path: test-generation/references/go-testing.md). Skipping contract validation. |
+| warning | jest-vitest | discovery | Artifact 'jest-vitest' is not a skill or agent (path: test-generation/references/jest-vitest.md). Skipping contract validation. |
+| warning | junit-spring | discovery | Artifact 'junit-spring' is not a skill or agent (path: test-generation/references/junit-spring.md). Skipping contract validation. |
+| warning | pytest-unittest | discovery | Artifact 'pytest-unittest' is not a skill or agent (path: test-generation/references/pytest-unittest.md). Skipping contract validation. |
+| warning | test-generation-report | discovery | Artifact 'test-generation-report' is not a skill or agent (path: test-generation/templates/test-generation-report.md). Skipping contract validation. |
+| blocking | SKILL | metadata | Missing required metadata fields: name, artifact_type, purpose, category, owner, version, inputs, outputs, dependencies, intended_consumers, quality_level, last_reviewed |
+| warning | SKILL | metadata | Purpose is missing or too short / vague. |
+| blocking | SKILL | contract | Inputs contract is missing or unstructured. |
+| blocking | SKILL | contract | Outputs contract is missing or unstructured. |
+| blocking | SKILL | contract | Outputs contract is vague (e.g. 'a report', 'analysis', 'summary'). |
+| warning | SKILL | contract | Outputs do not declare a structured format hint (json/markdown/yaml/...). |
+| warning | validation-report | discovery | Artifact 'validation-report' is not a skill or agent (path: validation-runner/templates/validation-report.md). Skipping contract validation. |
+| blocking | adr | dependency | Circular dependency: adr -> architecture-options-analysis -> adr |
+| blocking | release-gate-checklist | dependency | Circular dependency: release-gate-checklist -> go-no-go-checklist -> release-gate-checklist |
+| blocking | blocker | dependency | Circular dependency: blocker -> task -> blocker |
+| blocking | task | dependency | Circular dependency: task -> validation-report -> task |
 
 ## Dependency graph
-- Nodes: 56
+- Nodes: 78
 - Missing: 0
 - Circular: 4
 - Unused: 0
@@ -285,157 +331,130 @@ CI: FAIL
 
 | Flag | Count |
 | --- | --- |
-| over-broad | 22 |
-| unclear | 104 |
+| over-broad | 17 |
+| unclear | 82 |
 
 ### Over-broad skills (first 5)
-- `agents/CODE_REVIEW_AGENT` (score=50): Detected 4 distinct actions: design, detect, review, test. Skill may be over-broad; consider tightening scope.
-- `agents/DATA_ANALYST_AGENT` (score=50): Detected 4 distinct actions: analyze, build, create, report. Skill may be over-broad; consider tightening scope.
-- `agents/MONITORING_AGENT` (score=50): Detected 4 distinct actions: alert, build, detect, monitor. Skill may be over-broad; consider tightening scope.
-- `agents/PEN_TESTING_AGENT` (score=50): Detected 4 distinct actions: deploy, execute, report, test. Skill may be over-broad; consider tightening scope.
-- `agents/SOFTWARE_ENGINEER_AGENT` (score=50): Detected 4 distinct actions: design, refactor, review, test. Skill may be over-broad; consider tightening scope.
+- `SKILL` (score=50): Detected 5 distinct actions: audit, create, design, review, route. Skill may be over-broad; consider tightening scope.
+- `SKILL` (score=50): Detected 4 distinct actions: audit, recommend, report, review. Skill may be over-broad; consider tightening scope.
+- `SKILL` (score=25): Detected 6 distinct actions: design, merge, rank, report, review, sign. Skill is over-broad; consider splitting.
+- `code-review-report` (score=50): Detected 4 distinct actions: list, report, review, test. Skill may be over-broad; consider tightening scope.
+- `SKILL` (score=50): Detected 5 distinct actions: build, find, rank, report, review. Skill may be over-broad; consider tightening scope.
 
 ## Overlap (top 10 pairs)
 
 | Artifact A | Artifact B | Score | Recommendation |
 | --- | --- | --- | --- |
-| skills/templates | skills/templates | 55 | keep_separate |
-| skills/backend-implementation | skills/frontend-implementation | 54 | keep_separate |
-| skills/templates | skills/templates | 54 | keep_separate |
-| skills/profiles | skills/profiles | 53 | keep_separate |
-| skills/profiles | skills/profiles | 52 | keep_separate |
-| skills/templates | skills/templates | 49 | keep_separate |
-| skills/profiles | skills/profiles | 48 | keep_separate |
-| skills/templates | skills/templates | 43 | keep_separate |
-| skills/templates | skills/templates | 42 | keep_separate |
-| skills/templates | skills/templates | 42 | keep_separate |
+| SKILL | SKILL | 60 | keep_separate |
+| architecture-review-report | observability-review-report | 45 | keep_separate |
+| frontend-implementation-report | integration-implementation-report | 44 | keep_separate |
+| react | vue | 43 | keep_separate |
+| angular | react | 42 | keep_separate |
+| SKILL | SKILL | 41 | keep_separate |
+| observability-review-report | slo-review | 39 | keep_separate |
+| angular | vue | 38 | keep_separate |
+| SKILL | SKILL | 33 | keep_separate |
+| SKILL | SKILL | 33 | keep_separate |
 
 ## Scorecard
 | Name | ROI | Decision | Rationale |
 | --- | --- | --- | --- |
-| README | 32 | rewrite | Score 32; rewrite triggered by 4 blocking + 2 warnings. |
-| agents/ARCHITECT_AGENT | 43 | rewrite | Score 43; rewrite triggered by 1 blocking + 0 warnings. |
-| agents/CLOUD_SECURITY_AGENT | 42 | rewrite | Score 42; rewrite triggered by 1 blocking + 0 warnings. |
-| agents/CODE_REVIEW_AGENT | 44 | rewrite | Score 44; rewrite triggered by 1 blocking + 0 warnings. |
-| agents/COMMUNICATIONS_MANAGER_AGENT | 44 | rewrite | Score 44; rewrite triggered by 1 blocking + 0 warnings. |
-| agents/CREATIVE_DIRECTOR_AGENT | 44 | rewrite | Score 44; rewrite triggered by 1 blocking + 0 warnings. |
-| agents/DATA_ANALYST_AGENT | 44 | rewrite | Score 44; rewrite triggered by 1 blocking + 0 warnings. |
-| agents/DEVOPS_AGENT | 44 | rewrite | Score 44; rewrite triggered by 1 blocking + 0 warnings. |
-| agents/DOCUMENTATION_AGENT | 44 | rewrite | Score 44; rewrite triggered by 1 blocking + 0 warnings. |
-| agents/EXECUTIVE_ASSISTANT_AGENT | 44 | rewrite | Score 44; rewrite triggered by 1 blocking + 0 warnings. |
-| agents/FINANCIAL_ANALYST_AGENT | 44 | rewrite | Score 44; rewrite triggered by 1 blocking + 0 warnings. |
-| agents/KNOWLEDGE_MANAGER_AGENT | 44 | rewrite | Score 44; rewrite triggered by 1 blocking + 0 warnings. |
-| agents/LEGAL_COMPLIANCE_AGENT | 44 | rewrite | Score 44; rewrite triggered by 1 blocking + 0 warnings. |
-| agents/MONITORING_AGENT | 44 | rewrite | Score 44; rewrite triggered by 1 blocking + 0 warnings. |
-| agents/PEN_TESTING_AGENT | 43 | rewrite | Score 43; rewrite triggered by 1 blocking + 0 warnings. |
-| agents/PRODUCT_MANAGER_AGENT | 44 | rewrite | Score 44; rewrite triggered by 1 blocking + 0 warnings. |
-| agents/PROJECT_COORDINATOR_AGENT | 44 | rewrite | Score 44; rewrite triggered by 1 blocking + 0 warnings. |
-| agents/README | 42 | rewrite | Score 42; rewrite triggered by 1 blocking + 0 warnings. |
-| agents/RESEARCH_ANALYST_AGENT | 44 | rewrite | Score 44; rewrite triggered by 1 blocking + 0 warnings. |
-| agents/SECURITY_ANALYST_AGENT | 43 | rewrite | Score 43; rewrite triggered by 1 blocking + 0 warnings. |
-| agents/SOFTWARE_ENGINEER_AGENT | 44 | rewrite | Score 44; rewrite triggered by 1 blocking + 0 warnings. |
-| agents/TEST_AUTOMATION_AGENT | 44 | rewrite | Score 44; rewrite triggered by 1 blocking + 0 warnings. |
-| skills/README | 40 | rewrite | Score 40; rewrite triggered by 1 blocking + 0 warnings. |
-| skills/architecture-decision | 31 | rewrite | Score 31; rewrite triggered by 2 blocking + 0 warnings. |
-| skills/references | 33 | rewrite | Score 33; rewrite triggered by 21 blocking + 0 warnings. |
-| skills/templates | 31 | rewrite | Score 31; rewrite triggered by 34 blocking + 0 warnings. |
-| skills/templates | 31 | rewrite | Score 31; rewrite triggered by 34 blocking + 0 warnings. |
-| skills/architecture-review | 41 | rewrite | Score 41; rewrite triggered by 1 blocking + 0 warnings. |
-| skills/references | 33 | rewrite | Score 33; rewrite triggered by 21 blocking + 0 warnings. |
-| skills/references | 33 | rewrite | Score 33; rewrite triggered by 21 blocking + 0 warnings. |
-| skills/references | 33 | rewrite | Score 33; rewrite triggered by 21 blocking + 0 warnings. |
-| skills/templates | 31 | rewrite | Score 31; rewrite triggered by 34 blocking + 0 warnings. |
-| skills/backend-implementation | 30 | rewrite | Score 30; rewrite triggered by 2 blocking + 0 warnings. |
-| skills/profiles | 33 | rewrite | Score 33; rewrite triggered by 16 blocking + 0 warnings. |
-| skills/profiles | 33 | rewrite | Score 33; rewrite triggered by 16 blocking + 0 warnings. |
-| skills/profiles | 33 | rewrite | Score 33; rewrite triggered by 16 blocking + 0 warnings. |
-| skills/profiles | 33 | rewrite | Score 33; rewrite triggered by 16 blocking + 0 warnings. |
-| skills/profiles | 33 | rewrite | Score 33; rewrite triggered by 16 blocking + 0 warnings. |
-| skills/profiles | 33 | rewrite | Score 33; rewrite triggered by 16 blocking + 0 warnings. |
-| skills/templates | 31 | rewrite | Score 31; rewrite triggered by 34 blocking + 0 warnings. |
-| skills/code-change-review | 44 | rewrite | Score 44; rewrite triggered by 1 blocking + 0 warnings. |
-| skills/references | 33 | rewrite | Score 33; rewrite triggered by 21 blocking + 0 warnings. |
-| skills/templates | 31 | rewrite | Score 31; rewrite triggered by 34 blocking + 0 warnings. |
-| skills/database-migration-safety | 44 | rewrite | Score 44; rewrite triggered by 1 blocking + 0 warnings. |
-| skills/references | 33 | rewrite | Score 33; rewrite triggered by 21 blocking + 0 warnings. |
-| skills/templates | 31 | rewrite | Score 31; rewrite triggered by 34 blocking + 0 warnings. |
-| skills/dependency-change-review | 44 | rewrite | Score 44; rewrite triggered by 1 blocking + 0 warnings. |
-| skills/references | 33 | rewrite | Score 33; rewrite triggered by 21 blocking + 0 warnings. |
-| skills/templates | 31 | rewrite | Score 31; rewrite triggered by 34 blocking + 0 warnings. |
-| skills/documentation-update | 42 | rewrite | Score 42; rewrite triggered by 1 blocking + 0 warnings. |
-| skills/references | 33 | rewrite | Score 33; rewrite triggered by 21 blocking + 0 warnings. |
-| skills/test_fixtures | 35 | rewrite | Score 35; rewrite triggered by 3 blocking + 0 warnings. |
-| skills/test_fixtures | 35 | rewrite | Score 35; rewrite triggered by 3 blocking + 0 warnings. |
-| skills/templates | 31 | rewrite | Score 31; rewrite triggered by 34 blocking + 0 warnings. |
-| skills/templates | 31 | rewrite | Score 31; rewrite triggered by 34 blocking + 0 warnings. |
-| skills/templates | 31 | rewrite | Score 31; rewrite triggered by 34 blocking + 0 warnings. |
-| skills/frontend-implementation | 31 | rewrite | Score 31; rewrite triggered by 2 blocking + 0 warnings. |
-| skills/profiles | 33 | rewrite | Score 33; rewrite triggered by 16 blocking + 0 warnings. |
-| skills/profiles | 33 | rewrite | Score 33; rewrite triggered by 16 blocking + 0 warnings. |
-| skills/profiles | 33 | rewrite | Score 33; rewrite triggered by 16 blocking + 0 warnings. |
-| skills/profiles | 33 | rewrite | Score 33; rewrite triggered by 16 blocking + 0 warnings. |
-| skills/profiles | 33 | rewrite | Score 33; rewrite triggered by 16 blocking + 0 warnings. |
-| skills/templates | 31 | rewrite | Score 31; rewrite triggered by 34 blocking + 0 warnings. |
-| skills/handoff-packet | 43 | rewrite | Score 43; rewrite triggered by 1 blocking + 0 warnings. |
-| skills/templates | 31 | rewrite | Score 31; rewrite triggered by 34 blocking + 0 warnings. |
-| skills/implementation-orchestrator | 41 | rewrite | Score 41; rewrite triggered by 1 blocking + 0 warnings. |
-| skills/templates | 31 | rewrite | Score 31; rewrite triggered by 34 blocking + 0 warnings. |
-| skills/incident-triage | 41 | rewrite | Score 41; rewrite triggered by 1 blocking + 0 warnings. |
-| skills/references | 33 | rewrite | Score 33; rewrite triggered by 21 blocking + 0 warnings. |
-| skills/templates | 31 | rewrite | Score 31; rewrite triggered by 34 blocking + 0 warnings. |
-| skills/templates | 31 | rewrite | Score 31; rewrite triggered by 34 blocking + 0 warnings. |
-| skills/templates | 31 | rewrite | Score 31; rewrite triggered by 34 blocking + 0 warnings. |
-| skills/integration-implementation | 40 | rewrite | Score 40; rewrite triggered by 1 blocking + 0 warnings. |
-| skills/profiles | 33 | rewrite | Score 33; rewrite triggered by 16 blocking + 0 warnings. |
-| skills/profiles | 33 | rewrite | Score 33; rewrite triggered by 16 blocking + 0 warnings. |
-| skills/profiles | 33 | rewrite | Score 33; rewrite triggered by 16 blocking + 0 warnings. |
-| skills/profiles | 33 | rewrite | Score 33; rewrite triggered by 16 blocking + 0 warnings. |
-| skills/profiles | 33 | rewrite | Score 33; rewrite triggered by 16 blocking + 0 warnings. |
-| skills/templates | 31 | rewrite | Score 31; rewrite triggered by 34 blocking + 0 warnings. |
-| skills/observability-review | 42 | rewrite | Score 42; rewrite triggered by 1 blocking + 0 warnings. |
-| skills/references | 33 | rewrite | Score 33; rewrite triggered by 21 blocking + 0 warnings. |
-| skills/templates | 31 | rewrite | Score 31; rewrite triggered by 34 blocking + 0 warnings. |
-| skills/templates | 31 | rewrite | Score 31; rewrite triggered by 34 blocking + 0 warnings. |
-| skills/release-readiness | 41 | rewrite | Score 41; rewrite triggered by 1 blocking + 0 warnings. |
-| skills/references | 33 | rewrite | Score 33; rewrite triggered by 21 blocking + 0 warnings. |
-| skills/templates | 31 | rewrite | Score 31; rewrite triggered by 34 blocking + 0 warnings. |
-| skills/templates | 31 | rewrite | Score 31; rewrite triggered by 34 blocking + 0 warnings. |
-| skills/templates | 31 | rewrite | Score 31; rewrite triggered by 34 blocking + 0 warnings. |
-| skills/repo-discovery | 43 | rewrite | Score 43; rewrite triggered by 1 blocking + 0 warnings. |
-| skills/templates | 31 | rewrite | Score 31; rewrite triggered by 34 blocking + 0 warnings. |
-| skills/runbook-authoring | 41 | rewrite | Score 41; rewrite triggered by 1 blocking + 0 warnings. |
-| skills/references | 33 | rewrite | Score 33; rewrite triggered by 21 blocking + 0 warnings. |
-| skills/test_fixtures | 35 | rewrite | Score 35; rewrite triggered by 3 blocking + 0 warnings. |
-| skills/templates | 31 | rewrite | Score 31; rewrite triggered by 34 blocking + 0 warnings. |
-| skills/templates | 31 | rewrite | Score 31; rewrite triggered by 34 blocking + 0 warnings. |
-| skills/templates | 31 | rewrite | Score 31; rewrite triggered by 34 blocking + 0 warnings. |
-| skills/security-review | 43 | rewrite | Score 43; rewrite triggered by 1 blocking + 0 warnings. |
-| skills/references | 33 | rewrite | Score 33; rewrite triggered by 21 blocking + 0 warnings. |
-| skills/references | 33 | rewrite | Score 33; rewrite triggered by 21 blocking + 0 warnings. |
-| skills/references | 33 | rewrite | Score 33; rewrite triggered by 21 blocking + 0 warnings. |
-| skills/templates | 31 | rewrite | Score 31; rewrite triggered by 34 blocking + 0 warnings. |
-| skills/task-state-management | 42 | rewrite | Score 42; rewrite triggered by 1 blocking + 0 warnings. |
-| skills/templates | 31 | rewrite | Score 31; rewrite triggered by 34 blocking + 0 warnings. |
-| skills/templates | 31 | rewrite | Score 31; rewrite triggered by 34 blocking + 0 warnings. |
-| skills/templates | 31 | rewrite | Score 31; rewrite triggered by 34 blocking + 0 warnings. |
-| skills/templates | 31 | rewrite | Score 31; rewrite triggered by 34 blocking + 0 warnings. |
-| skills/test-gap-analysis | 32 | rewrite | Score 32; rewrite triggered by 2 blocking + 0 warnings. |
-| skills/references | 33 | rewrite | Score 33; rewrite triggered by 21 blocking + 0 warnings. |
-| skills/templates | 31 | rewrite | Score 31; rewrite triggered by 34 blocking + 0 warnings. |
-| skills/test-generation | 43 | rewrite | Score 43; rewrite triggered by 1 blocking + 0 warnings. |
-| skills/references | 33 | rewrite | Score 33; rewrite triggered by 21 blocking + 0 warnings. |
-| skills/references | 33 | rewrite | Score 33; rewrite triggered by 21 blocking + 0 warnings. |
-| skills/references | 33 | rewrite | Score 33; rewrite triggered by 21 blocking + 0 warnings. |
-| skills/references | 33 | rewrite | Score 33; rewrite triggered by 21 blocking + 0 warnings. |
-| skills/references | 33 | rewrite | Score 33; rewrite triggered by 21 blocking + 0 warnings. |
-| skills/templates | 31 | rewrite | Score 31; rewrite triggered by 34 blocking + 0 warnings. |
-| skills/validation-runner | 42 | rewrite | Score 42; rewrite triggered by 1 blocking + 0 warnings. |
-| skills/templates | 31 | rewrite | Score 31; rewrite triggered by 34 blocking + 0 warnings. |
-| adr-index | 44 | rewrite | Score 44; rewrite triggered by 1 blocking + 0 warnings. |
-| approval-gate | 44 | rewrite | Score 44; rewrite triggered by 1 blocking + 0 warnings. |
-| findings-severity | 44 | rewrite | Score 44; rewrite triggered by 1 blocking + 0 warnings. |
-| go-no-go-summary | 44 | rewrite | Score 44; rewrite triggered by 1 blocking + 0 warnings. |
-| incident-summary | 44 | rewrite | Score 44; rewrite triggered by 1 blocking + 0 warnings. |
-| operational-risk-register | 44 | rewrite | Score 44; rewrite triggered by 1 blocking + 0 warnings. |
-| risk-register | 44 | rewrite | Score 44; rewrite triggered by 1 blocking + 0 warnings. |
-| task-spec-packet | 43 | rewrite | Score 43; rewrite triggered by 1 blocking + 0 warnings. |
+| README | 41 | rewrite | Score 41; rewrite triggered by 0 blocking + 2 warnings. |
+| SKILL | 34 | rewrite | Score 34; rewrite triggered by 84 blocking + 42 warnings. |
+| decision-quality-checklist | 49 | merge | Score 49; merge candidate (high overlap detected). |
+| adr | 39 | rewrite | Score 39; rewrite triggered by 1 blocking + 1 warnings. |
+| architecture-options-analysis | 48 | merge | Score 48; merge candidate (high overlap detected). |
+| SKILL | 34 | rewrite | Score 34; rewrite triggered by 84 blocking + 42 warnings. |
+| architecture-risk-checklist | 49 | merge | Score 49; merge candidate (high overlap detected). |
+| distributed-systems-checklist | 49 | merge | Score 49; merge candidate (high overlap detected). |
+| modular-monolith-checklist | 49 | merge | Score 49; merge candidate (high overlap detected). |
+| architecture-review-report | 48 | merge | Score 48; merge candidate (high overlap detected). |
+| SKILL | 34 | rewrite | Score 34; rewrite triggered by 84 blocking + 42 warnings. |
+| dotnet | 49 | merge | Score 49; merge candidate (high overlap detected). |
+| go | 50 | rewrite | Score 50; rewrite triggered by 0 blocking + 1 warnings. |
+| java-spring | 49 | merge | Score 49; merge candidate (high overlap detected). |
+| mixed-monolith | 49 | merge | Score 49; merge candidate (high overlap detected). |
+| node-typescript | 49 | merge | Score 49; merge candidate (high overlap detected). |
+| python | 50 | rewrite | Score 50; rewrite triggered by 0 blocking + 1 warnings. |
+| backend-implementation-report | 49 | merge | Score 49; merge candidate (high overlap detected). |
+| SKILL | 34 | rewrite | Score 34; rewrite triggered by 84 blocking + 42 warnings. |
+| review-severity | 49 | merge | Score 49; merge candidate (high overlap detected). |
+| code-review-report | 49 | merge | Score 49; merge candidate (high overlap detected). |
+| SKILL | 34 | rewrite | Score 34; rewrite triggered by 84 blocking + 42 warnings. |
+| migration-risk-checklist | 48 | merge | Score 48; merge candidate (high overlap detected). |
+| migration-safety-report | 49 | merge | Score 49; merge candidate (high overlap detected). |
+| SKILL | 34 | rewrite | Score 34; rewrite triggered by 84 blocking + 42 warnings. |
+| dependency-risk-checklist | 49 | merge | Score 49; merge candidate (high overlap detected). |
+| dependency-change-report | 49 | merge | Score 49; merge candidate (high overlap detected). |
+| SKILL | 34 | rewrite | Score 34; rewrite triggered by 84 blocking + 42 warnings. |
+| doc-source-of-truth | 48 | merge | Score 48; merge candidate (high overlap detected). |
+| README | 41 | rewrite | Score 41; rewrite triggered by 0 blocking + 2 warnings. |
+| self | 50 | rewrite | Score 50; rewrite triggered by 0 blocking + 1 warnings. |
+| api-doc-update-checklist | 49 | merge | Score 49; merge candidate (high overlap detected). |
+| documentation-impact-report | 49 | merge | Score 49; merge candidate (high overlap detected). |
+| readme-update-checklist | 49 | merge | Score 49; merge candidate (high overlap detected). |
+| SKILL | 34 | rewrite | Score 34; rewrite triggered by 84 blocking + 42 warnings. |
+| angular | 48 | merge | Score 48; merge candidate (high overlap detected). |
+| nextjs | 48 | merge | Score 48; merge candidate (high overlap detected). |
+| react | 48 | merge | Score 48; merge candidate (high overlap detected). |
+| static-ui | 49 | merge | Score 49; merge candidate (high overlap detected). |
+| vue | 49 | merge | Score 49; merge candidate (high overlap detected). |
+| frontend-implementation-report | 49 | merge | Score 49; merge candidate (high overlap detected). |
+| SKILL | 34 | rewrite | Score 34; rewrite triggered by 84 blocking + 42 warnings. |
+| handoff-packet | 49 | merge | Score 49; merge candidate (high overlap detected). |
+| SKILL | 34 | rewrite | Score 34; rewrite triggered by 84 blocking + 42 warnings. |
+| handoff-and-forbidden | 49 | merge | Score 49; merge candidate (high overlap detected). |
+| stop-and-validation | 50 | rewrite | Score 50; rewrite triggered by 0 blocking + 1 warnings. |
+| workflow | 49 | merge | Score 49; merge candidate (high overlap detected). |
+| implementation-routing-report | 48 | merge | Score 48; merge candidate (high overlap detected). |
+| SKILL | 34 | rewrite | Score 34; rewrite triggered by 84 blocking + 42 warnings. |
+| incident-severity-guide | 49 | merge | Score 49; merge candidate (high overlap detected). |
+| action-item | 49 | merge | Score 49; merge candidate (high overlap detected). |
+| incident-triage-report | 48 | merge | Score 48; merge candidate (high overlap detected). |
+| timeline | 49 | merge | Score 49; merge candidate (high overlap detected). |
+| SKILL | 34 | rewrite | Score 34; rewrite triggered by 84 blocking + 42 warnings. |
+| async-messaging | 48 | merge | Score 48; merge candidate (high overlap detected). |
+| contract-testing | 48 | merge | Score 48; merge candidate (high overlap detected). |
+| file-batch | 48 | merge | Score 48; merge candidate (high overlap detected). |
+| rest-api | 48 | merge | Score 48; merge candidate (high overlap detected). |
+| webhook | 48 | merge | Score 48; merge candidate (high overlap detected). |
+| integration-implementation-report | 48 | merge | Score 48; merge candidate (high overlap detected). |
+| SKILL | 34 | rewrite | Score 34; rewrite triggered by 84 blocking + 42 warnings. |
+| logging-metrics-tracing-checklist | 48 | merge | Score 48; merge candidate (high overlap detected). |
+| observability-review-report | 48 | merge | Score 48; merge candidate (high overlap detected). |
+| slo-review | 49 | merge | Score 49; merge candidate (high overlap detected). |
+| SKILL | 34 | rewrite | Score 34; rewrite triggered by 84 blocking + 42 warnings. |
+| release-gate-checklist | 39 | rewrite | Score 39; rewrite triggered by 1 blocking + 1 warnings. |
+| go-no-go-checklist | 49 | merge | Score 49; merge candidate (high overlap detected). |
+| release-readiness-report | 48 | merge | Score 48; merge candidate (high overlap detected). |
+| release-risk-register | 49 | merge | Score 49; merge candidate (high overlap detected). |
+| SKILL | 34 | rewrite | Score 34; rewrite triggered by 84 blocking + 42 warnings. |
+| repo-discovery-report | 49 | merge | Score 49; merge candidate (high overlap detected). |
+| SKILL | 34 | rewrite | Score 34; rewrite triggered by 84 blocking + 42 warnings. |
+| runbook-quality-checklist | 49 | merge | Score 49; merge candidate (high overlap detected). |
+| latency-spike | 50 | rewrite | Score 50; rewrite triggered by 0 blocking + 1 warnings. |
+| runbook-authoring-report | 49 | merge | Score 49; merge candidate (high overlap detected). |
+| runbook | 49 | merge | Score 49; merge candidate (high overlap detected). |
+| troubleshooting-guide | 49 | merge | Score 49; merge candidate (high overlap detected). |
+| SKILL | 34 | rewrite | Score 34; rewrite triggered by 84 blocking + 42 warnings. |
+| authz-review-checklist | 49 | merge | Score 49; merge candidate (high overlap detected). |
+| owasp-checklist | 49 | merge | Score 49; merge candidate (high overlap detected). |
+| secrets-review-checklist | 49 | merge | Score 49; merge candidate (high overlap detected). |
+| security-review-report | 49 | merge | Score 49; merge candidate (high overlap detected). |
+| SKILL | 34 | rewrite | Score 34; rewrite triggered by 84 blocking + 42 warnings. |
+| blocker | 40 | rewrite | Score 40; rewrite triggered by 1 blocking + 1 warnings. |
+| decision-log | 50 | rewrite | Score 50; rewrite triggered by 0 blocking + 1 warnings. |
+| state | 50 | rewrite | Score 50; rewrite triggered by 0 blocking + 1 warnings. |
+| task | 45 | rewrite | Score 45; rewrite triggered by 1 blocking + 1 warnings. |
+| SKILL | 34 | rewrite | Score 34; rewrite triggered by 84 blocking + 42 warnings. |
+| risk-weighting | 49 | merge | Score 49; merge candidate (high overlap detected). |
+| test-gap-report | 49 | merge | Score 49; merge candidate (high overlap detected). |
+| SKILL | 34 | rewrite | Score 34; rewrite triggered by 84 blocking + 42 warnings. |
+| dotnet-testing | 49 | merge | Score 49; merge candidate (high overlap detected). |
+| go-testing | 49 | merge | Score 49; merge candidate (high overlap detected). |
+| jest-vitest | 49 | merge | Score 49; merge candidate (high overlap detected). |
+| junit-spring | 49 | merge | Score 49; merge candidate (high overlap detected). |
+| pytest-unittest | 49 | merge | Score 49; merge candidate (high overlap detected). |
+| test-generation-report | 49 | merge | Score 49; merge candidate (high overlap detected). |
+| SKILL | 34 | rewrite | Score 34; rewrite triggered by 84 blocking + 42 warnings. |
+| validation-report | 50 | rewrite | Score 50; rewrite triggered by 0 blocking + 1 warnings. |
