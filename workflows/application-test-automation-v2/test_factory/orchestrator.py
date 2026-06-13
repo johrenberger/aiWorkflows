@@ -18,7 +18,7 @@ from .analyzers.coverage_normalizer import (
     parse_python_coverage_xml,
 )
 from .analyzers.repo_inventory import inventory_repo
-from .analyzers.risk_scorer import priority, score_file, weighted_index
+from .analyzers.risk_scorer import is_zero_coverage, priority, score_file, weighted_index
 from .analyzers.source_test_mapper import infer_existing_test_files, supporting_files_for_source
 from .analyzers.test_type_recommender import conventions_summary, recommend_test_type
 from .config import load_config
@@ -585,13 +585,21 @@ class TestFactoryOrchestrator:
         )
         return scores
 
-    def queue(self, module: str | None = None) -> list[dict[str, Any]]:
+    def queue(self, module: str | None = None, zero_coverage_only: bool = False) -> list[dict[str, Any]]:
         scores = [item for item in _read_json(self.artifacts / "risk_scores.json", []) if _module_matches_scope(module, item["path"], item.get("module", ""))]
         queue = []
         for item in scores:
             if item.get("coverage_gap", 0) <= 0 and item.get("risk_score", 0) <= 0:
                 continue
             item["priority"] = float(item.get("risk_score", 0)) * float(item.get("coverage_gap", 0))
+            # Story 024: annotate every item with `zero_coverage` so
+            # downstream consumers (final_report.md, the user's
+            # scripts, the new CLI flag) can filter without having
+            # to know the line/branch threshold semantics.
+            item["zero_coverage"] = is_zero_coverage(
+                float(item.get("line_coverage", 0.0) or 0.0),
+                item.get("branch_coverage"),
+            )
             queue.append(item)
         queue.sort(key=lambda item: (-item["priority"], item["path"]))
         _dump_json(self.artifacts / "test_gap_queue.json", queue)
@@ -599,6 +607,17 @@ class TestFactoryOrchestrator:
             self.artifacts / "component_test_candidates.json",
             [item for item in queue if self._is_component_candidate(item)],
         )
+        # Story 024: separate artifact for zero-coverage-only items,
+        # sorted by risk_score (the priority formula collapses to
+        # risk_score * 180 for all of them, so risk_score is the
+        # meaningful axis). Path is the deterministic tiebreak.
+        zero_coverage_queue = sorted(
+            [item for item in queue if item.get("zero_coverage")],
+            key=lambda item: (-float(item.get("risk_score", 0.0)), item["path"]),
+        )
+        _dump_json(self.artifacts / "zero_coverage_queue.json", zero_coverage_queue)
+        if zero_coverage_only:
+            return zero_coverage_queue
         return queue
 
     @staticmethod
@@ -629,9 +648,13 @@ class TestFactoryOrchestrator:
         )
         return any(marker in path for marker in markers)
 
-    def workitems(self, limit: int | None = None, module: str | None = None) -> list[WorkItemRecord]:
+    def workitems(self, limit: int | None = None, module: str | None = None, zero_coverage_only: bool = False) -> list[WorkItemRecord]:
         coverage_records = [CoverageRecord(**item) for item in _read_json(self.artifacts / "coverage_baseline.json", []) if _module_matches_scope(module, item["path"])]
         scores = [RiskScoreRecord(**item) for item in _read_json(self.artifacts / "risk_scores.json", []) if _module_matches_scope(module, item["path"], item.get("module", ""))]
+        # Story 024: when --zero-coverage-only is set, restrict the
+        # generated work items to files with no test coverage.
+        if zero_coverage_only:
+            scores = [s for s in scores if is_zero_coverage(s.line_coverage, s.branch_coverage)]
         source_maps: dict[str, SourceTestMapRecord] = {}
         for score in scores:
             source_file = self.repo_root / score.path
@@ -901,6 +924,7 @@ class TestFactoryOrchestrator:
         module: str | None = None,
         generate_coverage: bool = True,
         adapter_name: str | None = None,
+        zero_coverage_only: bool = False,
     ) -> dict[str, Any]:
         self.scan(module=module)
         # Story 020: coverage generation is now ON by default. The CLI surfaces
@@ -916,8 +940,8 @@ class TestFactoryOrchestrator:
             coverage_generation = self.coverage_generate(module=module, adapter_name=adapter_name)
         self.coverage(module=module)
         self.score(module=module)
-        self.queue(module=module)
-        self.workitems(limit=limit, module=module)
+        self.queue(module=module, zero_coverage_only=zero_coverage_only)
+        self.workitems(limit=limit, module=module, zero_coverage_only=zero_coverage_only)
         self.mutate(enabled=mutation, high_risk_only=mutation_high_risk_only)
         self.report(module=module)
         return {
