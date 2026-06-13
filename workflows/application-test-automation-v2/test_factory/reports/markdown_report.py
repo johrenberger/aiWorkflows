@@ -32,6 +32,7 @@ def render_final_report(artifacts_dir: str | Path) -> str:
     coverage = _load_json(artifacts_dir, "coverage_baseline.json", [])
     risk = _load_json(artifacts_dir, "risk_scores.json", [])
     queue = _load_json(artifacts_dir, "test_gap_queue.json", [])
+    zero_coverage_queue = _load_json(artifacts_dir, "zero_coverage_queue.json", [])
     exclusions = _load_json(artifacts_dir, "exclusions.json", [])
     language_stack = _load_json(artifacts_dir, "language_stack.json", {})
     module_graph = _load_json(artifacts_dir, "module_graph.json", {})
@@ -97,6 +98,22 @@ def render_final_report(artifacts_dir: str | Path) -> str:
     parts.append(f"- Branch-weighted index: `{weighted.get('branch_index', 0)}`")
     parts.extend(["", "## Highest Risk Gaps"])
     parts.extend(_format_top_items(queue, 10) or ["- no queue items were generated"])
+    parts.extend(["", "## Zero-Coverage Files"])
+    if zero_coverage_queue:
+        # Sort by risk_score desc for the report (the artifact is
+        # already sorted this way; we re-sort defensively in case a
+        # caller hand-edits the artifact).
+        top_zero = sorted(
+            zero_coverage_queue,
+            key=lambda item: (-float(item.get("risk_score", 0.0)), _item_path(item)),
+        )[:10]
+        parts.append(f"- Count: `{len(zero_coverage_queue)}`")
+        for item in top_zero:
+            path = _item_path(item) or "unknown"
+            risk_score = item.get("risk_score", 0)
+            parts.append(f"- {path} | risk_score={risk_score}")
+    else:
+        parts.append("- no zero-coverage files detected")
     parts.extend(["", "## Recommended Next Work Items"])
     parts.extend(_format_top_items(queue, 10) or ["- no recommendations available"])
     parts.extend(["", "## Component or Integration Candidates"])

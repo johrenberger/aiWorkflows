@@ -7,6 +7,37 @@ from typing import Any
 from ..models import CoverageRecord, RiskScoreRecord
 
 
+def is_zero_coverage(
+    line_coverage: float,
+    branch_coverage: float | None = None,
+) -> bool:
+    """True when a file has *no* test coverage at all.
+
+    A file is "zero coverage" when:
+      - `line_coverage` is 0.0 (no lines hit by tests), AND
+      - `branch_coverage` is either None (no branch data reported) or
+        0.0 (branch data was reported but no branches hit).
+
+    This matches the user-visible concept of "completely untested":
+    the file may have been analyzed (line_coverage is a number, not
+    missing) but no test exercised it, OR the file wasn't analyzed
+    at all (line_coverage defaults to 0.0 in that case — see
+    `score_file`). Both cases are surfaced in the zero-coverage
+    queue.
+
+    Story 024: previously zero-coverage files were mixed in with
+    low-coverage files in `test_gap_queue.json`; the user had to
+    filter manually. This helper powers a `zero_coverage: bool`
+    annotation on every queue item and a separate
+    `zero_coverage_queue.json` artifact.
+    """
+    if line_coverage != 0.0:
+        return False
+    if branch_coverage is None:
+        return True
+    return branch_coverage == 0.0
+
+
 def score_file(
     path: str,
     module: str,

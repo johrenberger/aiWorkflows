@@ -22,6 +22,11 @@ def build_parser() -> argparse.ArgumentParser:
         sub.add_argument("--work-item-id", default=None)
         sub.add_argument("--module", default=None)
         sub.add_argument("--scope", default=None)
+        sub.add_argument("--zero-coverage-only", action="store_true",
+                         help="Story 024: when set, restrict queue/workitems/run output to "
+                              "files with zero test coverage (line_coverage==0.0 and "
+                              "branch_coverage in (None, 0.0)). No effect on branch/commit/"
+                              "coverage/score/scan.")
         sub.add_argument("--allow-dirty", action="store_true")
         sub.add_argument("--mutation", action="store_true")
         sub.add_argument("--mutation-high-risk-only", action="store_true")
@@ -53,9 +58,9 @@ def main(argv: list[str] | None = None) -> int:
         elif args.command == "score":
             result = [asdict(record) for record in orchestrator.score(module=args.module or args.scope)]
         elif args.command == "queue":
-            result = orchestrator.queue(module=args.module or args.scope)
+            result = orchestrator.queue(module=args.module or args.scope, zero_coverage_only=args.zero_coverage_only)
         elif args.command == "workitems":
-            result = [asdict(record) for record in orchestrator.workitems(limit=args.limit, module=args.module or args.scope)]
+            result = [asdict(record) for record in orchestrator.workitems(limit=args.limit, module=args.module or args.scope, zero_coverage_only=args.zero_coverage_only)]
         elif args.command == "validate":
             if not args.work_item_id:
                 raise SystemExit("--work-item-id is required for validate")
@@ -72,6 +77,7 @@ def main(argv: list[str] | None = None) -> int:
                 module=args.module or args.scope,
                 generate_coverage=args.generate_coverage,
                 adapter_name=args.adapter,
+                zero_coverage_only=args.zero_coverage_only,
             )
         elif args.command == "branch":
             result = orchestrator.branch(args.scope or args.module or "root", allow_dirty=args.allow_dirty)
