@@ -173,31 +173,43 @@ def test_queue_annotates_every_item_with_zero_coverage_flag(tmp_path):
 
 
 def test_zero_coverage_queue_artifact_filtered_and_sorted_by_risk_score(tmp_path):
-    """Scenario 2: zero_coverage_queue.json contains only zero-coverage
-    items, sorted by risk_score desc (path is the deterministic tiebreak)."""
+    """Scenario 2: zero_coverage_queue.json contains only the
+    measured-zero subset of zero-coverage items (story 031).
+    Sorted by risk_score desc (path is the deterministic tiebreak).
+    In the test fixture, a.py is unmeasurable (branch_coverage=None)
+    and d.py is measured-zero (branch_coverage=0.0). Only d.py is
+    in zero_coverage_queue.json after story 031.
+    """
     orch = _init_orchestrator_with_fake_risk_scores(tmp_path)
     try:
         orch.queue()
         artifact = tmp_path / "analysis-artifacts" / "zero_coverage_queue.json"
         assert artifact.exists(), "zero_coverage_queue.json should be written"
         items = json.loads(artifact.read_text(encoding="utf-8"))
-        assert len(items) == 2, f"expected 2 zero-coverage items, got {len(items)}"
-        paths = [item["path"] for item in items]
-        assert paths == ["package/d.py", "package/a.py"], (
-            f"expected sort by risk_score desc (d=900, a=100), got {paths}"
-        )
+        # Story 031: only the measured-zero subset. In the test
+        # fixture, that's just d.py (a.py is unmeasurable).
+        assert len(items) == 1, f"expected 1 measured-zero item, got {len(items)}: {[i['path'] for i in items]}"
+        assert items[0]["path"] == "package/d.py"
+        # Verify the coverage_status annotation is set.
+        assert items[0]["coverage_status"] == "measured_zero"
     finally:
         orch.close()
 
 
 def test_queue_with_zero_coverage_only_filter_returns_only_zero_coverage_items(tmp_path):
     """Scenario 3: orchestrator.queue(zero_coverage_only=True) returns
-    only the zero-coverage subset (same content as the artifact)."""
+    only the MEASURED-zero subset (same content as the artifact).
+    Story 031: previously this returned all `zero_coverage=True` items
+    including unmeasurable; now it returns only measured-zero.
+    """
     orch = _init_orchestrator_with_fake_risk_scores(tmp_path)
     try:
         result = orch.queue(zero_coverage_only=True)
-        assert len(result) == 2
+        assert len(result) == 1
+        # The legacy `zero_coverage` bool is still True (backward compat)
         assert all(item.get("zero_coverage") is True for item in result)
+        # But the new `coverage_status` is specifically "measured_zero"
+        assert all(item["coverage_status"] == "measured_zero" for item in result)
         assert all(item["line_coverage"] == 0.0 for item in result)
     finally:
         orch.close()
@@ -235,7 +247,10 @@ def _run_cli(*args: str, cwd: Path) -> subprocess.CompletedProcess[str]:
 
 def test_cli_queue_zero_coverage_only_filters_stdout(tmp_path):
     """Scenario 3 (CLI): test-factory queue --zero-coverage-only
-    returns only the zero-coverage items in its stdout JSON output."""
+    returns only the MEASURED-zero items in its stdout JSON output.
+    (Story 031: unmeasurable items now have a separate
+    --unmeasurable-only flag.)
+    """
     repo = tmp_path / "fake-repo"
     repo.mkdir()
     out = tmp_path / "analysis-artifacts"
@@ -250,10 +265,11 @@ def test_cli_queue_zero_coverage_only_filters_stdout(tmp_path):
     )
     assert result.returncode == 0, f"CLI failed: {result.stderr}"
     items = json.loads(result.stdout)
-    assert len(items) == 2
-    assert all(item["line_coverage"] == 0.0 for item in items)
-    paths = [item["path"] for item in items]
-    assert paths == ["package/d.py", "package/a.py"]
+    # Story 031: only measured-zero, not unmeasurable. In the test
+    # fixture, that's just d.py.
+    assert len(items) == 1
+    assert items[0]["path"] == "package/d.py"
+    assert items[0]["coverage_status"] == "measured_zero"
 
 
 def test_cli_run_zero_coverage_only_writes_filtered_workitems(tmp_path):

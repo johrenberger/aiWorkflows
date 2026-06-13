@@ -19,7 +19,15 @@ from .analyzers.coverage_normalizer import (
     parse_python_coverage_xml,
 )
 from .analyzers.repo_inventory import inventory_repo
-from .analyzers.risk_scorer import is_zero_coverage, priority, score_file, weighted_index
+from .analyzers.risk_scorer import (
+    COVERAGE_STATUS_MEASURED_ZERO,
+    COVERAGE_STATUS_UNMEASURABLE,
+    coverage_status,
+    is_zero_coverage,
+    priority,
+    score_file,
+    weighted_index,
+)
 from .analyzers.source_test_mapper import infer_existing_test_files, supporting_files_for_source
 from .analyzers.test_type_recommender import conventions_summary, recommend_test_type
 from .config import load_config
@@ -639,7 +647,7 @@ class TestFactoryOrchestrator:
         )
         return scores
 
-    def queue(self, module: str | None = None, zero_coverage_only: bool = False) -> list[dict[str, Any]]:
+    def queue(self, module: str | None = None, zero_coverage_only: bool = False, unmeasurable_only: bool = False) -> list[dict[str, Any]]:
         scores = [item for item in _read_json(self.artifacts / "risk_scores.json", []) if _module_matches_scope(module, item["path"], item.get("module", ""))]
         queue = []
         for item in scores:
@@ -654,6 +662,16 @@ class TestFactoryOrchestrator:
                 float(item.get("line_coverage", 0.0) or 0.0),
                 item.get("branch_coverage"),
             )
+            # Story 031: also annotate with the three-state
+            # coverage_status. Downstream code that wants to
+            # distinguish "really untested" from "couldn't be
+            # analyzed" should use this field. The `zero_coverage`
+            # bool is preserved for backward compat with story 024
+            # consumers.
+            item["coverage_status"] = coverage_status(
+                float(item.get("line_coverage", 0.0) or 0.0),
+                item.get("branch_coverage"),
+            )
             queue.append(item)
         queue.sort(key=lambda item: (-item["priority"], item["path"]))
         _dump_json(self.artifacts / "test_gap_queue.json", queue)
@@ -661,15 +679,28 @@ class TestFactoryOrchestrator:
             self.artifacts / "component_test_candidates.json",
             [item for item in queue if self._is_component_candidate(item)],
         )
-        # Story 024: separate artifact for zero-coverage-only items,
-        # sorted by risk_score (the priority formula collapses to
-        # risk_score * 180 for all of them, so risk_score is the
-        # meaningful axis). Path is the deterministic tiebreak.
+        # Story 024 + 031: separate artifacts. Story 024 wrote a
+        # single `zero_coverage_queue.json` that conflated measured
+        # zero and unmeasurable. Story 031 splits it:
+        #   - `zero_coverage_queue.json` = measured_zero only
+        #     (the user's real priority for new tests)
+        #   - `unmeasurable_queue.json` = unmeasurable only
+        #     (the user needs to investigate the build, not tests)
+        # Both sorted by risk_score (the priority formula collapses
+        # to risk_score * 180 for zero-coverage items). Path is the
+        # deterministic tiebreak.
         zero_coverage_queue = sorted(
-            [item for item in queue if item.get("zero_coverage")],
+            [item for item in queue if item.get("coverage_status") == COVERAGE_STATUS_MEASURED_ZERO],
+            key=lambda item: (-float(item.get("risk_score", 0.0)), item["path"]),
+        )
+        unmeasurable_queue = sorted(
+            [item for item in queue if item.get("coverage_status") == COVERAGE_STATUS_UNMEASURABLE],
             key=lambda item: (-float(item.get("risk_score", 0.0)), item["path"]),
         )
         _dump_json(self.artifacts / "zero_coverage_queue.json", zero_coverage_queue)
+        _dump_json(self.artifacts / "unmeasurable_queue.json", unmeasurable_queue)
+        if unmeasurable_only:
+            return unmeasurable_queue
         if zero_coverage_only:
             return zero_coverage_queue
         return queue
@@ -702,13 +733,17 @@ class TestFactoryOrchestrator:
         )
         return any(marker in path for marker in markers)
 
-    def workitems(self, limit: int | None = None, module: str | None = None, zero_coverage_only: bool = False) -> list[WorkItemRecord]:
+    def workitems(self, limit: int | None = None, module: str | None = None, zero_coverage_only: bool = False, unmeasurable_only: bool = False) -> list[WorkItemRecord]:
         coverage_records = [CoverageRecord(**item) for item in _read_json(self.artifacts / "coverage_baseline.json", []) if _module_matches_scope(module, item["path"])]
         scores = [RiskScoreRecord(**item) for item in _read_json(self.artifacts / "risk_scores.json", []) if _module_matches_scope(module, item["path"], item.get("module", ""))]
-        # Story 024: when --zero-coverage-only is set, restrict the
-        # generated work items to files with no test coverage.
+        # Story 024 + 031: when --zero-coverage-only is set, restrict
+        # the generated work items to files with no test coverage.
+        # Story 031 adds --unmeasurable-only for the unmeasurable
+        # bucket (see coverage_status() in risk_scorer.py).
         if zero_coverage_only:
             scores = [s for s in scores if is_zero_coverage(s.line_coverage, s.branch_coverage)]
+        elif unmeasurable_only:
+            scores = [s for s in scores if coverage_status(s.line_coverage, s.branch_coverage) == COVERAGE_STATUS_UNMEASURABLE]
         source_maps: dict[str, SourceTestMapRecord] = {}
         for score in scores:
             source_file = self.repo_root / score.path
@@ -979,6 +1014,7 @@ class TestFactoryOrchestrator:
         generate_coverage: bool = True,
         adapter_name: str | None = None,
         zero_coverage_only: bool = False,
+        unmeasurable_only: bool = False,
         coverage_out_dir: str | Path | None = None,
     ) -> dict[str, Any]:
         self.scan(module=module)
@@ -999,8 +1035,8 @@ class TestFactoryOrchestrator:
             )
         self.coverage(module=module)
         self.score(module=module)
-        self.queue(module=module, zero_coverage_only=zero_coverage_only)
-        self.workitems(limit=limit, module=module, zero_coverage_only=zero_coverage_only)
+        self.queue(module=module, zero_coverage_only=zero_coverage_only, unmeasurable_only=unmeasurable_only)
+        self.workitems(limit=limit, module=module, zero_coverage_only=zero_coverage_only, unmeasurable_only=unmeasurable_only)
         self.mutate(enabled=mutation, high_risk_only=mutation_high_risk_only)
         self.report(module=module)
         return {

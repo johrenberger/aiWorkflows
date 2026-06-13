@@ -85,6 +85,12 @@ def build_parser() -> argparse.ArgumentParser:
                               "files with zero test coverage (line_coverage==0.0 and "
                               "branch_coverage in (None, 0.0)). No effect on branch/commit/"
                               "coverage/score/scan.")
+        sub.add_argument("--unmeasurable-only", action="store_true",
+                         help="Story 031: when set, restrict queue/workitems/run output to "
+                              "files whose coverage could not be measured (e.g. generated "
+                              "code, aspect-oriented Java, custom JaCoCo filters). These "
+                              "need a build-side fix, not new tests. No effect on "
+                              "branch/commit/coverage/score/scan.")
         sub.add_argument("--allow-dirty", action="store_true")
         sub.add_argument("--mutation", action="store_true")
         sub.add_argument("--mutation-high-risk-only", action="store_true")
@@ -140,9 +146,18 @@ def main(argv: list[str] | None = None) -> int:
         elif args.command == "score":
             result = [asdict(record) for record in orchestrator.score(module=module)]
         elif args.command == "queue":
-            result = orchestrator.queue(module=module, zero_coverage_only=args.zero_coverage_only)
+            result = orchestrator.queue(
+                module=module,
+                zero_coverage_only=args.zero_coverage_only,
+                unmeasurable_only=args.unmeasurable_only,
+            )
         elif args.command == "workitems":
-            result = [asdict(record) for record in orchestrator.workitems(limit=args.limit, module=module, zero_coverage_only=args.zero_coverage_only)]
+            result = [asdict(record) for record in orchestrator.workitems(
+                limit=args.limit,
+                module=module,
+                zero_coverage_only=args.zero_coverage_only,
+                unmeasurable_only=args.unmeasurable_only,
+            )]
         elif args.command == "validate":
             if not args.work_item_id:
                 raise SystemExit("--work-item-id is required for validate")
@@ -167,6 +182,7 @@ def main(argv: list[str] | None = None) -> int:
                 generate_coverage=generate_coverage,
                 adapter_name=args.adapter,
                 zero_coverage_only=args.zero_coverage_only,
+                unmeasurable_only=args.unmeasurable_only,
                 coverage_out_dir=args.coverage_out,
             )
         elif args.command == "branch":
