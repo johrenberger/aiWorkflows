@@ -1,0 +1,21 @@
+{
+  "task_id": "2026-06-13-bi-uc4",
+  "current_state": "implementation_done",
+  "updated_at": "2026-06-13T20:10:00Z",
+  "history": [
+    {
+      "from": "ready",
+      "to": "in_progress",
+      "by": "software-engineer",
+      "at": "2026-06-13T20:04:00Z",
+      "reason": "Use case #4 (with skill): POST endpoint with validation."
+    },
+    {
+      "from": "in_progress",
+      "to": "implementation_done",
+      "by": "software-engineer",
+      "at": "2026-06-13T20:10:00Z",
+      "reason": "Use case #4 (with skill) complete. POST /api/pets-with-owner endpoint with Bean Validation. 5 min 49 sec, 3 files, 247 lines, 4/4 new tests pass, 241/241 total tests pass. Smooth implementation - this is the kind of typical CRUD task the skill is designed for."
+    }
+  ]
+}
