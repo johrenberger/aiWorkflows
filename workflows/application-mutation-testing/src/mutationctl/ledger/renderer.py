@@ -80,9 +80,17 @@ def render_ledger(store: StateStore) -> Path:
                 lines.append("NOT_RUN")
             else:
                 lines.append(f"- Evidence: {coverage.evidence_path}")
+                # Per-file rows now surface the lineage marker when the
+                # coverage was sourced from v2 (test-factory). The
+                # ``v2://`` prefix on ``item.evidence_path`` is the
+                # stable signal emitted by
+                # ``coverage/v2_risk_scores.py``.
                 for item in coverage.files:
                     value = f"{item.line_coverage:.2f}%" if item.line_coverage is not None else "Not available"
-                    lines.append(f"- {item.source_file}: {value}")
+                    source_marker = ""
+                    if item.evidence_path.startswith("v2://"):
+                        source_marker = " (v2)"
+                    lines.append(f"- {item.source_file}: {value}{source_marker}")
         elif section == "Selected Targets":
             selected_targets = [target for target in targets if target.selected]
             if not selected_targets:

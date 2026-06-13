@@ -38,11 +38,20 @@ def select_targets(
         if line_coverage is None and not fallback_allowed:
             excluded.append(_excluded_target(relative, language, "Coverage unavailable and fallback disabled"))
             continue
-        complexity = complexity_score(path.read_text(encoding="utf-8", errors="replace"))
+        # Complexity: prefer the value from the coverage source (e.g. v2's
+        # test-factory risk_scores.json emits a per-file complexity signal);
+        # fall back to mutation's deterministic complexity_score(source) when
+        # the source is silent or absent.
+        if coverage_item is not None and coverage_item.complexity is not None:
+            complexity = coverage_item.complexity
+            complexity_source = "from coverage source"
+        else:
+            complexity = complexity_score(path.read_text(encoding="utf-8", errors="replace"))
+            complexity_source = "from deterministic complexity_score"
         rationale = (
-            f"Coverage {line_coverage:.1f}% and deterministic complexity score {complexity:.2f}"
+            f"Coverage {line_coverage:.1f}% and complexity {complexity:.2f} ({complexity_source})"
             if line_coverage is not None
-            else f"Coverage unavailable; fallback readiness applied with complexity score {complexity:.2f}"
+            else f"Coverage unavailable; fallback readiness applied with complexity {complexity:.2f} ({complexity_source})"
         )
         candidates.append(
             MutationTarget(

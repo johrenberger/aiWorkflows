@@ -1,0 +1,50 @@
+[
+  {
+    "path": "src/covered.py",
+    "module": "src",
+    "language": "python",
+    "line_coverage": 92.5,
+    "branch_coverage": 80.0,
+    "coverage_gap": 7.5,
+    "complexity": 5.0,
+    "churn": 12.0,
+    "defect_history": 0.0,
+    "public_api_exposure": 1.0,
+    "data_or_security_sensitivity": 0.0,
+    "dependency_fan_in": 3.0,
+    "risk_score": 250.0,
+    "missing_evidence": []
+  },
+  {
+    "path": "src/partial.py",
+    "module": "src",
+    "language": "python",
+    "line_coverage": null,
+    "branch_coverage": null,
+    "coverage_gap": 100.0,
+    "complexity": 3.0,
+    "churn": 0.0,
+    "defect_history": 0.0,
+    "public_api_exposure": 0.0,
+    "data_or_security_sensitivity": 0.0,
+    "dependency_fan_in": 0.0,
+    "risk_score": 120.0,
+    "missing_evidence": ["coverage", "churn", "defect_history"]
+  },
+  {
+    "path": "src/zero.py",
+    "module": "src",
+    "language": "python",
+    "line_coverage": 0.0,
+    "branch_coverage": 0.0,
+    "coverage_gap": 100.0,
+    "complexity": 1.0,
+    "churn": 0.0,
+    "defect_history": 0.0,
+    "public_api_exposure": 0.0,
+    "data_or_security_sensitivity": 0.0,
+    "dependency_fan_in": 0.0,
+    "risk_score": 80.0,
+    "missing_evidence": []
+  }
+]

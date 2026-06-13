@@ -128,6 +128,16 @@ class CoverageFileSummary:
     uncovered_lines: list[int]
     evidence_path: str
     status: str
+    # Optional complexity signal. When a coverage source (e.g. v2's
+    # test-factory risk_scores.json) emits a per-file complexity value,
+    # it lands here. When None, callers should fall back to
+    # ``mutationctl.targeting.scorer.complexity_score(source)`` if they
+    # need a numeric value.
+    #
+    # NOTE: added as the LAST field with a default so existing
+    # positional callers (e.g. test_007_target_selection.py) keep
+    # working. New callers should pass by keyword.
+    complexity: float | None = None
 
 
 @dataclass(slots=True)
