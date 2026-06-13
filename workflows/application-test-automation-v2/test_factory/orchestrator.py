@@ -899,17 +899,15 @@ class TestFactoryOrchestrator:
         mutation: bool | None = None,
         mutation_high_risk_only: bool | None = None,
         module: str | None = None,
-        generate_coverage: bool = False,
+        generate_coverage: bool = True,
         adapter_name: str | None = None,
     ) -> dict[str, Any]:
         self.scan(module=module)
-        # Opt-in coverage generation: when generate_coverage is True, run the
-        # primary adapter's `discover_coverage_command` to actually produce a
-        # coverage report. This is a non-deterministic, slow, and repo-mutating
-        # step (writes coverage.json / coverage.xml into the target repo), so
-        # it is OFF by default. When False (the default), `coverage()` below
-        # only reads whatever reports already exist on disk. See PR #23.
-        #
+        # Story 020: coverage generation is now ON by default. The CLI surfaces
+        # this as `--no-generate-coverage` (opt-out) since `--generate-coverage`
+        # (opt-in) is what shipped in PR #23 and is the value used in
+        # existing CI / docs. The orchestrator default flipped to True; the
+        # default for the underlying `coverage_generate()` call is unchanged.
         # `adapter_name` (Bug #36) lets the caller force a specific adapter
         # when auto-detect picks the wrong one (e.g. a stray .java test file
         # tipping the tie-break toward java_junit on an otherwise Python repo).
