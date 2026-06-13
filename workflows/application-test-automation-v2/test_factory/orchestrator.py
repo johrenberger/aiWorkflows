@@ -537,13 +537,32 @@ class TestFactoryOrchestrator:
                 new_reports.append(path)
         new_reports = sorted(new_reports)
         result["new_reports"] = [str(p) for p in new_reports]
-        # Story 025: if the user passed --coverage-out, copy the freshly-
-        # written reports there. The target repo is still mutated by the
-        # build tool (we can't easily avoid that for Gradle etc.) but the
-        # user gets a clean copy under their `--out` tree that doesn't
-        # depend on the repo state.
-        if coverage_out_dir is not None:
+        # Story 025 + 029: if the user passed --coverage-out, copy the
+        # freshly-written reports there. The target repo is still mutated
+        # by the build tool (we can't easily avoid that for Gradle etc.)
+        # but the user gets a clean copy under their `--out` tree that
+        # doesn't depend on the repo state.
+        #
+        # Story 029 (contract flatten): the result ALWAYS carries all
+        # three of these keys, regardless of whether the user requested
+        # --coverage-out. Semantics:
+        #   coverage_out_dir    str | None  resolved path, or None
+        #   coverage_out_copied list[str]   paths to copied files, or []
+        #   coverage_out_error  str | None  non-fatal warning, or None
+        # Consumers can rely on all three being present and typed
+        # consistently. Before story 029, the keys were set
+        # conditionally, which made "key absent" ambiguous (could mean
+        # "not requested", "mkdir failed", or "no new reports" depending
+        # on the key).
+        if coverage_out_dir is None:
+            result["coverage_out_dir"] = None
+            result["coverage_out_copied"] = []
+            result["coverage_out_error"] = None
+        else:
             out = Path(coverage_out_dir).resolve()
+            result["coverage_out_dir"] = str(out)
+            result["coverage_out_copied"] = []
+            result["coverage_out_error"] = None
             try:
                 out.mkdir(parents=True, exist_ok=True)
             except OSError as exc:
@@ -551,18 +570,15 @@ class TestFactoryOrchestrator:
                     f"could not create --coverage-out directory {out}: {exc}"
                 )
             else:
-                result["coverage_out_dir"] = str(out)
                 if new_reports:
-                    copied: list[Path] = []
                     copy_errors: list[str] = []
                     for src in new_reports:
                         try:
                             dst = out / src.name
                             shutil.copy2(src, dst)
-                            copied.append(dst)
+                            result["coverage_out_copied"].append(str(dst))
                         except OSError as exc:
                             copy_errors.append(f"{src.name}: {exc}")
-                    result["coverage_out_copied"] = [str(p) for p in copied]
                     if copy_errors:
                         result["coverage_out_error"] = "; ".join(copy_errors)
         if result["status"] == "completed" and not new_reports:
@@ -991,7 +1007,17 @@ class TestFactoryOrchestrator:
             "status": "ok",
             "module_scope": module or "all",
             "coverage_generation": coverage_generation,
-            "coverage_out_dir": str(coverage_out_dir) if coverage_out_dir else None,
+            # Story 029: read the resolved path from coverage_generation
+            # so the top-level field always matches the nested one.
+            # Before story 029, the top-level was the user-supplied path
+            # (could be relative) and the nested was the resolved path.
+            # When generate_coverage is False, coverage_generation is
+            # None and we fall back to the user-supplied path (or None).
+            "coverage_out_dir": (
+                coverage_generation.get("generation", {}).get("coverage_out_dir")
+                if coverage_generation is not None
+                else (str(Path(coverage_out_dir).resolve()) if coverage_out_dir else None)
+            ),
         }
 
     def branch(self, module: str, allow_dirty: bool = False) -> dict[str, Any]:

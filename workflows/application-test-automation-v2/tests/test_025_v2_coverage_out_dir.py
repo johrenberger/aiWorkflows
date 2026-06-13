@@ -77,7 +77,9 @@ VALID_COVERAGE_XML = '<coverage version="1" timestamp="0" lines-valid="0" lines-
 
 def test_coverage_generate_no_coverage_out_does_nothing(tmp_path):
     """Scenario 3 (negative): coverage_generate(coverage_out_dir=None)
-    leaves the result unchanged (no `coverage_out_dir` field).
+    sets all three coverage_out_* keys to their "not requested"
+    values: None / [] / None. (Story 029 contract flatten: keys
+    are always present, even when not requested.)
     """
     repo = tmp_path / "fake-repo"
     repo.mkdir()
@@ -90,9 +92,10 @@ def test_coverage_generate_no_coverage_out_does_nothing(tmp_path):
             ),
         ):
             result = o.coverage_generate(coverage_out_dir=None)
-        # No coverage_out_dir key when not requested
-        assert "coverage_out_dir" not in result["generation"]
-        assert "coverage_out_copied" not in result["generation"]
+        # Story 029: keys are always present, with neutral defaults.
+        assert result["generation"].get("coverage_out_dir") is None
+        assert result["generation"].get("coverage_out_copied") == []
+        assert result["generation"].get("coverage_out_error") is None
     finally:
         o.close()
 
@@ -253,7 +256,9 @@ def test_cli_run_coverage_out_flag_parses(tmp_path):
     # the run() should still complete successfully.
     assert result.returncode == 0, f"stderr: {result.stderr}"
     parsed = json.loads(result.stdout)
-    assert parsed["coverage_out_dir"] == "/tmp/some-cov"
+    # Story 029: the top-level coverage_out_dir is read from
+    # coverage_generation.coverage_out_dir, which is the resolved path.
+    assert parsed["coverage_out_dir"] == str(Path("/tmp/some-cov").resolve())
 
 
 def test_cli_run_coverage_out_default_is_none(tmp_path):
@@ -286,5 +291,110 @@ def test_run_signature_accepts_coverage_out_dir_kwarg(tmp_path):
         )
         # coverage_out_dir is returned even when generation is skipped
         assert result["coverage_out_dir"] == str(tmp_path / "some-cov")
+    finally:
+        o.close()
+
+
+# --------------------------------------------------------------------------
+# Story 029: flattened contract
+# --------------------------------------------------------------------------
+
+def test_coverage_generate_always_sets_all_three_fields(tmp_path):
+    """Story 029: regardless of whether coverage_out_dir is requested,
+    the result has all three coverage_out_* keys, with consistent types.
+    """
+    repo = tmp_path / "fake-repo"
+    repo.mkdir()
+    o = _init_orchestrator(tmp_path, repo=repo)
+    try:
+        # When NOT requested
+        with patch(
+            "test_factory.orchestrator.subprocess.run",
+            return_value=subprocess.CompletedProcess(
+                args=[], returncode=0, stdout="", stderr=""
+            ),
+        ):
+            result = o.coverage_generate(coverage_out_dir=None)
+        gen = result["generation"]
+        assert "coverage_out_dir" in gen
+        assert "coverage_out_copied" in gen
+        assert "coverage_out_error" in gen
+        assert gen["coverage_out_dir"] is None
+        assert gen["coverage_out_copied"] == []
+        assert gen["coverage_out_error"] is None
+
+        # When requested (with a real path)
+        out_dir = tmp_path / "out"
+        result = o.coverage_generate(coverage_out_dir=str(out_dir))
+        gen = result["generation"]
+        assert "coverage_out_dir" in gen
+        assert "coverage_out_copied" in gen
+        assert "coverage_out_error" in gen
+        assert gen["coverage_out_dir"] == str(out_dir.resolve())
+        assert gen["coverage_out_copied"] == []  # no new reports
+        assert gen["coverage_out_error"] is None
+    finally:
+        o.close()
+
+
+def test_run_top_level_coverage_out_dir_matches_generation(tmp_path):
+    """Story 029: the top-level coverage_out_dir in run()'s return
+    value should match coverage_generation.coverage_out_dir, NOT be
+    a possibly-relative input. This kills M2 from the code review.
+    """
+    repo = tmp_path / "fake-repo"
+    repo.mkdir()
+    # Use a relative path to make the resolution test meaningful
+    out_dir = tmp_path / "out"
+    o = _init_orchestrator(tmp_path, repo=repo)
+    try:
+        result = o.run(
+            generate_coverage=False,
+            coverage_out_dir=str(out_dir),
+        )
+        # generate_coverage=False → coverage_generation is None →
+        # we fall back to resolving the input path. Should be the
+        # resolved absolute path.
+        top_level = result["coverage_out_dir"]
+        assert top_level == str(out_dir.resolve())
+        assert Path(top_level).is_absolute()
+    finally:
+        o.close()
+
+
+def test_run_top_level_coverage_out_dir_matches_generation_when_generated(tmp_path):
+    """Story 029: when generate_coverage=True, the top-level field
+    should be read from coverage_generation (not the input), so
+    they're guaranteed to match.
+    """
+    repo = tmp_path / "fake-repo"
+    repo.mkdir()
+    target_report = repo / "coverage.json"
+    # Pre-write a *valid* coverage.json (mtime = now). The pre-run
+    # snapshot in coverage_generate will see this file with a known
+    # mtime. The mock subprocess then writes fresh content with a
+    # bumped mtime so the post-run sees a "new" report.
+    target_report.write_text(VALID_COVERAGE_PY_JSON)
+
+    out_dir = tmp_path / "out"
+    o = _init_orchestrator(tmp_path, repo=repo)
+    try:
+        def _fake_subprocess(*args, **kwargs):
+            _write_then_utime(target_report, VALID_COVERAGE_PY_JSON, future_seconds=2.0)
+            return subprocess.CompletedProcess(
+                args=[], returncode=0, stdout="", stderr=""
+            )
+        with patch(
+            "test_factory.orchestrator.subprocess.run",
+            side_effect=_fake_subprocess,
+        ):
+            result = o.run(
+                generate_coverage=True,
+                coverage_out_dir=str(out_dir),
+            )
+        # coverage_generate returns {"generation": ..., "records": ...}
+        gen = result["coverage_generation"]["generation"]
+        assert result["coverage_out_dir"] == gen["coverage_out_dir"]
+        assert result["coverage_out_dir"] == str(out_dir.resolve())
     finally:
         o.close()
