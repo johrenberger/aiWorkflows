@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import re
+import shutil
 import subprocess
 from dataclasses import asdict
 from pathlib import Path
@@ -396,7 +397,7 @@ class TestFactoryOrchestrator:
         _dump_json(self.artifacts / "coverage_deltas" / "baseline.json", [asdict(record) for record in coverage])
         return coverage
 
-    def coverage_generate(self, module: str | None = None, adapter_name: str | None = None) -> dict[str, Any]:
+    def coverage_generate(self, module: str | None = None, adapter_name: str | None = None, coverage_out_dir: str | Path | None = None) -> dict[str, Any]:
         """Run the primary adapter's `discover_coverage_command` to actually
         *generate* a coverage report on disk, then return the parsed records.
 
@@ -408,6 +409,15 @@ class TestFactoryOrchestrator:
         manually run `coverage run -m pytest && coverage json` before
         `test-factory run`, because `coverage()` only reads existing reports.
         See PR #23.
+
+        `coverage_out_dir` (Story 025): when set, the orchestrator copies the
+        freshly-written reports to this directory after the run. This lets
+        the user keep the target repo clean (or as clean as the build tool
+        leaves it) while still having a permanent record of the generated
+        coverage under their `--out` tree. The repo is *not* redirected
+        (Gradle etc. don't support that from the command line); we copy
+        after the fact. The build tool's writes still happen; v2 just
+        doesn't depend on them staying in the repo.
         """
         adapter = self._primary_adapter(adapter_name=adapter_name)
         if adapter is None:
@@ -527,6 +537,34 @@ class TestFactoryOrchestrator:
                 new_reports.append(path)
         new_reports = sorted(new_reports)
         result["new_reports"] = [str(p) for p in new_reports]
+        # Story 025: if the user passed --coverage-out, copy the freshly-
+        # written reports there. The target repo is still mutated by the
+        # build tool (we can't easily avoid that for Gradle etc.) but the
+        # user gets a clean copy under their `--out` tree that doesn't
+        # depend on the repo state.
+        if coverage_out_dir is not None:
+            out = Path(coverage_out_dir).resolve()
+            try:
+                out.mkdir(parents=True, exist_ok=True)
+            except OSError as exc:
+                result["coverage_out_error"] = (
+                    f"could not create --coverage-out directory {out}: {exc}"
+                )
+            else:
+                result["coverage_out_dir"] = str(out)
+                if new_reports:
+                    copied: list[Path] = []
+                    copy_errors: list[str] = []
+                    for src in new_reports:
+                        try:
+                            dst = out / src.name
+                            shutil.copy2(src, dst)
+                            copied.append(dst)
+                        except OSError as exc:
+                            copy_errors.append(f"{src.name}: {exc}")
+                    result["coverage_out_copied"] = [str(p) for p in copied]
+                    if copy_errors:
+                        result["coverage_out_error"] = "; ".join(copy_errors)
         if result["status"] == "completed" and not new_reports:
             result["status"] = "no_report_written"
             result["warning"] = (
@@ -925,6 +963,7 @@ class TestFactoryOrchestrator:
         generate_coverage: bool = True,
         adapter_name: str | None = None,
         zero_coverage_only: bool = False,
+        coverage_out_dir: str | Path | None = None,
     ) -> dict[str, Any]:
         self.scan(module=module)
         # Story 020: coverage generation is now ON by default. The CLI surfaces
@@ -937,7 +976,11 @@ class TestFactoryOrchestrator:
         # tipping the tie-break toward java_junit on an otherwise Python repo).
         coverage_generation: dict[str, Any] | None = None
         if generate_coverage:
-            coverage_generation = self.coverage_generate(module=module, adapter_name=adapter_name)
+            coverage_generation = self.coverage_generate(
+                module=module,
+                adapter_name=adapter_name,
+                coverage_out_dir=coverage_out_dir,
+            )
         self.coverage(module=module)
         self.score(module=module)
         self.queue(module=module, zero_coverage_only=zero_coverage_only)
@@ -948,6 +991,7 @@ class TestFactoryOrchestrator:
             "status": "ok",
             "module_scope": module or "all",
             "coverage_generation": coverage_generation,
+            "coverage_out_dir": str(coverage_out_dir) if coverage_out_dir else None,
         }
 
     def branch(self, module: str, allow_dirty: bool = False) -> dict[str, Any]:
