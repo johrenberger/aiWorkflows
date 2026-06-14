@@ -71,7 +71,13 @@ def test_missing_dependency_is_detected():
         assert ("skills/alpha", "ghost") in graph.missing_dependencies
         # Also surfaces as a finding
         findings = graph_to_findings(graph)
-        assert any(f.category == "dependency" and "missing" in f.message.lower() for f in findings)
+        # Phase 6+ fix: missing-dep findings are tagged with the specific
+        # category "missing-dependency" (not the generic "dependency") so
+        # downstream consumers can group by issue type. See CTA-GAP-002.
+        assert any(
+            f.category == "missing-dependency" and "missing" in f.message.lower()
+            for f in findings
+        )
         assert any(f.severity.value == "blocking" for f in findings)
 
 
