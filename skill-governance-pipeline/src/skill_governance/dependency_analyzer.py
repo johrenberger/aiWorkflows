@@ -216,13 +216,25 @@ def analyze(artifacts: list[SkillArtifact], roots: list[Path] | None = None) -> 
     `roots` are the discovery roots used to resolve relative
     artifact paths. If omitted, the analyzer uses the
     filesystem CWD (best-effort).
+
+    Note: 'unknown'-type artifacts (READMEs, references, templates)
+    are filtered out of the dep graph. They are documentation
+    artifacts, not governance participants, and including them
+    causes false-positive cycles when generic English words in
+    real skills/agents match template filenames.
     """
+    from .models import ArtifactType
     roots = roots or [Path.cwd()]
-    name_index = _build_name_index(artifacts)
-    nodes = _build_graph(artifacts, name_index, roots)
-    missing = _find_missing(artifacts, name_index, roots)
+    # Filter out 'unknown' artifacts before building the graph.
+    # They pollute the name index with template filenames that
+    # match generic English words (e.g. 'task' template matching
+    # 'task' in agent bodies).
+    governed = [a for a in artifacts if a.artifact_type != ArtifactType.UNKNOWN]
+    name_index = _build_name_index(governed)
+    nodes = _build_graph(governed, name_index, roots)
+    missing = _find_missing(governed, name_index, roots)
     cycles = _find_cycles(nodes)
-    unused = _find_unused(artifacts, name_index, roots)
+    unused = _find_unused(governed, name_index, roots)
     return DependencyGraph(
         nodes=nodes,
         missing_dependencies=missing,
