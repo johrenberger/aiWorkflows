@@ -125,6 +125,11 @@ class Metadata:
     intended_consumers: list[str] = field(default_factory=list)
     quality_level: str | None = None
     last_reviewed: str | None = None
+    # Cross-reference fields (optional, not required)
+    # For agents: which skills this agent uses
+    # For skills: which agents use this skill
+    uses_skills: list[str] = field(default_factory=list)
+    used_by_agents: list[str] = field(default_factory=list)
 
     def missing_fields(self) -> list[str]:
         """Return the list of required fields that are missing or empty."""
