@@ -42,5 +42,30 @@ python_classes = "Test*"
 python_functions = "test_*"
 addopts = "-v --tb=short"
 
+[tool.coverage.run]
+branch = true
+source = ["skill_governance"]
+omit = [
+    "*/tests/*",
+    "*/__pycache__/*",
+]
+
+[tool.coverage.report]
+# Branch coverage is the primary signal; line coverage is a fallback.
+# Show entries missing branches (partial) to highlight gaps line coverage hides.
+show_missing = true
+skip_covered = false
+exclude_lines = [
+    "pragma: no cover",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "\\.\\.\\.",
+]
+precision = 1
+
+[tool.coverage.html]
+directory = "htmlcov"
+
 [tool.setuptools.package-data]
 skill_governance = ["py.typed"]
