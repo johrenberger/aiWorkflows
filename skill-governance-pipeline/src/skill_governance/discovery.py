@@ -75,16 +75,32 @@ class DiscoveryError(RuntimeError):
 
 
 def classify_artifact(path: Path, root: Path) -> ArtifactType:
-    """Classify a file as skill/agent/unknown from its path."""
+    """Classify a file as skill/agent/unknown from its path.
+
+    Directory hint wins over filename hint: e.g. a file at
+    'agents/SKILL.md' is classified as AGENT (the parent directory
+    'agents' is the stronger hint than the basename 'SKILL').
+    """
     rel = str(path.relative_to(root))
-    if SKILL_PATH_PATTERN.search(rel):
-        return ArtifactType.SKILL
-    if AGENT_PATH_PATTERN.search(rel):
+    # Check the directory part (everything except the basename) first.
+    # If the directory tree contains 'agent' or 'skill' as a directory
+    # component, that hint wins over the filename.
+    directory = str(path.parent.relative_to(root))
+    if AGENT_PATH_PATTERN.search(directory):
         return ArtifactType.AGENT
+    if SKILL_PATH_PATTERN.search(directory):
+        return ArtifactType.SKILL
     # Fallback: filename-based
     if path.stem.upper() in {"AGENT", "AGENTS"}:
         return ArtifactType.AGENT
     if path.stem.upper() in {"SKILL"}:
+        return ArtifactType.SKILL
+    # Last resort: re-check the full path (in case the path component
+    # hint is only in the basename, e.g. 'loose/SKILL.md' where 'loose'
+    # has no hint)
+    if AGENT_PATH_PATTERN.search(rel):
+        return ArtifactType.AGENT
+    if SKILL_PATH_PATTERN.search(rel):
         return ArtifactType.SKILL
     return ArtifactType.UNKNOWN
 
