@@ -7,6 +7,7 @@ The leading underscore on `_docs/` marks it as metadata, not a workflow (a futur
 ## Contents
 
 - **[multi-module-orchestration.md](multi-module-orchestration.md)** — the 3-role split (discoverer / test-writer / coverage-manager), file-claim protocol, branch-per-module isolation, repair-loop failure handling, and resource budget for BroadleafCommerce-class targets.
+- **[python-pytest-coverage.md](python-pytest-coverage.md)** — Python 3.13 + pytest 8.4 + coverage 7.14 specifics: stack detection, coverage command, mutation testing (mutmut/cosmic-ray gotchas + manual-script pattern), BDD-TDD test design, surviving-mutant interpretation.
 
 ## Cross-references
 
