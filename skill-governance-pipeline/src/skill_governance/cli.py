@@ -590,8 +590,19 @@ def install_hooks(target_repo: Path) -> None:
 @main.command()
 @click.option("--config", "config_path", type=click.Path(exists=True, path_type=Path), required=True)
 @click.option("--top-n", default=3, type=int, help="Number of recommendations to return (default 3).")
+@click.option(
+    "--include-unknown",
+    is_flag=True,
+    default=False,
+    help="Include 'unknown' artifacts (READMEs, references, templates) "
+    "in the recommendations. By default these are filtered out so the "
+    "top results are real agents and skills, not just checklist "
+    "filenames that happen to share vocabulary.",
+)
 @click.argument("task", nargs=1, type=str)
-def recommend_task(config_path: Path, top_n: int, task: str) -> None:
+def recommend_task(
+    config_path: Path, top_n: int, include_unknown: bool, task: str
+) -> None:
     """Recommend agents and skills for a natural-language task.
 
     Loads the catalog from the configured skill_directories and
@@ -599,6 +610,11 @@ def recommend_task(config_path: Path, top_n: int, task: str) -> None:
     artifact's purpose and 'situation' text using a deterministic
     token-based Jaccard similarity. Returns the top N (default 3)
     results.
+
+    By default, 'unknown' artifacts (READMEs, references, templates)
+    are filtered out of the ranking so the top results are real
+    agents and skills. Use --include-unknown to include them
+    (useful for debugging or advanced catalog exploration).
 
     This is the 'where do I start?' tool for users who don't yet
     know the catalog. It's deterministic (no LLM), fast, and
@@ -626,6 +642,9 @@ def recommend_task(config_path: Path, top_n: int, task: str) -> None:
     # Build artifacts with situation + purpose text
     artifacts: list[Artifact] = []
     for a in inv:
+        # Filter out 'unknown' artifacts unless the user opts in
+        if not include_unknown and a.artifact_type.value == "unknown":
+            continue
         for root in dcfg.skill_directories + dcfg.agent_directories:
             cand = root / a.path
             if cand.exists():

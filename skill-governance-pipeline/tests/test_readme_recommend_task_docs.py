@@ -107,3 +107,16 @@ class TestReadmeRecommendTaskSection:
             f"Expected limitations section in recommend-task docs.\n"
             f"Section: {section[:500]}"
         )
+
+    def test_recommend_task_section_documents_include_unknown_flag(self) -> None:
+        """Given the recommend-task section
+        When we read it
+        Then it documents the --include-unknown flag (so users
+        know about the escape hatch for debugging).
+        """
+        readme = README_PATH.read_text(encoding="utf-8")
+        section = _extract_section(readme, "## recommend-task")
+        assert "--include-unknown" in section, (
+            f"Expected --include-unknown flag documented in section.\n"
+            f"Section: {section[:500]}"
+        )
