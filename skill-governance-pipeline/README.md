@@ -305,11 +305,10 @@ in the test-repo: a one-page decision guide that maps
 - The matcher is keyword-based; paraphrases that don't share
   vocabulary may not match (e.g. "ship a fix" might miss
   "deploy"). Pair with the catalog guide for nuanced cases.
-- Templates and references in the catalog (artifact_type
-  `unknown`) are still indexed. They sometimes beat agents
-  in the ranking because their titles are keyword-dense.
-  This is a separate SGP improvement (filter `unknown` from
-  the catalog) and not a matcher bug.
+- `unknown` artifacts (READMEs, references, templates) are
+  filtered out of the recommendations by default. Use
+  `--include-unknown` to see them in the output (useful for
+  debugging or advanced catalog exploration).
 
 ## Governance operating model
 
