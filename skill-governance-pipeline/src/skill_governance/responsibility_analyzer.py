@@ -22,7 +22,7 @@ import re
 from collections import Counter
 from pathlib import Path
 
-from .models import ResponsibilityFlag, ResponsibilityReport, SkillArtifact
+from .models import Metadata, ResponsibilityFlag, ResponsibilityReport, SkillArtifact
 
 # Common action verbs that signal responsibilities.
 # This is a deliberately small, conservative set; semantic
@@ -145,7 +145,7 @@ def analyze(
     reports: list[ResponsibilityReport] = []
     frontmatter_re = re.compile(r"^---\s*\n.*?\n---\s*\n", re.DOTALL)
 
-    def _resolve_metadata(artifact: SkillArtifact):
+    def _resolve_metadata(artifact: SkillArtifact) -> Metadata | None:
         for root in roots:
             try:
                 path = root / artifact.path

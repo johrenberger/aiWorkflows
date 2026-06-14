@@ -31,6 +31,7 @@ from dataclasses import dataclass
 from .models import (
     Decision,
     Finding,
+    OverlapPair,
     ScorecardEntry,
     Severity,
     SkillArtifact,
@@ -103,7 +104,7 @@ def _score_one(
     benchmark_pass_rate: float,
     business_criticality: int,
     weights: ROIWeights,
-    overlap_pairs: list | None = None,
+    overlap_pairs: list[OverlapPair] | None = None,
 ) -> ScorecardEntry:
     """Compute a ScorecardEntry for a single artifact."""
     # Output quality: -50 if any blocking contract finding, -25 if warning, else 100
@@ -211,7 +212,7 @@ def score(
     benchmark_map: dict[str, float] | None = None,
     criticality_map: dict[str, int] | None = None,
     weights: ROIWeights | None = None,
-    overlap_pairs: list | None = None,
+    overlap_pairs: list[OverlapPair] | None = None,
 ) -> list[ScorecardEntry]:
     """Compute ROI scores for every artifact.
 
