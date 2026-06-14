@@ -1,0 +1,68 @@
+name: SGP Tests
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "skill-governance-pipeline/**"
+      - ".github/workflows/sgp-tests.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "skill-governance-pipeline/**"
+      - ".github/workflows/sgp-tests.yml"
+
+defaults:
+  run:
+    working-directory: skill-governance-pipeline
+
+jobs:
+  test:
+    name: pytest --cov
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: skill-governance-pipeline/pyproject.toml
+
+      - name: Install package + test extras
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[test]"
+
+      - name: Run tests with branch coverage
+        run: |
+          pytest --cov --cov-branch --cov-report=xml --cov-report=term-missing
+
+      - name: Enforce branch coverage threshold
+        env:
+          COVERAGE_FILE: .coverage
+        run: |
+          # Branch coverage gate. 90% is the floor for catching real
+          # regressions while absorbing minor CI fluctuations
+          # (different platform, Python build, etc.).
+          #
+          # Local baseline is 94.1% (v3 re-assessment at 8d7f8c1).
+          # If this gate ever fires, it means branch coverage has
+          # dropped by 4+ percentage points — a real regression,
+          # not a CI wobble.
+          #
+          # To RAISE the floor above 90%, first run a deliberate
+          # gap-closure pass that lifts the local number, then bump
+          # this number to match.
+          coverage report --fail-under=90
+
+      - name: Upload coverage to Codecov (optional)
+        if: env.CODECOV_TOKEN != null
+        uses: codecov/codecov-action@v4
+        with:
+          file: skill-governance-pipeline/coverage.xml
+          flags: sgp
+          fail_ci_if_error: false
