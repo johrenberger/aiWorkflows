@@ -1,0 +1,82 @@
+#!/usr/bin/env bash
+# SGP (Skill Governance Pipeline) pre-commit hook.
+#
+# Installed by: python -m skill_governance.cli install-hooks <repo>
+# Behavior:     Validates staged skill and agent files using SGP's
+#               `validate-files` command. Blocks the commit when any
+#               blocking governance finding is present in the staged set.
+#
+# Bypass:       git commit --no-verify  (use sparingly; usually a sign
+#               that the rule should be loosened, not bypassed)
+#
+# What gets validated:
+#   - Any staged file matching */SKILL.md or *AGENT.md
+#   - The first matching config/governance.yaml (or governance.*.yaml)
+#     in the repo root is passed via --config. If none is found, the
+#     hook skips silently (SGP needs a config to know which directories
+#     to scan).
+#
+# Exit codes:
+#   0  -> no blocking findings (or no relevant files staged)
+#   2  -> blocking findings present (commit blocked)
+#   *  -> internal error (e.g. sgp not installed, git not available)
+
+set -e
+
+# --- Step 1: find staged skill/agent files --------------------------------
+
+# Get the list of staged files (added, copied, modified). --diff-filter=ACMR
+# excludes deleted files (we don't validate deleted files).
+staged_files=$(git diff --cached --name-only --diff-filter=ACMR 2>/dev/null || true)
+
+# Filter to only files SGP cares about. We match on filename, not
+# directory — this catches skills/skills/foo/SKILL.md and
+# agents/foo_AGENT.md, both relative to the repo root.
+relevant_files=$(echo "$staged_files" | grep -E '(^|/)SKILL\.md$|(^|/).*AGENT\.md$' || true)
+
+if [ -z "$relevant_files" ]; then
+    # No relevant files staged. Nothing to validate. Exit clean.
+    exit 0
+fi
+
+# --- Step 2: locate the SGP config ---------------------------------------
+
+# Look for a governance config in the repo root. Order matters:
+# explicit governance.yaml first, then governance.<env>.yaml.
+repo_root=$(git rev-parse --show-toplevel 2>/dev/null || echo ".")
+config=""
+for candidate in governance.yaml governance.local.yaml governance.default.yaml; do
+    if [ -f "$repo_root/$candidate" ]; then
+        config="$repo_root/$candidate"
+        break
+    fi
+done
+
+if [ -z "$config" ]; then
+    # No SGP config in this repo. The hook can't run. Print a
+    # warning but don't block the commit — the user may not want
+    # SGP at all in this repo.
+    echo "sgp pre-commit: no governance config found in $repo_root (looked for governance.yaml, governance.local.yaml, governance.default.yaml)."
+    echo "  To enable SGP validation, copy a config from the SGP repo and run \`python -m skill_governance.cli install-hooks .\` again."
+    exit 0
+fi
+
+# --- Step 3: convert relative paths to absolute and run sgp ---------------
+
+# git diff gives repo-root-relative paths. SGP's validate-files
+# expects absolute paths (or at least paths that match
+# Finding.artifact_path, which is absolute). Convert.
+abs_files=""
+for f in $relevant_files; do
+    abs_files="$abs_files $repo_root/$f"
+done
+
+echo "sgp pre-commit: validating $(echo $relevant_files | wc -w | tr -d ' ') staged file(s)..."
+
+# Run SGP. Use `python3 -m` for portability (covers venvs, system
+# python, etc.). The `--` separates flags from positional args.
+python3 -m skill_governance.cli validate-files --config "$config" $abs_files
+rc=$?
+
+# validate-files already prints findings. Just propagate the exit code.
+exit $rc
