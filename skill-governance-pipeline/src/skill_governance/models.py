@@ -181,6 +181,10 @@ class Finding:
     message: str
     evidence: dict[str, Any] = field(default_factory=dict)
     suggestion: str | None = None
+    # Phase 6 fix: stable identifier for the source artifact. Same value
+    # for all findings that originate from the same file, so consumers
+    # can group findings by artifact without re-deriving from name.
+    artifact_path: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
         d = asdict(self)

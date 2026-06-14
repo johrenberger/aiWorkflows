@@ -145,6 +145,11 @@ def artifact_name_from_path(path: Path, root: Path) -> str:
     # filename stem.
     if len(parts) >= 3:
         return f"{namespace}/{parts[-2]}"
+    # Phase 7 fix: 2-part case (root/<skill-name>/SKILL.md).
+    # Previously returned "skills/SKILL" — the file stem, not the
+    # skill name. Use the parent directory name as the leaf.
+    if len(parts) == 2:
+        return f"{namespace}/{parts[0]}"
     return f"{namespace}/{rel.stem}"
 
 

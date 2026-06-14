@@ -1,36 +1,36 @@
 # Executive Report — Skill Governance Pipeline
 
-- **Total skills:** 96
-- **Total agents:** 21
-- **Health score:** 0/100
+- **Total skills:** 21
+- **Total agents:** 0
+- **Health score:** 69/100
 - **CI status:** FAIL
-- **Blocking findings:** 133
-- **Warnings:** 2
+- **Blocking findings:** 88
+- **Warnings:** 120
 - **Active waivers:** 0
-- **Proposed rewrites:** 56
+- **Proposed rewrites:** 78
 - **Benchmark results:** 0
-- **Started:** 2026-06-13T22:26:05Z
-- **Finished:** 2026-06-13T22:26:06Z
+- **Started:** 2026-06-14T01:18:45Z
+- **Finished:** 2026-06-14T01:18:45Z
 
 ## Decisions
-- **rewrite:** 126
+- **rewrite:** 99
 
 ## Top risks
-- `blocking` **README**: Missing required metadata fields: name, artifact_type, purpose, category, owner, version, inputs, outputs, dependencies, intended_consumers, quality_level, last_reviewed
-- `warning` **README**: Purpose is missing or too short / vague.
-- `blocking` **README**: Inputs contract is missing or unstructured.
-- `blocking` **README**: Outputs contract is missing or unstructured.
-- `blocking` **README**: Outputs contract is vague (e.g. 'a report', 'analysis', 'summary').
+- `warning` **README**: Artifact 'README' is not a skill or agent (path: README.md). Skipping contract validation.
+- `blocking` **SKILL**: Missing required metadata fields: name, artifact_type, purpose, category, owner, version, inputs, outputs, dependencies, intended_consumers, quality_level, last_reviewed
+- `warning` **SKILL**: Purpose is missing or too short / vague.
+- `blocking` **SKILL**: Inputs contract is missing or unstructured.
+- `blocking` **SKILL**: Outputs contract is missing or unstructured.
 
 ## Recommended actions
-- **rewrite** (skills/task-state-management): 1 blocking + 0 warnings on skills/task-state-management.
-- **rewrite** (skills/validation-runner): 1 blocking + 0 warnings on skills/validation-runner.
-- **rewrite** (skills/templates): 34 blocking + 0 warnings on skills/templates.
-- **rewrite** (skills/test-gap-analysis): 2 blocking + 0 warnings on skills/test-gap-analysis.
-- **rewrite** (approval-gate): 1 blocking + 0 warnings on approval-gate.
+- **rewrite** (task): 1 blocking + 1 warnings on task.
+- **rewrite** (release-gate-checklist): 1 blocking + 1 warnings on release-gate-checklist.
+- **rewrite** (SKILL): 84 blocking + 42 warnings on SKILL.
+- **rewrite** (adr): 1 blocking + 1 warnings on adr.
+- **rewrite** (blocker): 1 blocking + 1 warnings on blocker.
 
 ## Merge / split / rewrite / deprecate candidates
 
 | Decision | Count |
 | --- | --- |
-| rewrite | 126 |
+| rewrite | 99 |

@@ -113,11 +113,17 @@ def _score_pair(a: SkillArtifact, b: SkillArtifact) -> tuple[int, str]:
     return score, rationale
 
 
-def _recommendation(score: int) -> OverlapRecommendation:
-    """Map a score to a recommendation per the source spec."""
-    if score >= 85:
+def _recommendation(score: int, merge_threshold: int = 85, differentiate_threshold: int = 70) -> OverlapRecommendation:
+    """Map a score to a recommendation per the source spec.
+
+    Phase 7 fix: thresholds are now configurable. Previously this
+    function hardcoded 85/70, but the analyzer accepts
+    `blocking_threshold` and `warning_threshold` from the config
+    (which can be lowered for catalogs with different needs).
+    """
+    if score >= merge_threshold:
         return OverlapRecommendation.MERGE
-    if score >= 70:
+    if score >= differentiate_threshold:
         return OverlapRecommendation.DIFFERENTIATE
     return OverlapRecommendation.KEEP_SEPARATE
 
@@ -148,7 +154,11 @@ def analyze(
                     artifact_b=b.name,
                     overlap_score=score,
                     rationale=rationale,
-                    recommendation=_recommendation(score),
+                    recommendation=_recommendation(
+                        score,
+                        merge_threshold=blocking_threshold,
+                        differentiate_threshold=warning_threshold,
+                    ),
                 )
             )
     # Sort highest-overlap first

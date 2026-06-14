@@ -1,703 +1,856 @@
 # Remediation Backlog
 
-## rec-06e02c61 — rewrite (priority 2)
+## rec-1d85ab12 — rewrite (priority 2)
 
-- **Affected:** skills/task-state-management
-- **Rationale:** 1 blocking + 0 warnings on skills/task-state-management.
+- **Affected:** task
+- **Rationale:** 1 blocking + 1 warnings on task.
 - **Effort:** M
 - **Risk:** low
 - **CI impact:** blocking
-- **Next action:** Open a rewrite task for skills/task-state-management.
+- **Next action:** Open a rewrite task for task.
 
-## rec-09b0d974 — rewrite (priority 2)
+## rec-4bcea911 — rewrite (priority 2)
 
-- **Affected:** skills/validation-runner
-- **Rationale:** 1 blocking + 0 warnings on skills/validation-runner.
+- **Affected:** release-gate-checklist
+- **Rationale:** 1 blocking + 1 warnings on release-gate-checklist.
 - **Effort:** M
 - **Risk:** low
 - **CI impact:** blocking
-- **Next action:** Open a rewrite task for skills/validation-runner.
+- **Next action:** Open a rewrite task for release-gate-checklist.
 
-## rec-103e4351 — rewrite (priority 2)
+## rec-9735bb25 — rewrite (priority 2)
 
-- **Affected:** skills/templates
-- **Rationale:** 34 blocking + 0 warnings on skills/templates.
+- **Affected:** SKILL
+- **Rationale:** 84 blocking + 42 warnings on SKILL.
 - **Effort:** M
 - **Risk:** low
 - **CI impact:** blocking
-- **Next action:** Open a rewrite task for skills/templates.
+- **Next action:** Open a rewrite task for SKILL.
 
-## rec-10823759 — rewrite (priority 2)
+## rec-a6d4a27b — rewrite (priority 2)
 
-- **Affected:** skills/test-gap-analysis
-- **Rationale:** 2 blocking + 0 warnings on skills/test-gap-analysis.
+- **Affected:** adr
+- **Rationale:** 1 blocking + 1 warnings on adr.
 - **Effort:** M
 - **Risk:** low
 - **CI impact:** blocking
-- **Next action:** Open a rewrite task for skills/test-gap-analysis.
+- **Next action:** Open a rewrite task for adr.
 
-## rec-10d85b12 — rewrite (priority 2)
+## rec-c43b2b11 — rewrite (priority 2)
 
-- **Affected:** approval-gate
-- **Rationale:** 1 blocking + 0 warnings on approval-gate.
+- **Affected:** blocker
+- **Rationale:** 1 blocking + 1 warnings on blocker.
 - **Effort:** M
 - **Risk:** low
 - **CI impact:** blocking
-- **Next action:** Open a rewrite task for approval-gate.
+- **Next action:** Open a rewrite task for blocker.
 
-## rec-19a84286 — rewrite (priority 2)
+## rec-027621d2 — rewrite (priority 3)
 
-- **Affected:** agents/DOCUMENTATION_AGENT
-- **Rationale:** 1 blocking + 0 warnings on agents/DOCUMENTATION_AGENT.
+- **Affected:** release-risk-register
+- **Rationale:** 0 blocking + 1 warnings on release-risk-register.
 - **Effort:** M
 - **Risk:** low
-- **CI impact:** blocking
-- **Next action:** Open a rewrite task for agents/DOCUMENTATION_AGENT.
+- **CI impact:** warning
+- **Next action:** Open a rewrite task for release-risk-register.
 
-## rec-1ad3967f — rewrite (priority 2)
+## rec-0b13b4fe — rewrite (priority 3)
 
-- **Affected:** skills/repo-discovery
-- **Rationale:** 1 blocking + 0 warnings on skills/repo-discovery.
+- **Affected:** pytest-unittest
+- **Rationale:** 0 blocking + 1 warnings on pytest-unittest.
 - **Effort:** M
 - **Risk:** low
-- **CI impact:** blocking
-- **Next action:** Open a rewrite task for skills/repo-discovery.
+- **CI impact:** warning
+- **Next action:** Open a rewrite task for pytest-unittest.
 
-## rec-1f0ad398 — rewrite (priority 2)
+## rec-0b17187a — rewrite (priority 3)
 
-- **Affected:** skills/profiles
-- **Rationale:** 16 blocking + 0 warnings on skills/profiles.
+- **Affected:** readme-update-checklist
+- **Rationale:** 0 blocking + 1 warnings on readme-update-checklist.
 - **Effort:** M
 - **Risk:** low
-- **CI impact:** blocking
-- **Next action:** Open a rewrite task for skills/profiles.
+- **CI impact:** warning
+- **Next action:** Open a rewrite task for readme-update-checklist.
 
-## rec-1f265edf — rewrite (priority 2)
+## rec-1096f2bb — rewrite (priority 3)
 
-- **Affected:** agents/README
-- **Rationale:** 1 blocking + 0 warnings on agents/README.
+- **Affected:** mixed-monolith
+- **Rationale:** 0 blocking + 1 warnings on mixed-monolith.
 - **Effort:** M
 - **Risk:** low
-- **CI impact:** blocking
-- **Next action:** Open a rewrite task for agents/README.
+- **CI impact:** warning
+- **Next action:** Open a rewrite task for mixed-monolith.
 
-## rec-1f6839b9 — rewrite (priority 2)
+## rec-11c58744 — rewrite (priority 3)
 
-- **Affected:** agents/RESEARCH_ANALYST_AGENT
-- **Rationale:** 1 blocking + 0 warnings on agents/RESEARCH_ANALYST_AGENT.
+- **Affected:** architecture-review-report
+- **Rationale:** 0 blocking + 1 warnings on architecture-review-report.
 - **Effort:** M
 - **Risk:** low
-- **CI impact:** blocking
-- **Next action:** Open a rewrite task for agents/RESEARCH_ANALYST_AGENT.
+- **CI impact:** warning
+- **Next action:** Open a rewrite task for architecture-review-report.
 
-## rec-215c53dd — rewrite (priority 2)
+## rec-1293fda5 — rewrite (priority 3)
 
-- **Affected:** skills/runbook-authoring
-- **Rationale:** 1 blocking + 0 warnings on skills/runbook-authoring.
+- **Affected:** static-ui
+- **Rationale:** 0 blocking + 1 warnings on static-ui.
 - **Effort:** M
 - **Risk:** low
-- **CI impact:** blocking
-- **Next action:** Open a rewrite task for skills/runbook-authoring.
+- **CI impact:** warning
+- **Next action:** Open a rewrite task for static-ui.
 
-## rec-29f7b69d — rewrite (priority 2)
+## rec-18f9cf53 — rewrite (priority 3)
 
-- **Affected:** task-spec-packet
-- **Rationale:** 1 blocking + 0 warnings on task-spec-packet.
+- **Affected:** go-testing
+- **Rationale:** 0 blocking + 1 warnings on go-testing.
 - **Effort:** M
 - **Risk:** low
-- **CI impact:** blocking
-- **Next action:** Open a rewrite task for task-spec-packet.
+- **CI impact:** warning
+- **Next action:** Open a rewrite task for go-testing.
 
-## rec-2ae5d082 — rewrite (priority 2)
+## rec-19ca1735 — rewrite (priority 3)
 
-- **Affected:** skills/observability-review
-- **Rationale:** 1 blocking + 0 warnings on skills/observability-review.
+- **Affected:** junit-spring
+- **Rationale:** 0 blocking + 1 warnings on junit-spring.
 - **Effort:** M
 - **Risk:** low
-- **CI impact:** blocking
-- **Next action:** Open a rewrite task for skills/observability-review.
+- **CI impact:** warning
+- **Next action:** Open a rewrite task for junit-spring.
 
-## rec-34d89078 — rewrite (priority 2)
+## rec-1a02f6b1 — rewrite (priority 3)
 
-- **Affected:** agents/LEGAL_COMPLIANCE_AGENT
-- **Rationale:** 1 blocking + 0 warnings on agents/LEGAL_COMPLIANCE_AGENT.
+- **Affected:** dotnet
+- **Rationale:** 0 blocking + 1 warnings on dotnet.
 - **Effort:** M
 - **Risk:** low
-- **CI impact:** blocking
-- **Next action:** Open a rewrite task for agents/LEGAL_COMPLIANCE_AGENT.
+- **CI impact:** warning
+- **Next action:** Open a rewrite task for dotnet.
 
-## rec-3814ed24 — rewrite (priority 2)
+## rec-1f600ceb — rewrite (priority 3)
 
-- **Affected:** agents/PROJECT_COORDINATOR_AGENT
-- **Rationale:** 1 blocking + 0 warnings on agents/PROJECT_COORDINATOR_AGENT.
+- **Affected:** distributed-systems-checklist
+- **Rationale:** 0 blocking + 1 warnings on distributed-systems-checklist.
 - **Effort:** M
 - **Risk:** low
-- **CI impact:** blocking
-- **Next action:** Open a rewrite task for agents/PROJECT_COORDINATOR_AGENT.
+- **CI impact:** warning
+- **Next action:** Open a rewrite task for distributed-systems-checklist.
 
-## rec-385fd409 — rewrite (priority 2)
+## rec-21ce8286 — rewrite (priority 3)
 
-- **Affected:** skills/security-review
-- **Rationale:** 1 blocking + 0 warnings on skills/security-review.
+- **Affected:** go-no-go-checklist
+- **Rationale:** 0 blocking + 1 warnings on go-no-go-checklist.
 - **Effort:** M
 - **Risk:** low
-- **CI impact:** blocking
-- **Next action:** Open a rewrite task for skills/security-review.
+- **CI impact:** warning
+- **Next action:** Open a rewrite task for go-no-go-checklist.
 
-## rec-386eae70 — rewrite (priority 2)
+## rec-21ee7ad8 — rewrite (priority 3)
 
-- **Affected:** agents/EXECUTIVE_ASSISTANT_AGENT
-- **Rationale:** 1 blocking + 0 warnings on agents/EXECUTIVE_ASSISTANT_AGENT.
+- **Affected:** owasp-checklist
+- **Rationale:** 0 blocking + 1 warnings on owasp-checklist.
 - **Effort:** M
 - **Risk:** low
-- **CI impact:** blocking
-- **Next action:** Open a rewrite task for agents/EXECUTIVE_ASSISTANT_AGENT.
+- **CI impact:** warning
+- **Next action:** Open a rewrite task for owasp-checklist.
 
-## rec-38f26e2e — rewrite (priority 2)
+## rec-223c35ec — rewrite (priority 3)
 
-- **Affected:** go-no-go-summary
-- **Rationale:** 1 blocking + 0 warnings on go-no-go-summary.
+- **Affected:** file-batch
+- **Rationale:** 0 blocking + 1 warnings on file-batch.
 - **Effort:** M
 - **Risk:** low
-- **CI impact:** blocking
-- **Next action:** Open a rewrite task for go-no-go-summary.
+- **CI impact:** warning
+- **Next action:** Open a rewrite task for file-batch.
 
-## rec-3db22aec — rewrite (priority 2)
+## rec-25571585 — rewrite (priority 3)
 
-- **Affected:** agents/DATA_ANALYST_AGENT
-- **Rationale:** 1 blocking + 0 warnings on agents/DATA_ANALYST_AGENT.
+- **Affected:** timeline
+- **Rationale:** 0 blocking + 1 warnings on timeline.
 - **Effort:** M
 - **Risk:** low
-- **CI impact:** blocking
-- **Next action:** Open a rewrite task for agents/DATA_ANALYST_AGENT.
+- **CI impact:** warning
+- **Next action:** Open a rewrite task for timeline.
 
-## rec-3dc9e2d4 — rewrite (priority 2)
+## rec-27dfd663 — rewrite (priority 3)
 
-- **Affected:** skills/backend-implementation
-- **Rationale:** 2 blocking + 0 warnings on skills/backend-implementation.
+- **Affected:** review-severity
+- **Rationale:** 0 blocking + 1 warnings on review-severity.
 - **Effort:** M
 - **Risk:** low
-- **CI impact:** blocking
-- **Next action:** Open a rewrite task for skills/backend-implementation.
+- **CI impact:** warning
+- **Next action:** Open a rewrite task for review-severity.
 
-## rec-437df8e3 — rewrite (priority 2)
+## rec-2c83bbf5 — rewrite (priority 3)
 
-- **Affected:** skills/test_fixtures
-- **Rationale:** 3 blocking + 0 warnings on skills/test_fixtures.
+- **Affected:** api-doc-update-checklist
+- **Rationale:** 0 blocking + 1 warnings on api-doc-update-checklist.
 - **Effort:** M
 - **Risk:** low
-- **CI impact:** blocking
-- **Next action:** Open a rewrite task for skills/test_fixtures.
+- **CI impact:** warning
+- **Next action:** Open a rewrite task for api-doc-update-checklist.
 
-## rec-47c57a7c — rewrite (priority 2)
+## rec-2e309355 — rewrite (priority 3)
 
-- **Affected:** risk-register
-- **Rationale:** 1 blocking + 0 warnings on risk-register.
+- **Affected:** architecture-options-analysis
+- **Rationale:** 0 blocking + 1 warnings on architecture-options-analysis.
 - **Effort:** M
 - **Risk:** low
-- **CI impact:** blocking
-- **Next action:** Open a rewrite task for risk-register.
+- **CI impact:** warning
+- **Next action:** Open a rewrite task for architecture-options-analysis.
 
-## rec-4e3c59c9 — rewrite (priority 2)
+## rec-2f8decf9 — rewrite (priority 3)
 
-- **Affected:** skills/implementation-orchestrator
-- **Rationale:** 1 blocking + 0 warnings on skills/implementation-orchestrator.
+- **Affected:** release-readiness-report
+- **Rationale:** 0 blocking + 1 warnings on release-readiness-report.
 - **Effort:** M
 - **Risk:** low
-- **CI impact:** blocking
-- **Next action:** Open a rewrite task for skills/implementation-orchestrator.
+- **CI impact:** warning
+- **Next action:** Open a rewrite task for release-readiness-report.
 
-## rec-51078d50 — rewrite (priority 2)
+## rec-3551283d — rewrite (priority 3)
 
-- **Affected:** agents/ARCHITECT_AGENT
-- **Rationale:** 1 blocking + 0 warnings on agents/ARCHITECT_AGENT.
+- **Affected:** code-review-report
+- **Rationale:** 0 blocking + 1 warnings on code-review-report.
 - **Effort:** M
 - **Risk:** low
-- **CI impact:** blocking
-- **Next action:** Open a rewrite task for agents/ARCHITECT_AGENT.
+- **CI impact:** warning
+- **Next action:** Open a rewrite task for code-review-report.
 
-## rec-53f4f9e2 — rewrite (priority 2)
+## rec-3a65122b — rewrite (priority 3)
 
-- **Affected:** skills/architecture-decision
-- **Rationale:** 2 blocking + 0 warnings on skills/architecture-decision.
+- **Affected:** test-generation-report
+- **Rationale:** 0 blocking + 1 warnings on test-generation-report.
 - **Effort:** M
 - **Risk:** low
-- **CI impact:** blocking
-- **Next action:** Open a rewrite task for skills/architecture-decision.
+- **CI impact:** warning
+- **Next action:** Open a rewrite task for test-generation-report.
 
-## rec-6575c68b — rewrite (priority 2)
+## rec-3c162ff4 — rewrite (priority 3)
 
-- **Affected:** skills/handoff-packet
-- **Rationale:** 1 blocking + 0 warnings on skills/handoff-packet.
+- **Affected:** go
+- **Rationale:** 0 blocking + 1 warnings on go.
 - **Effort:** M
 - **Risk:** low
-- **CI impact:** blocking
-- **Next action:** Open a rewrite task for skills/handoff-packet.
+- **CI impact:** warning
+- **Next action:** Open a rewrite task for go.
 
-## rec-69e6b77f — rewrite (priority 2)
+## rec-3cbf5efd — rewrite (priority 3)
 
-- **Affected:** agents/SECURITY_ANALYST_AGENT
-- **Rationale:** 1 blocking + 0 warnings on agents/SECURITY_ANALYST_AGENT.
+- **Affected:** decision-quality-checklist
+- **Rationale:** 0 blocking + 1 warnings on decision-quality-checklist.
 - **Effort:** M
 - **Risk:** low
-- **CI impact:** blocking
-- **Next action:** Open a rewrite task for agents/SECURITY_ANALYST_AGENT.
+- **CI impact:** warning
+- **Next action:** Open a rewrite task for decision-quality-checklist.
 
-## rec-6ed1ef11 — rewrite (priority 2)
+## rec-3d5ca3f5 — rewrite (priority 3)
 
-- **Affected:** skills/frontend-implementation
-- **Rationale:** 2 blocking + 0 warnings on skills/frontend-implementation.
+- **Affected:** doc-source-of-truth
+- **Rationale:** 0 blocking + 1 warnings on doc-source-of-truth.
 - **Effort:** M
 - **Risk:** low
-- **CI impact:** blocking
-- **Next action:** Open a rewrite task for skills/frontend-implementation.
+- **CI impact:** warning
+- **Next action:** Open a rewrite task for doc-source-of-truth.
 
-## rec-770edcf3 — rewrite (priority 2)
+## rec-3fb0f110 — rewrite (priority 3)
 
-- **Affected:** skills/release-readiness
-- **Rationale:** 1 blocking + 0 warnings on skills/release-readiness.
+- **Affected:** handoff-packet
+- **Rationale:** 0 blocking + 1 warnings on handoff-packet.
 - **Effort:** M
 - **Risk:** low
-- **CI impact:** blocking
-- **Next action:** Open a rewrite task for skills/release-readiness.
+- **CI impact:** warning
+- **Next action:** Open a rewrite task for handoff-packet.
 
-## rec-7ff82b22 — rewrite (priority 2)
+## rec-4664d42d — rewrite (priority 3)
 
-- **Affected:** agents/CLOUD_SECURITY_AGENT
-- **Rationale:** 1 blocking + 0 warnings on agents/CLOUD_SECURITY_AGENT.
+- **Affected:** migration-risk-checklist
+- **Rationale:** 0 blocking + 1 warnings on migration-risk-checklist.
 - **Effort:** M
 - **Risk:** low
-- **CI impact:** blocking
-- **Next action:** Open a rewrite task for agents/CLOUD_SECURITY_AGENT.
+- **CI impact:** warning
+- **Next action:** Open a rewrite task for migration-risk-checklist.
 
-## rec-85881d68 — rewrite (priority 2)
+## rec-4abd2100 — rewrite (priority 3)
 
-- **Affected:** skills/database-migration-safety
-- **Rationale:** 1 blocking + 0 warnings on skills/database-migration-safety.
+- **Affected:** repo-discovery-report
+- **Rationale:** 0 blocking + 1 warnings on repo-discovery-report.
 - **Effort:** M
 - **Risk:** low
-- **CI impact:** blocking
-- **Next action:** Open a rewrite task for skills/database-migration-safety.
+- **CI impact:** warning
+- **Next action:** Open a rewrite task for repo-discovery-report.
 
-## rec-875b3981 — rewrite (priority 2)
+## rec-4db5981c — rewrite (priority 3)
 
-- **Affected:** agents/FINANCIAL_ANALYST_AGENT
-- **Rationale:** 1 blocking + 0 warnings on agents/FINANCIAL_ANALYST_AGENT.
+- **Affected:** runbook-quality-checklist
+- **Rationale:** 0 blocking + 1 warnings on runbook-quality-checklist.
 - **Effort:** M
 - **Risk:** low
-- **CI impact:** blocking
-- **Next action:** Open a rewrite task for agents/FINANCIAL_ANALYST_AGENT.
+- **CI impact:** warning
+- **Next action:** Open a rewrite task for runbook-quality-checklist.
 
-## rec-8b6657d1 — rewrite (priority 2)
+## rec-4fe4fb1b — rewrite (priority 3)
 
-- **Affected:** agents/TEST_AUTOMATION_AGENT
-- **Rationale:** 1 blocking + 0 warnings on agents/TEST_AUTOMATION_AGENT.
+- **Affected:** security-review-report
+- **Rationale:** 0 blocking + 1 warnings on security-review-report.
 - **Effort:** M
 - **Risk:** low
-- **CI impact:** blocking
-- **Next action:** Open a rewrite task for agents/TEST_AUTOMATION_AGENT.
+- **CI impact:** warning
+- **Next action:** Open a rewrite task for security-review-report.
 
-## rec-9b57971a — rewrite (priority 2)
+## rec-5086551c — rewrite (priority 3)
 
-- **Affected:** skills/code-change-review
-- **Rationale:** 1 blocking + 0 warnings on skills/code-change-review.
+- **Affected:** dependency-risk-checklist
+- **Rationale:** 0 blocking + 1 warnings on dependency-risk-checklist.
 - **Effort:** M
 - **Risk:** low
-- **CI impact:** blocking
-- **Next action:** Open a rewrite task for skills/code-change-review.
+- **CI impact:** warning
+- **Next action:** Open a rewrite task for dependency-risk-checklist.
 
-## rec-9f6f2563 — rewrite (priority 2)
+## rec-53091ba3 — rewrite (priority 3)
 
-- **Affected:** findings-severity
-- **Rationale:** 1 blocking + 0 warnings on findings-severity.
+- **Affected:** java-spring
+- **Rationale:** 0 blocking + 1 warnings on java-spring.
 - **Effort:** M
 - **Risk:** low
-- **CI impact:** blocking
-- **Next action:** Open a rewrite task for findings-severity.
+- **CI impact:** warning
+- **Next action:** Open a rewrite task for java-spring.
 
-## rec-b054dda2 — rewrite (priority 2)
+## rec-5cfdfdc3 — rewrite (priority 3)
 
-- **Affected:** skills/documentation-update
-- **Rationale:** 1 blocking + 0 warnings on skills/documentation-update.
+- **Affected:** frontend-implementation-report
+- **Rationale:** 0 blocking + 1 warnings on frontend-implementation-report.
 - **Effort:** M
 - **Risk:** low
-- **CI impact:** blocking
-- **Next action:** Open a rewrite task for skills/documentation-update.
+- **CI impact:** warning
+- **Next action:** Open a rewrite task for frontend-implementation-report.
 
-## rec-b19898a7 — rewrite (priority 2)
+## rec-5f71159c — rewrite (priority 3)
 
-- **Affected:** skills/test-generation
-- **Rationale:** 1 blocking + 0 warnings on skills/test-generation.
+- **Affected:** logging-metrics-tracing-checklist
+- **Rationale:** 0 blocking + 1 warnings on logging-metrics-tracing-checklist.
 - **Effort:** M
 - **Risk:** low
-- **CI impact:** blocking
-- **Next action:** Open a rewrite task for skills/test-generation.
+- **CI impact:** warning
+- **Next action:** Open a rewrite task for logging-metrics-tracing-checklist.
 
-## rec-b8122919 — rewrite (priority 2)
+## rec-637e47eb — rewrite (priority 3)
 
-- **Affected:** adr-index
-- **Rationale:** 1 blocking + 0 warnings on adr-index.
+- **Affected:** runbook-authoring-report
+- **Rationale:** 0 blocking + 1 warnings on runbook-authoring-report.
 - **Effort:** M
 - **Risk:** low
-- **CI impact:** blocking
-- **Next action:** Open a rewrite task for adr-index.
+- **CI impact:** warning
+- **Next action:** Open a rewrite task for runbook-authoring-report.
 
-## rec-bae8213b — rewrite (priority 2)
+## rec-639b0b36 — rewrite (priority 3)
 
-- **Affected:** skills/integration-implementation
-- **Rationale:** 1 blocking + 0 warnings on skills/integration-implementation.
+- **Affected:** decision-log
+- **Rationale:** 0 blocking + 1 warnings on decision-log.
 - **Effort:** M
 - **Risk:** low
-- **CI impact:** blocking
-- **Next action:** Open a rewrite task for skills/integration-implementation.
+- **CI impact:** warning
+- **Next action:** Open a rewrite task for decision-log.
 
-## rec-bcb99a26 — rewrite (priority 2)
+## rec-67e60769 — rewrite (priority 3)
 
-- **Affected:** agents/SOFTWARE_ENGINEER_AGENT
-- **Rationale:** 1 blocking + 0 warnings on agents/SOFTWARE_ENGINEER_AGENT.
+- **Affected:** react
+- **Rationale:** 0 blocking + 1 warnings on react.
 - **Effort:** M
 - **Risk:** low
-- **CI impact:** blocking
-- **Next action:** Open a rewrite task for agents/SOFTWARE_ENGINEER_AGENT.
+- **CI impact:** warning
+- **Next action:** Open a rewrite task for react.
 
-## rec-bccb7a47 — rewrite (priority 2)
+## rec-690e8c9c — rewrite (priority 3)
 
-- **Affected:** agents/KNOWLEDGE_MANAGER_AGENT
-- **Rationale:** 1 blocking + 0 warnings on agents/KNOWLEDGE_MANAGER_AGENT.
+- **Affected:** async-messaging
+- **Rationale:** 0 blocking + 1 warnings on async-messaging.
 - **Effort:** M
 - **Risk:** low
-- **CI impact:** blocking
-- **Next action:** Open a rewrite task for agents/KNOWLEDGE_MANAGER_AGENT.
+- **CI impact:** warning
+- **Next action:** Open a rewrite task for async-messaging.
 
-## rec-c1a783df — rewrite (priority 2)
+## rec-742e077f — rewrite (priority 3)
 
-- **Affected:** agents/MONITORING_AGENT
-- **Rationale:** 1 blocking + 0 warnings on agents/MONITORING_AGENT.
+- **Affected:** secrets-review-checklist
+- **Rationale:** 0 blocking + 1 warnings on secrets-review-checklist.
 - **Effort:** M
 - **Risk:** low
-- **CI impact:** blocking
-- **Next action:** Open a rewrite task for agents/MONITORING_AGENT.
+- **CI impact:** warning
+- **Next action:** Open a rewrite task for secrets-review-checklist.
 
-## rec-c286844b — rewrite (priority 2)
+## rec-78394aed — rewrite (priority 3)
+
+- **Affected:** documentation-impact-report
+- **Rationale:** 0 blocking + 1 warnings on documentation-impact-report.
+- **Effort:** M
+- **Risk:** low
+- **CI impact:** warning
+- **Next action:** Open a rewrite task for documentation-impact-report.
+
+## rec-7884aee2 — rewrite (priority 3)
+
+- **Affected:** implementation-routing-report
+- **Rationale:** 0 blocking + 1 warnings on implementation-routing-report.
+- **Effort:** M
+- **Risk:** low
+- **CI impact:** warning
+- **Next action:** Open a rewrite task for implementation-routing-report.
+
+## rec-7b2979b8 — rewrite (priority 3)
+
+- **Affected:** action-item
+- **Rationale:** 0 blocking + 1 warnings on action-item.
+- **Effort:** M
+- **Risk:** low
+- **CI impact:** warning
+- **Next action:** Open a rewrite task for action-item.
+
+## rec-7cf04ea9 — rewrite (priority 3)
+
+- **Affected:** latency-spike
+- **Rationale:** 0 blocking + 1 warnings on latency-spike.
+- **Effort:** M
+- **Risk:** low
+- **CI impact:** warning
+- **Next action:** Open a rewrite task for latency-spike.
+
+## rec-7da433ef — rewrite (priority 3)
+
+- **Affected:** stop-and-validation
+- **Rationale:** 0 blocking + 1 warnings on stop-and-validation.
+- **Effort:** M
+- **Risk:** low
+- **CI impact:** warning
+- **Next action:** Open a rewrite task for stop-and-validation.
+
+## rec-84d0a637 — rewrite (priority 3)
+
+- **Affected:** self
+- **Rationale:** 0 blocking + 1 warnings on self.
+- **Effort:** M
+- **Risk:** low
+- **CI impact:** warning
+- **Next action:** Open a rewrite task for self.
+
+## rec-8de650e3 — rewrite (priority 3)
+
+- **Affected:** modular-monolith-checklist
+- **Rationale:** 0 blocking + 1 warnings on modular-monolith-checklist.
+- **Effort:** M
+- **Risk:** low
+- **CI impact:** warning
+- **Next action:** Open a rewrite task for modular-monolith-checklist.
+
+## rec-8e3a80af — rewrite (priority 3)
+
+- **Affected:** angular
+- **Rationale:** 0 blocking + 1 warnings on angular.
+- **Effort:** M
+- **Risk:** low
+- **CI impact:** warning
+- **Next action:** Open a rewrite task for angular.
+
+## rec-90b64bb8 — rewrite (priority 3)
+
+- **Affected:** validation-report
+- **Rationale:** 0 blocking + 1 warnings on validation-report.
+- **Effort:** M
+- **Risk:** low
+- **CI impact:** warning
+- **Next action:** Open a rewrite task for validation-report.
+
+## rec-98f83787 — rewrite (priority 3)
+
+- **Affected:** node-typescript
+- **Rationale:** 0 blocking + 1 warnings on node-typescript.
+- **Effort:** M
+- **Risk:** low
+- **CI impact:** warning
+- **Next action:** Open a rewrite task for node-typescript.
+
+## rec-9b73aaf6 — rewrite (priority 3)
+
+- **Affected:** incident-triage-report
+- **Rationale:** 0 blocking + 1 warnings on incident-triage-report.
+- **Effort:** M
+- **Risk:** low
+- **CI impact:** warning
+- **Next action:** Open a rewrite task for incident-triage-report.
+
+## rec-9c2fd8ea — rewrite (priority 3)
+
+- **Affected:** dotnet-testing
+- **Rationale:** 0 blocking + 1 warnings on dotnet-testing.
+- **Effort:** M
+- **Risk:** low
+- **CI impact:** warning
+- **Next action:** Open a rewrite task for dotnet-testing.
+
+## rec-a86d23c8 — rewrite (priority 3)
+
+- **Affected:** observability-review-report
+- **Rationale:** 0 blocking + 1 warnings on observability-review-report.
+- **Effort:** M
+- **Risk:** low
+- **CI impact:** warning
+- **Next action:** Open a rewrite task for observability-review-report.
+
+## rec-a9af7855 — rewrite (priority 3)
 
 - **Affected:** README
-- **Rationale:** 4 blocking + 2 warnings on README.
+- **Rationale:** 0 blocking + 2 warnings on README.
 - **Effort:** M
 - **Risk:** low
-- **CI impact:** blocking
+- **CI impact:** warning
 - **Next action:** Open a rewrite task for README.
 
-## rec-c39cb317 — rewrite (priority 2)
+## rec-b01ade52 — rewrite (priority 3)
 
-- **Affected:** agents/PEN_TESTING_AGENT
-- **Rationale:** 1 blocking + 0 warnings on agents/PEN_TESTING_AGENT.
+- **Affected:** risk-weighting
+- **Rationale:** 0 blocking + 1 warnings on risk-weighting.
 - **Effort:** M
 - **Risk:** low
-- **CI impact:** blocking
-- **Next action:** Open a rewrite task for agents/PEN_TESTING_AGENT.
+- **CI impact:** warning
+- **Next action:** Open a rewrite task for risk-weighting.
 
-## rec-c503e82f — rewrite (priority 2)
+## rec-b6576344 — rewrite (priority 3)
 
-- **Affected:** skills/architecture-review
-- **Rationale:** 1 blocking + 0 warnings on skills/architecture-review.
+- **Affected:** architecture-risk-checklist
+- **Rationale:** 0 blocking + 1 warnings on architecture-risk-checklist.
 - **Effort:** M
 - **Risk:** low
-- **CI impact:** blocking
-- **Next action:** Open a rewrite task for skills/architecture-review.
+- **CI impact:** warning
+- **Next action:** Open a rewrite task for architecture-risk-checklist.
 
-## rec-c6cab7ce — rewrite (priority 2)
+## rec-b9b62536 — rewrite (priority 3)
 
-- **Affected:** agents/CODE_REVIEW_AGENT
-- **Rationale:** 1 blocking + 0 warnings on agents/CODE_REVIEW_AGENT.
+- **Affected:** incident-severity-guide
+- **Rationale:** 0 blocking + 1 warnings on incident-severity-guide.
 - **Effort:** M
 - **Risk:** low
-- **CI impact:** blocking
-- **Next action:** Open a rewrite task for agents/CODE_REVIEW_AGENT.
+- **CI impact:** warning
+- **Next action:** Open a rewrite task for incident-severity-guide.
 
-## rec-c7330fff — rewrite (priority 2)
+## rec-c5c76cb7 — rewrite (priority 3)
 
-- **Affected:** skills/references
-- **Rationale:** 21 blocking + 0 warnings on skills/references.
+- **Affected:** dependency-change-report
+- **Rationale:** 0 blocking + 1 warnings on dependency-change-report.
 - **Effort:** M
 - **Risk:** low
-- **CI impact:** blocking
-- **Next action:** Open a rewrite task for skills/references.
+- **CI impact:** warning
+- **Next action:** Open a rewrite task for dependency-change-report.
 
-## rec-ca39a2d0 — rewrite (priority 2)
+## rec-d079d35a — rewrite (priority 3)
 
-- **Affected:** skills/incident-triage
-- **Rationale:** 1 blocking + 0 warnings on skills/incident-triage.
+- **Affected:** rest-api
+- **Rationale:** 0 blocking + 1 warnings on rest-api.
 - **Effort:** M
 - **Risk:** low
-- **CI impact:** blocking
-- **Next action:** Open a rewrite task for skills/incident-triage.
+- **CI impact:** warning
+- **Next action:** Open a rewrite task for rest-api.
 
-## rec-d706c2f4 — rewrite (priority 2)
+## rec-d375367d — rewrite (priority 3)
 
-- **Affected:** agents/PRODUCT_MANAGER_AGENT
-- **Rationale:** 1 blocking + 0 warnings on agents/PRODUCT_MANAGER_AGENT.
+- **Affected:** handoff-and-forbidden
+- **Rationale:** 0 blocking + 1 warnings on handoff-and-forbidden.
 - **Effort:** M
 - **Risk:** low
-- **CI impact:** blocking
-- **Next action:** Open a rewrite task for agents/PRODUCT_MANAGER_AGENT.
+- **CI impact:** warning
+- **Next action:** Open a rewrite task for handoff-and-forbidden.
 
-## rec-d75f9c3c — rewrite (priority 2)
+## rec-d40198b5 — rewrite (priority 3)
 
-- **Affected:** skills/README
-- **Rationale:** 1 blocking + 0 warnings on skills/README.
+- **Affected:** contract-testing
+- **Rationale:** 0 blocking + 1 warnings on contract-testing.
 - **Effort:** M
 - **Risk:** low
-- **CI impact:** blocking
-- **Next action:** Open a rewrite task for skills/README.
+- **CI impact:** warning
+- **Next action:** Open a rewrite task for contract-testing.
 
-## rec-df49d0a9 — rewrite (priority 2)
+## rec-d5cfdb02 — rewrite (priority 3)
 
-- **Affected:** agents/DEVOPS_AGENT
-- **Rationale:** 1 blocking + 0 warnings on agents/DEVOPS_AGENT.
+- **Affected:** webhook
+- **Rationale:** 0 blocking + 1 warnings on webhook.
 - **Effort:** M
 - **Risk:** low
-- **CI impact:** blocking
-- **Next action:** Open a rewrite task for agents/DEVOPS_AGENT.
+- **CI impact:** warning
+- **Next action:** Open a rewrite task for webhook.
 
-## rec-e059ebce — rewrite (priority 2)
+## rec-d6fb0077 — rewrite (priority 3)
 
-- **Affected:** agents/COMMUNICATIONS_MANAGER_AGENT
-- **Rationale:** 1 blocking + 0 warnings on agents/COMMUNICATIONS_MANAGER_AGENT.
+- **Affected:** state
+- **Rationale:** 0 blocking + 1 warnings on state.
 - **Effort:** M
 - **Risk:** low
-- **CI impact:** blocking
-- **Next action:** Open a rewrite task for agents/COMMUNICATIONS_MANAGER_AGENT.
+- **CI impact:** warning
+- **Next action:** Open a rewrite task for state.
 
-## rec-e9d3d52d — rewrite (priority 2)
+## rec-d785f568 — rewrite (priority 3)
 
-- **Affected:** agents/CREATIVE_DIRECTOR_AGENT
-- **Rationale:** 1 blocking + 0 warnings on agents/CREATIVE_DIRECTOR_AGENT.
+- **Affected:** workflow
+- **Rationale:** 0 blocking + 1 warnings on workflow.
 - **Effort:** M
 - **Risk:** low
-- **CI impact:** blocking
-- **Next action:** Open a rewrite task for agents/CREATIVE_DIRECTOR_AGENT.
+- **CI impact:** warning
+- **Next action:** Open a rewrite task for workflow.
 
-## rec-f0776fa7 — rewrite (priority 2)
+## rec-dad90502 — rewrite (priority 3)
 
-- **Affected:** incident-summary
-- **Rationale:** 1 blocking + 0 warnings on incident-summary.
+- **Affected:** troubleshooting-guide
+- **Rationale:** 0 blocking + 1 warnings on troubleshooting-guide.
 - **Effort:** M
 - **Risk:** low
-- **CI impact:** blocking
-- **Next action:** Open a rewrite task for incident-summary.
+- **CI impact:** warning
+- **Next action:** Open a rewrite task for troubleshooting-guide.
 
-## rec-f84552a5 — rewrite (priority 2)
+## rec-db68839c — rewrite (priority 3)
 
-- **Affected:** skills/dependency-change-review
-- **Rationale:** 1 blocking + 0 warnings on skills/dependency-change-review.
+- **Affected:** vue
+- **Rationale:** 0 blocking + 1 warnings on vue.
 - **Effort:** M
 - **Risk:** low
-- **CI impact:** blocking
-- **Next action:** Open a rewrite task for skills/dependency-change-review.
+- **CI impact:** warning
+- **Next action:** Open a rewrite task for vue.
 
-## rec-f8cc1940 — rewrite (priority 2)
+## rec-e2fe10b4 — rewrite (priority 3)
 
-- **Affected:** operational-risk-register
-- **Rationale:** 1 blocking + 0 warnings on operational-risk-register.
+- **Affected:** migration-safety-report
+- **Rationale:** 0 blocking + 1 warnings on migration-safety-report.
 - **Effort:** M
 - **Risk:** low
-- **CI impact:** blocking
-- **Next action:** Open a rewrite task for operational-risk-register.
+- **CI impact:** warning
+- **Next action:** Open a rewrite task for migration-safety-report.
 
-## split-0d99b682 — split (priority 3)
+## rec-e7bdb25d — rewrite (priority 3)
 
-- **Affected:** skills/templates
+- **Affected:** python
+- **Rationale:** 0 blocking + 1 warnings on python.
+- **Effort:** M
+- **Risk:** low
+- **CI impact:** warning
+- **Next action:** Open a rewrite task for python.
+
+## rec-ee300cae — rewrite (priority 3)
+
+- **Affected:** jest-vitest
+- **Rationale:** 0 blocking + 1 warnings on jest-vitest.
+- **Effort:** M
+- **Risk:** low
+- **CI impact:** warning
+- **Next action:** Open a rewrite task for jest-vitest.
+
+## rec-f084263f — rewrite (priority 3)
+
+- **Affected:** slo-review
+- **Rationale:** 0 blocking + 1 warnings on slo-review.
+- **Effort:** M
+- **Risk:** low
+- **CI impact:** warning
+- **Next action:** Open a rewrite task for slo-review.
+
+## rec-f153d1fa — rewrite (priority 3)
+
+- **Affected:** backend-implementation-report
+- **Rationale:** 0 blocking + 1 warnings on backend-implementation-report.
+- **Effort:** M
+- **Risk:** low
+- **CI impact:** warning
+- **Next action:** Open a rewrite task for backend-implementation-report.
+
+## rec-f1a13438 — rewrite (priority 3)
+
+- **Affected:** integration-implementation-report
+- **Rationale:** 0 blocking + 1 warnings on integration-implementation-report.
+- **Effort:** M
+- **Risk:** low
+- **CI impact:** warning
+- **Next action:** Open a rewrite task for integration-implementation-report.
+
+## rec-f634bca2 — rewrite (priority 3)
+
+- **Affected:** test-gap-report
+- **Rationale:** 0 blocking + 1 warnings on test-gap-report.
+- **Effort:** M
+- **Risk:** low
+- **CI impact:** warning
+- **Next action:** Open a rewrite task for test-gap-report.
+
+## rec-f9be2645 — rewrite (priority 3)
+
+- **Affected:** nextjs
+- **Rationale:** 0 blocking + 1 warnings on nextjs.
+- **Effort:** M
+- **Risk:** low
+- **CI impact:** warning
+- **Next action:** Open a rewrite task for nextjs.
+
+## rec-fe022fa8 — rewrite (priority 3)
+
+- **Affected:** runbook
+- **Rationale:** 0 blocking + 1 warnings on runbook.
+- **Effort:** M
+- **Risk:** low
+- **CI impact:** warning
+- **Next action:** Open a rewrite task for runbook.
+
+## rec-ff32e159 — rewrite (priority 3)
+
+- **Affected:** authz-review-checklist
+- **Rationale:** 0 blocking + 1 warnings on authz-review-checklist.
+- **Effort:** M
+- **Risk:** low
+- **CI impact:** warning
+- **Next action:** Open a rewrite task for authz-review-checklist.
+
+## split-05224264 — split (priority 3)
+
+- **Affected:** readme-update-checklist
 - **Rationale:** Responsibility score 50 indicates over-broad scope.
 - **Effort:** M
 - **Risk:** low
 - **CI impact:** warning
-- **Next action:** Identify split boundaries for skills/templates.
+- **Next action:** Identify split boundaries for readme-update-checklist.
 
-## split-1c182c80 — split (priority 3)
+## split-0f786769 — split (priority 3)
 
-- **Affected:** agents/CODE_REVIEW_AGENT
+- **Affected:** SKILL
 - **Rationale:** Responsibility score 50 indicates over-broad scope.
 - **Effort:** M
 - **Risk:** low
 - **CI impact:** warning
-- **Next action:** Identify split boundaries for agents/CODE_REVIEW_AGENT.
+- **Next action:** Identify split boundaries for SKILL.
 
-## split-28f1b113 — split (priority 3)
+## split-1fe3bd2d — split (priority 3)
 
-- **Affected:** skills/security-review
+- **Affected:** SKILL
+- **Rationale:** Responsibility score 50 indicates over-broad scope.
+- **Effort:** M
+- **Risk:** low
+- **CI impact:** warning
+- **Next action:** Identify split boundaries for SKILL.
+
+## split-29d455d7 — split (priority 3)
+
+- **Affected:** SKILL
+- **Rationale:** Responsibility score 50 indicates over-broad scope.
+- **Effort:** M
+- **Risk:** low
+- **CI impact:** warning
+- **Next action:** Identify split boundaries for SKILL.
+
+## split-32f319f1 — split (priority 3)
+
+- **Affected:** SKILL
 - **Rationale:** Responsibility score 25 indicates over-broad scope.
 - **Effort:** M
 - **Risk:** low
 - **CI impact:** warning
-- **Next action:** Identify split boundaries for skills/security-review.
+- **Next action:** Identify split boundaries for SKILL.
 
-## split-314d24da — split (priority 3)
+## split-3bbf5b21 — split (priority 3)
 
-- **Affected:** skills/architecture-review
+- **Affected:** code-review-report
 - **Rationale:** Responsibility score 50 indicates over-broad scope.
 - **Effort:** M
 - **Risk:** low
 - **CI impact:** warning
-- **Next action:** Identify split boundaries for skills/architecture-review.
+- **Next action:** Identify split boundaries for code-review-report.
 
-## split-370b1a10 — split (priority 3)
+## split-4d240d4f — split (priority 3)
 
-- **Affected:** skills/observability-review
+- **Affected:** SKILL
 - **Rationale:** Responsibility score 50 indicates over-broad scope.
 - **Effort:** M
 - **Risk:** low
 - **CI impact:** warning
-- **Next action:** Identify split boundaries for skills/observability-review.
+- **Next action:** Identify split boundaries for SKILL.
 
-## split-46dceb65 — split (priority 3)
+## split-642c6e10 — split (priority 3)
 
-- **Affected:** agents/SOFTWARE_ENGINEER_AGENT
+- **Affected:** SKILL
 - **Rationale:** Responsibility score 50 indicates over-broad scope.
 - **Effort:** M
 - **Risk:** low
 - **CI impact:** warning
-- **Next action:** Identify split boundaries for agents/SOFTWARE_ENGINEER_AGENT.
+- **Next action:** Identify split boundaries for SKILL.
 
-## split-4fd9a2cd — split (priority 3)
+## split-6df253f3 — split (priority 3)
 
-- **Affected:** skills/templates
+- **Affected:** SKILL
 - **Rationale:** Responsibility score 50 indicates over-broad scope.
 - **Effort:** M
 - **Risk:** low
 - **CI impact:** warning
-- **Next action:** Identify split boundaries for skills/templates.
+- **Next action:** Identify split boundaries for SKILL.
 
-## split-503f3ab4 — split (priority 3)
+## split-82ac245e — split (priority 3)
 
-- **Affected:** skills/code-change-review
+- **Affected:** SKILL
+- **Rationale:** Responsibility score 50 indicates over-broad scope.
+- **Effort:** M
+- **Risk:** low
+- **CI impact:** warning
+- **Next action:** Identify split boundaries for SKILL.
+
+## split-ac38f841 — split (priority 3)
+
+- **Affected:** SKILL
 - **Rationale:** Responsibility score 25 indicates over-broad scope.
 - **Effort:** M
 - **Risk:** low
 - **CI impact:** warning
-- **Next action:** Identify split boundaries for skills/code-change-review.
+- **Next action:** Identify split boundaries for SKILL.
 
-## split-5097118d — split (priority 3)
+## split-beb3796b — split (priority 3)
 
-- **Affected:** skills/templates
+- **Affected:** test-generation-report
 - **Rationale:** Responsibility score 50 indicates over-broad scope.
 - **Effort:** M
 - **Risk:** low
 - **CI impact:** warning
-- **Next action:** Identify split boundaries for skills/templates.
+- **Next action:** Identify split boundaries for test-generation-report.
 
-## split-5870a4de — split (priority 3)
+## split-c1fba6e2 — split (priority 3)
 
-- **Affected:** skills/documentation-update
+- **Affected:** SKILL
 - **Rationale:** Responsibility score 50 indicates over-broad scope.
 - **Effort:** M
 - **Risk:** low
 - **CI impact:** warning
-- **Next action:** Identify split boundaries for skills/documentation-update.
+- **Next action:** Identify split boundaries for SKILL.
 
-## split-6b7ad91d — split (priority 3)
+## split-ce627a48 — split (priority 3)
 
-- **Affected:** skills/release-readiness
+- **Affected:** dependency-change-report
 - **Rationale:** Responsibility score 50 indicates over-broad scope.
 - **Effort:** M
 - **Risk:** low
 - **CI impact:** warning
-- **Next action:** Identify split boundaries for skills/release-readiness.
+- **Next action:** Identify split boundaries for dependency-change-report.
 
-## split-7fe2fa7f — split (priority 3)
+## split-dcff7074 — split (priority 3)
 
-- **Affected:** skills/test-gap-analysis
+- **Affected:** SKILL
 - **Rationale:** Responsibility score 50 indicates over-broad scope.
 - **Effort:** M
 - **Risk:** low
 - **CI impact:** warning
-- **Next action:** Identify split boundaries for skills/test-gap-analysis.
+- **Next action:** Identify split boundaries for SKILL.
 
-## split-872af302 — split (priority 3)
+## split-e9daaa36 — split (priority 3)
 
-- **Affected:** agents/DATA_ANALYST_AGENT
+- **Affected:** SKILL
 - **Rationale:** Responsibility score 50 indicates over-broad scope.
 - **Effort:** M
 - **Risk:** low
 - **CI impact:** warning
-- **Next action:** Identify split boundaries for agents/DATA_ANALYST_AGENT.
+- **Next action:** Identify split boundaries for SKILL.
 
-## split-907413d2 — split (priority 3)
+## split-f64ba979 — split (priority 3)
 
-- **Affected:** skills/dependency-change-review
+- **Affected:** implementation-routing-report
 - **Rationale:** Responsibility score 50 indicates over-broad scope.
 - **Effort:** M
 - **Risk:** low
 - **CI impact:** warning
-- **Next action:** Identify split boundaries for skills/dependency-change-review.
-
-## split-92607eaf — split (priority 3)
-
-- **Affected:** skills/repo-discovery
-- **Rationale:** Responsibility score 50 indicates over-broad scope.
-- **Effort:** M
-- **Risk:** low
-- **CI impact:** warning
-- **Next action:** Identify split boundaries for skills/repo-discovery.
-
-## split-955ad07f — split (priority 3)
-
-- **Affected:** skills/templates
-- **Rationale:** Responsibility score 50 indicates over-broad scope.
-- **Effort:** M
-- **Risk:** low
-- **CI impact:** warning
-- **Next action:** Identify split boundaries for skills/templates.
-
-## split-9818d828 — split (priority 3)
-
-- **Affected:** agents/MONITORING_AGENT
-- **Rationale:** Responsibility score 50 indicates over-broad scope.
-- **Effort:** M
-- **Risk:** low
-- **CI impact:** warning
-- **Next action:** Identify split boundaries for agents/MONITORING_AGENT.
-
-## split-a82c36e0 — split (priority 3)
-
-- **Affected:** agents/PEN_TESTING_AGENT
-- **Rationale:** Responsibility score 50 indicates over-broad scope.
-- **Effort:** M
-- **Risk:** low
-- **CI impact:** warning
-- **Next action:** Identify split boundaries for agents/PEN_TESTING_AGENT.
-
-## split-bc0a94f3 — split (priority 3)
-
-- **Affected:** skills/architecture-decision
-- **Rationale:** Responsibility score 50 indicates over-broad scope.
-- **Effort:** M
-- **Risk:** low
-- **CI impact:** warning
-- **Next action:** Identify split boundaries for skills/architecture-decision.
-
-## split-c214bb2f — split (priority 3)
-
-- **Affected:** skills/validation-runner
-- **Rationale:** Responsibility score 50 indicates over-broad scope.
-- **Effort:** M
-- **Risk:** low
-- **CI impact:** warning
-- **Next action:** Identify split boundaries for skills/validation-runner.
-
-## split-cb343e26 — split (priority 3)
-
-- **Affected:** skills/test-generation
-- **Rationale:** Responsibility score 50 indicates over-broad scope.
-- **Effort:** M
-- **Risk:** low
-- **CI impact:** warning
-- **Next action:** Identify split boundaries for skills/test-generation.
-
-## split-d7e67de3 — split (priority 3)
-
-- **Affected:** skills/templates
-- **Rationale:** Responsibility score 50 indicates over-broad scope.
-- **Effort:** M
-- **Risk:** low
-- **CI impact:** warning
-- **Next action:** Identify split boundaries for skills/templates.
+- **Next action:** Identify split boundaries for implementation-routing-report.
