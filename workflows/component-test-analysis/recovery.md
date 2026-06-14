@@ -8,10 +8,18 @@ If interrupted, resume from `TODO_component-analysis.md` checkpoints. Do not re-
 
 **Steps:**
 
-1. Read `TODO_component-analysis.md` and find the last completed checkpoint (the one with `[x]`).
-2. Skip to the next checkpoint (the one with `[ ]`).
-3. Verify the artifact files in `OUTPUT_DIR/` exist for completed work (e.g. `component-inventory.json` should exist if CTA-CKPT-4 is marked done).
-4. If an expected artifact is missing, fall back to its producing phase and re-run.
+1. Locate the ledger. The ledger is `TODO_component-analysis.md` at the
+   root of the project being analyzed (per
+   `workflows/shared/output-rules.md`). For a subpath project, that
+   means the project subpath (e.g. `skill-governance-pipeline/`), not
+   the input repository root. The `JSON OUTPUTS`
+   (`component-inventory.json`, `gap-backlog.json`, etc.) live in
+   `OUTPUT_DIR` as configured; the ledger is co-located with the
+   project.
+2. Read the ledger and find the last completed checkpoint (the one with `[x]`).
+3. Skip to the next checkpoint (the one with `[ ]`).
+4. Verify the artifact files in `OUTPUT_DIR/` exist for completed work (e.g. `component-inventory.json` should exist if CTA-CKPT-4 is marked done).
+5. If an expected artifact is missing, fall back to its producing phase and re-run.
 
 **Cheap re-runs:** Phase 2 (clone) is cheap. Phase 3-4 (stack + component detection) is fast. Phase 5+ can be slow for large repos.
 

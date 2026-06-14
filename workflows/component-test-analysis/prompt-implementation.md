@@ -40,6 +40,15 @@ PRIMARY OUTPUT:
 Maintain a workflow ledger named:
 TODO_component-analysis.md
 
+LOCATION: Write the ledger at the root of the project being analyzed.
+For a single-project repository, that is the repository root. For a
+repository that contains the target project as a subdirectory, that is
+the smallest directory containing the project's source files (e.g.
+`skill-governance-pipeline/`). The `JSON OUTPUTS` (component-inventory,
+gap-backlog, etc.) are written to `OUTPUT_DIR` as configured; the
+ledger stays co-located with the project. Record the chosen path in
+the ledger's `CTA-CTX-1 [Repository]` field.
+
 The ledger must include context, checkpoints, execution logs, commands, evidence, per-component analysis, gap classification, and handoff manifest.
 
 MACHINE-READABLE OUTPUTS (only when source data is found):

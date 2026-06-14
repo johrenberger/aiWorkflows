@@ -30,6 +30,14 @@ PRIMARY OUTPUT:
 Maintain a workflow ledger named:
 TODO_mutation-testing.md
 
+LOCATION: Write the ledger next to the ledger produced by
+`application-test-coverage` (the `TODO_test-coverage.md` file). If that
+ledger exists at `<subpath>/TODO_test-coverage.md`, write this ledger
+at the same `<subpath>/`. If no `TODO_test-coverage.md` exists, default
+to the repository root for a single-project repository, or the smallest
+directory containing the project's source files. Record the chosen
+path in the ledger's `MT-CTX-1 [Repository]` field.
+
 STRICT RULES:
 - Accept the GitHub repository URL as the target input.
 - Prefer consuming TODO_test-coverage.md if present.

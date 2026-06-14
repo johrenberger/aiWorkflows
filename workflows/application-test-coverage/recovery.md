@@ -2,9 +2,18 @@
 
 ## Resume Procedure
 
-1. Open `TODO_test-coverage.md`.
-2. Find the last completed checkpoint.
-3. Run `git status --short`.
+1. Locate the ledger. The ledger is `TODO_test-coverage.md` at the
+   root of the project being analyzed (per `workflows/shared/output-rules.md`).
+   For a single-project repository that is the repository root; for a
+   subpath project (e.g. `skill-governance-pipeline/`) it is the
+   project subpath. The `TC-CTX-1 [Repository]` field of the ledger
+   records the exact path. If no ledger exists at the project root,
+   search the repository: `find . -name TODO_test-coverage.md -not
+   -path './.git/*'`. If a misplaced ledger is found at the input
+   repository root for a subpath project, it is a `TC-BLK-LedgerMisplaced`
+   and should be moved to the project root.
+2. Open the ledger and find the last completed checkpoint.
+3. Run `git status --short` at the project root.
 4. Verify no unrelated user changes would be overwritten.
 5. Continue from the next incomplete phase.
 

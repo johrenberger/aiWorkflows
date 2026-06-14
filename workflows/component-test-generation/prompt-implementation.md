@@ -39,6 +39,16 @@ PRIMARY OUTPUT:
 Maintain a workflow ledger named:
 TODO_test-generation.md
 
+LOCATION: Write the ledger at the same path as the input
+`TODO_component-analysis.md` ledger from the prior workflow pass, if it
+exists. That ledger is co-located with the project being analyzed. If
+no prior analysis ledger exists, default to the repository root for a
+single-project repository, or the smallest directory containing the
+project's source files. The `JSON OUTPUTS` (selected-gaps,
+test-execution-results, etc.) are written to `OUTPUT_DIR` as
+configured; the ledger stays co-located with the project. Record the
+chosen path in the ledger's `CTG-CTX-1 [Repository]` field.
+
 The ledger must include context, checkpoints, execution logs, commands, evidence, per-gap generation, repair attempts, test execution results, and the final PR URL.
 
 MACHINE-READABLE OUTPUTS:

@@ -58,6 +58,7 @@ MAX_BASELINE_TEST_MINUTES=30
 ENABLE_TESTABILITY_CLASSIFICATION=true
 MULTI_MODULE_MODE=auto
 MODULE_LIST=<OPTIONAL_COMMA_SEPARATED_LIST_OR_BLANK>
+PROJECT_ROOT=<PROJECT_SUBDIR_OR_LEAVE_BLANK_FOR_REPO_ROOT>
 
 MISSION:
 Clone or open the provided GitHub repository, detect the application stack and test framework, run baseline tests and coverage where feasible, classify eligible source files, and implement tests to close coverage gaps toward 90% coverage per eligible source file.
@@ -65,6 +66,14 @@ Clone or open the provided GitHub repository, detect the application stack and t
 PRIMARY OUTPUT:
 Maintain a workflow ledger named:
 TODO_test-coverage.md
+
+LOCATION: Write the ledger at `<PROJECT_ROOT>/TODO_test-coverage.md` where
+`<PROJECT_ROOT>` is the value of the `PROJECT_ROOT` input. If
+`PROJECT_ROOT` is blank, default to the repository root for a
+single-project repository, or the smallest directory containing the
+project's source files (e.g. `skill-governance-pipeline/`) for a
+repository that contains the target project as a subdirectory. Record
+the chosen path in the ledger's `TC-CTX-1 [Repository]` field.
 
 The ledger must include context, checkpoints, execution logs, commands, evidence, per-file coverage tracking, implemented test cases, validation results, blockers, and commit-ready summary.
 

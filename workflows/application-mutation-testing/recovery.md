@@ -2,9 +2,15 @@
 
 ## Resume Procedure
 
-1. Open `TODO_mutation-testing.md`.
-2. Find the last completed checkpoint.
-3. Run `git status --short`.
+1. Locate the ledger. The ledger is `TODO_mutation-testing.md` at the
+   root of the project being analyzed, next to the
+   `TODO_test-coverage.md` ledger from the prior pass (per
+   `workflows/shared/output-rules.md`). For a subpath project, that
+   means the project subpath (e.g. `skill-governance-pipeline/`), not
+   the input repository root. If no ledger is found, the workflow has
+   not been started.
+2. Open the ledger and find the last completed checkpoint.
+3. Run `git status --short` at the project root.
 4. Verify no unrelated changes would be overwritten.
 5. Continue from the next incomplete phase.
 

@@ -26,6 +26,7 @@
 - [ ] **TC-VAL-22 [v2 Analysis Consumed]** If `test-factory` was on PATH at run start, the artifacts directory contains `v2/v2_summary.md` AND the ledger cites at least 5 of the 13 v2 JSON outputs in evidence fields. The presence of `v2_summary.md` and at least 5 cited JSONs proves the LLM consumed the deterministic analysis instead of re-deriving it. If `test-factory` was not on PATH, this gate is satisfied by a `TC-BLK-V2NotInstalled` entry in the Blocker section.
 - [ ] **TC-VAL-23 [No Re-Detection]** Each of TC-FRAMEWORK-1, TC-CKPT-5, TC-CKPT-7, and TC-CKPT-8 has an evidence field that cites a v2 JSON artifact (or, if v2 was unavailable, a documented `TC-BLK-V2NotInstalled`). If the LLM disagrees with any v2-derived value, the disagreement is recorded in TC-OBS-1 with the v2 path being disagreed with, and the LLM either fell back to the v2 value or skipped the file with `TC-BLK-V2Disagreement`. Re-deriving values without recording the disagreement is a failure of this gate.
 - [ ] **TC-VAL-24 [v2 Re-Run After Each Batch]** After implementing each test batch (Phase 12), the workflow re-runs `workflows/shared/integrate-v2.sh` (with `--generate-coverage` if the pre-batch run used it) to produce a fresh `coverage_baseline.json`. The diff between the pre-batch and post-batch `coverage_baseline.json` is the evidence for `TC-VAL-RESULT-2 [Coverage Recheck]`. An empty diff means the batch did not move coverage and MUST be investigated before proceeding to Phase 15.
+- [ ] **TC-VAL-25 [Ledger Co-Located With Project]** `TODO_test-coverage.md` is written at the root of the project being analyzed, not at the root of the input repository. For a single-project repository, the project root is the repository root. For a repository that contains the target project as a subdirectory, the project root is the smallest directory containing the project's source files (e.g. `skill-governance-pipeline/`). The chosen path is recorded in `TC-CTX-1 [Repository]` and matches the smallest common ancestor of all per-file coverage rows in the per-file table. If the ledger is found at the input repository root when a subpath project was analyzed, this gate fails with `TC-BLK-LedgerMisplaced`.
 
 ## Failure Handling
 
@@ -41,5 +42,6 @@ If validation fails, classify the failure:
 - Pre-flight (build/install prerequisite missing) — TC-BLK-PreFlight.
 - Baseline timeout — TC-BLK-BaselineTimeout.
 - Environment verification (tool missing, disk full, network down) — TC-BLK-PreFlight.
+- Ledger written at wrong path (repo root instead of project root) — TC-BLK-LedgerMisplaced.
 
 Record evidence and next action.

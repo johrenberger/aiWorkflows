@@ -12,6 +12,15 @@ TODO_test-coverage.md
 
 The ledger documents analysis, implementation, validation, coverage results, and remaining gaps.
 
+The ledger lives at the **root of the project being analyzed**, not at
+the root of the input repository. For a single-project repository,
+that is the repository root. For a repository that contains the target
+project as a subdirectory (e.g. `aiWorkflows` → `skill-governance-pipeline/`),
+that is the project subpath. See
+[`workflows/shared/output-rules.md`](../shared/output-rules.md#project-root)
+for the project-root rule and `TC-VAL-25` in `validation.md` for the
+gate that enforces it.
+
 ## Default Mode
 
 ```text

@@ -8,10 +8,18 @@ If interrupted, resume from `TODO_test-generation.md` checkpoints. Do not re-clo
 
 **Steps:**
 
-1. Read `TODO_test-generation.md` and find the last completed checkpoint (the one with `[x]`).
-2. Skip to the next checkpoint (the one with `[ ]`).
-3. Verify the artifact files in `OUTPUT_DIR/` exist for completed work.
-4. If an expected artifact is missing, fall back to its producing phase and re-run.
+1. Locate the ledger. The ledger is `TODO_test-generation.md` at the
+   same path as the input `TODO_component-analysis.md` from the prior
+   workflow pass (per `workflows/shared/output-rules.md`). For a
+   subpath project, that means the project subpath (e.g.
+   `skill-governance-pipeline/`), not the input repository root. The
+   `JSON OUTPUTS` (`selected-gaps.json`, `test-execution-results.json`,
+   etc.) live in `OUTPUT_DIR` as configured; the ledger is
+   co-located with the project.
+2. Read the ledger and find the last completed checkpoint (the one with `[x]`).
+3. Skip to the next checkpoint (the one with `[ ]`).
+4. Verify the artifact files in `OUTPUT_DIR/` exist for completed work.
+5. If an expected artifact is missing, fall back to its producing phase and re-run.
 
 **Cheap re-runs:**
 

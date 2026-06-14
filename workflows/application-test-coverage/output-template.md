@@ -9,6 +9,9 @@
   - Timestamp:
   - Mode:
   - Coverage Target Per File: 90%
+  - Project Root: <absolute path to the project being analyzed; for a
+    subpath project, e.g. `<repo>/skill-governance-pipeline/`. The
+    ledger lives at `<Project Root>/TODO_test-coverage.md`.>
 
 ## Checkpoints
 
