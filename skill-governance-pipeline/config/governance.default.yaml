@@ -8,7 +8,7 @@ skill_directories:
 
 agent_directories:
   - ./agents
-  - ../test-repo/.openclaw
+  - ../test-repo/agents
 
 output_directory: ./output
 
