@@ -9,8 +9,8 @@
 - **Active waivers:** 0
 - **Proposed rewrites:** 78
 - **Benchmark results:** 0
-- **Started:** 2026-06-14T00:03:30Z
-- **Finished:** 2026-06-14T00:03:30Z
+- **Started:** 2026-06-14T01:18:45Z
+- **Finished:** 2026-06-14T01:18:45Z
 
 ## Decisions
 - **rewrite:** 99
@@ -23,11 +23,11 @@
 - `blocking` **SKILL**: Outputs contract is missing or unstructured.
 
 ## Recommended actions
-- **rewrite** (release-gate-checklist): 1 blocking + 1 warnings on release-gate-checklist.
-- **rewrite** (blocker): 1 blocking + 1 warnings on blocker.
 - **rewrite** (task): 1 blocking + 1 warnings on task.
+- **rewrite** (release-gate-checklist): 1 blocking + 1 warnings on release-gate-checklist.
 - **rewrite** (SKILL): 84 blocking + 42 warnings on SKILL.
 - **rewrite** (adr): 1 blocking + 1 warnings on adr.
+- **rewrite** (blocker): 1 blocking + 1 warnings on blocker.
 
 ## Merge / split / rewrite / deprecate candidates
 

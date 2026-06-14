@@ -1,7 +1,7 @@
 # Technical Report — Skill Governance Pipeline
 
-Started: 2026-06-14T00:03:30Z
-Finished: 2026-06-14T00:03:30Z
+Started: 2026-06-14T01:18:45Z
+Finished: 2026-06-14T01:18:45Z
 CI: FAIL
 
 ## Inventory
