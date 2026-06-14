@@ -1,13 +1,8 @@
 """Tests for the overlap analyzer (CR 6)."""
 from __future__ import annotations
 
-import tempfile
 from pathlib import Path
 
-from skill_governance.discovery import (
-    DiscoveryConfig,
-    discover,
-)
 from skill_governance.models import (
     ArtifactType,
     OverlapRecommendation,

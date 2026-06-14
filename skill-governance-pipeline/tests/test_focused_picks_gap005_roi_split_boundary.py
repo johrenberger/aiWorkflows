@@ -24,7 +24,7 @@ Method: BDD-TDD
 from __future__ import annotations
 
 from skill_governance.models import ArtifactType, SkillArtifact
-from skill_governance.roi_scorer import _score_one, ROIWeights
+from skill_governance.roi_scorer import ROIWeights, _score_one
 
 
 def _artifact(name: str = "x") -> SkillArtifact:

@@ -22,8 +22,6 @@ from skill_governance.models import (
     Finding,
     OverlapPair,
     OverlapRecommendation,
-    ResponsibilityFlag,
-    ResponsibilityReport,
     ScorecardEntry,
     Severity,
 )

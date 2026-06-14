@@ -12,20 +12,14 @@ Method: BDD-TDD
 """
 from __future__ import annotations
 
-import json
 from pathlib import Path
 
-import pytest
 from click.testing import CliRunner
 
-from skill_governance.cli import main, _compute_health, _run_full_pipeline
+from skill_governance.cli import _compute_health, main
 from skill_governance.models import (
     ArtifactType,
-    Decision,
-    Finding,
     PipelineResult,
-    ScorecardEntry,
-    Severity,
     SkillArtifact,
 )
 
@@ -193,7 +187,6 @@ def test_rewrite_command_with_artifact_filter(tmp_path: Path):
 def test_compute_health_returns_perfect_score_for_empty_inventory():
     """An empty inventory returns 100/100 health, 0 blocking."""
     from skill_governance.config_loader import GovernanceConfig
-    from skill_governance.models import Waiver
     cfg = GovernanceConfig(
         {
             "skill_directories": [],

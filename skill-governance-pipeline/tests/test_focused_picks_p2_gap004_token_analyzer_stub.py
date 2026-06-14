@@ -33,9 +33,9 @@ import json
 import warnings
 from pathlib import Path
 
+from skill_governance.models import ArtifactType, SkillArtifact
 from skill_governance.runtime_metrics import ingest as runtime_ingest
 from skill_governance.token_analyzer import analyze_runtime, analyze_static
-from skill_governance.models import ArtifactType, SkillArtifact
 
 
 def _write_log(tmp_path: Path, lines: list[dict]) -> Path:

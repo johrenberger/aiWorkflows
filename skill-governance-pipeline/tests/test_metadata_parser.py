@@ -47,8 +47,9 @@ def test_purpose_vagueness_detection():
 
 def test_string_dependencies_are_split():
     """A comma-separated string in `dependencies` becomes a list."""
-    from skill_governance.metadata_parser import parse_metadata
     import tempfile
+
+    from skill_governance.metadata_parser import parse_metadata
     with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
         f.write("---\nname: t\nartifact_type: skill\npurpose: a sufficiently long and meaningful purpose text.\ncategory: test\nowner: me\nversion: '1.0'\ninputs:\n  - x\noutputs:\n  format: json\ndependencies: a, b, c\nintended_consumers: d\nquality_level: draft\nlast_reviewed: 2026-06-13\n---\n# body\n")
         f.flush()
@@ -58,8 +59,9 @@ def test_string_dependencies_are_split():
 
 def test_has_structured_contracts_only_when_dict_or_list():
     """Structured contracts are dicts or lists, not free-text strings."""
-    from skill_governance.metadata_parser import parse_metadata
     import tempfile
+
+    from skill_governance.metadata_parser import parse_metadata
     with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
         f.write("---\nname: t\nartifact_type: skill\npurpose: a sufficiently long and meaningful purpose text.\ncategory: test\nowner: me\nversion: '1.0'\ninputs: 'some file'\noutputs: 'a report'\ndependencies: []\nintended_consumers: []\nquality_level: draft\nlast_reviewed: 2026-06-13\n---\n# body\n")
         f.flush()

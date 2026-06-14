@@ -16,18 +16,11 @@ from pathlib import Path
 from skill_governance.models import (
     ArtifactType,
     Decision,
-    DependencyGraph,
     Finding,
-    OverlapPair,
-    OverlapRecommendation,
     PipelineResult,
-    ResponsibilityFlag,
-    ResponsibilityReport,
     ScorecardEntry,
     Severity,
     SkillArtifact,
-    TokenCostStatic,
-    Waiver,
 )
 
 
@@ -247,7 +240,7 @@ def test_remediation_backlog_sorts_by_priority(tmp_path: Path):
     pos_low = text.find("rec-low")
     assert pos_high >= 0, "rec-high not in backlog"
     assert pos_low >= 0, "rec-low not in backlog"
-    assert pos_high < pos_low, f"Expected rec-high before rec-low (by priority)"
+    assert pos_high < pos_low, "Expected rec-high before rec-low (by priority)"
 
 
 # ===========================================================================

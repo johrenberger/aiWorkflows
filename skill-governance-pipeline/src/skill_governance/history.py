@@ -10,10 +10,10 @@ can be computed across runs.
 from __future__ import annotations
 
 import json
+from collections.abc import Iterable
 from dataclasses import asdict, dataclass
-from datetime import date, datetime, timezone
+from datetime import datetime, timezone
 from pathlib import Path
-from typing import Iterable
 
 from .models import PipelineResult
 

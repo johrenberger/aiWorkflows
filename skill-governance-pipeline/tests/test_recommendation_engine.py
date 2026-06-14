@@ -8,7 +8,6 @@ from skill_governance.models import (
     OverlapRecommendation,
     ResponsibilityFlag,
     ResponsibilityReport,
-    ScorecardEntry,
     Severity,
 )
 from skill_governance.recommendation_engine import generate

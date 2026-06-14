@@ -10,11 +10,7 @@ them.
 
 from __future__ import annotations
 
-import re
 from pathlib import Path
-
-import pytest
-
 
 README_PATH = Path(__file__).resolve().parent.parent / "README.md"
 

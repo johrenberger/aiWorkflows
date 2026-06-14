@@ -37,6 +37,24 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e ".[test]"
 
+      - name: Install lint/type-check extras
+        run: |
+          pip install -e ".[dev]"
+
+      - name: Run ruff lint
+        run: |
+          # Ruff is fast (sub-second) and strict. A failure here
+          # means a real lint issue: unused import, deprecated
+          # pattern, bug-prone construct.
+          ruff check src/ tests/
+
+      - name: Run mypy type check
+        run: |
+          # mypy is non-strict (warn_return_any, warn_unused_ignores)
+          # but fails on real type errors. To tighten, raise the
+          # strict mode in pyproject.toml [tool.mypy].
+          mypy src/skill_governance/
+
       - name: Run tests with branch coverage
         run: |
           pytest --cov --cov-branch --cov-report=xml --cov-report=term-missing

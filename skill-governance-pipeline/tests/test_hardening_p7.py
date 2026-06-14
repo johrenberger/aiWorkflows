@@ -19,15 +19,14 @@ from __future__ import annotations
 
 from collections import Counter
 
+from skill_governance.models import ArtifactType, SkillArtifact
 from skill_governance.overlap_analyzer import (
-    OverlapRecommendation,
     _bag,
     _jaccard,
     _name_overlap,
     _score_pair,
 )
 from skill_governance.roi_scorer import _normalize
-from skill_governance.models import ArtifactType, SkillArtifact
 
 
 def _artifact(name: str, body: str = "test body") -> SkillArtifact:

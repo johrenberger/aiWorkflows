@@ -19,9 +19,9 @@ BDD:
 from __future__ import annotations
 
 import re
+from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable
 
 from .models import ArtifactType, SkillArtifact
 from .utils import (
@@ -214,9 +214,9 @@ def discover(config: DiscoveryConfig) -> list[SkillArtifact]:
             continue
         for path in _iter_candidate_files(root, config):
             try:
-                rel = relative_to_root(path, root)
+                _rel = relative_to_root(path, root)
             except ValueError:
-                rel = str(path)
+                _rel = str(path)
             key = str(path.resolve())
             if key in seen_abs:
                 continue

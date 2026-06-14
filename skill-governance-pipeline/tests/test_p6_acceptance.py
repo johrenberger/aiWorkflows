@@ -21,7 +21,6 @@ import subprocess
 import sys
 from pathlib import Path
 
-import pytest
 import yaml
 
 PIPELINE_ROOT = Path(__file__).resolve().parents[1]
@@ -262,7 +261,7 @@ def test_health_score_is_above_0_when_only_cosmetic_findings_present(tmp_path):
     if not exec_report.exists():
         _run_cli(["report", "--config", str(cfg)])
     assert exec_report.exists(), (
-        f"executive_report.md must be written. Got:\n"
+        "executive_report.md must be written. Got:\n"
         + (exec_report.read_text() if exec_report.exists() else "<missing>")[:800]
     )
     text = exec_report.read_text()

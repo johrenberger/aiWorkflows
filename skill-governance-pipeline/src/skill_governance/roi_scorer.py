@@ -26,8 +26,7 @@ is derived from the ROI score plus the governance findings:
 """
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Callable
+from dataclasses import dataclass
 
 from .models import (
     Decision,

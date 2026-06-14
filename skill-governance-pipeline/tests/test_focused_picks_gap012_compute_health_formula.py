@@ -25,11 +25,7 @@ Method: BDD-TDD
 """
 from __future__ import annotations
 
-from pathlib import Path
-
 from skill_governance.cli import _compute_health
-from skill_governance.config_loader import load_config
-from skill_governance.discovery import DiscoveryConfig, discover
 from skill_governance.models import (
     ArtifactType,
     Finding,

@@ -5,7 +5,6 @@ from skill_governance.models import (
     ArtifactType,
     Decision,
     Finding,
-    ScorecardEntry,
     Severity,
     SkillArtifact,
     TokenCostStatic,
@@ -107,8 +106,8 @@ def test_custom_weights_change_score():
     """Heavily weighting business_criticality boosts the score."""
     a = _artifact("crit-skill")
     tokens = [TokenCostStatic(artifact_name="crit-skill", estimated_tokens=100, size_bytes=400, high_cost=False)]
-    # Default weights
-    sc_default = score([a], findings=[], token_costs=tokens, criticality_map={"crit-skill": 100})
+    # Default weights (smoke test — make sure score() doesn't crash on defaults)
+    _ = score([a], findings=[], token_costs=tokens, criticality_map={"crit-skill": 100})
     # Custom weights: all weight on business_criticality
     weights = ROIWeights(
         reuse=0, token_cost=0, output_quality=0, dependency_value=0,
