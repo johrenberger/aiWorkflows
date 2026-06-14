@@ -81,7 +81,6 @@ ACTION_VERBS = frozenset(
         "encrypt",
         "decrypt",
         "sign",
-        "verify",
     }
 )
 

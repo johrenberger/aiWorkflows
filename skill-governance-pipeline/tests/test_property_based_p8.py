@@ -17,7 +17,7 @@ function name = assertion.
 from __future__ import annotations
 
 from collections import Counter
-from typing import Callable
+from collections.abc import Callable
 
 import pytest
 from hypothesis import HealthCheck, assume, given, settings
@@ -26,9 +26,6 @@ from hypothesis import strategies as st
 from skill_governance.models import (
     ArtifactType,
     Decision,
-    Finding,
-    ScorecardEntry,
-    Severity,
     SkillArtifact,
 )
 from skill_governance.overlap_analyzer import (
@@ -49,7 +46,6 @@ from skill_governance.roi_scorer import (
     _normalize,
     _token_cost_score,
 )
-
 
 # Strategies -----------------------------------------------------------------
 

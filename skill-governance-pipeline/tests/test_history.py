@@ -1,9 +1,6 @@
 """Tests for the governance history module."""
 from __future__ import annotations
 
-import tempfile
-from pathlib import Path
-
 from skill_governance.history import (
     HistoryEntry,
     append,

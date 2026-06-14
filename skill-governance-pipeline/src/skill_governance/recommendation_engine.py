@@ -24,7 +24,6 @@ from __future__ import annotations
 
 import uuid
 from collections import defaultdict
-from typing import Iterable
 
 from .models import (
     Decision,

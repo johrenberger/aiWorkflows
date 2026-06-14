@@ -17,7 +17,7 @@ Support waivers with explicit rationale.
 """
 from __future__ import annotations
 
-from .models import Finding, PipelineResult, Severity, Waiver
+from .models import PipelineResult, Severity, Waiver
 
 
 def evaluate(result: PipelineResult, waivers: list[Waiver] | None = None) -> bool:

@@ -13,7 +13,7 @@ import json
 from pathlib import Path
 
 from skill_governance.models import ArtifactType, RuntimeTokenMetrics, SkillArtifact
-from skill_governance.token_analyzer import write_runtime, write_static, analyze_static
+from skill_governance.token_analyzer import analyze_static, write_runtime, write_static
 
 
 def _artifact(name: str, tokens: int) -> SkillArtifact:

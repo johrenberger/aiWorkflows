@@ -22,10 +22,7 @@ from __future__ import annotations
 
 import json
 import os
-import tempfile
 from pathlib import Path
-
-import pytest
 
 from skill_governance.utils import (
     FileInfo,
@@ -101,7 +98,6 @@ def test_parse_iso_timestamp_returns_none_for_invalid_input():
 # ===========================================================================
 def test_parse_iso_timestamp_handles_trailing_z():
     """A 'Z' suffix is accepted as UTC."""
-    from datetime import timezone
     dt = parse_iso_timestamp("2026-06-14T00:00:00Z")
     assert dt is not None
     assert dt.tzinfo is not None

@@ -249,17 +249,17 @@ dependencies: []
     cfg_path.write_text(yaml.dump(cfg))
     result = _run_cli(["ci", "--config", str(cfg_path)])
     # Acceptance: stdout has at least 4 lines
-    lines = [l for l in result.stdout.splitlines() if l.strip()]
+    lines = [line for line in result.stdout.splitlines() if line.strip()]
     assert len(lines) >= 4, (
         f"ci stdout should be a multi-line summary (>=4 lines), got {len(lines)}:\n"
         f"{result.stdout}"
     )
     # Must contain PASS or FAILED
-    assert any(("PASS" in l or "FAIL" in l) for l in lines), (
+    assert any(("PASS" in line or "FAIL" in line) for line in lines), (
         f"ci stdout must contain a line with PASS or FAIL, got:\n{result.stdout}"
     )
     # Must mention the executive report
-    assert any("executive_report" in l or "report" in l.lower() for l in lines), (
+    assert any("executive_report" in line or "report" in line.lower() for line in lines), (
         f"ci stdout must reference the executive report, got:\n{result.stdout}"
     )
 

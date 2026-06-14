@@ -28,14 +28,12 @@ from pathlib import Path
 
 from .metadata_parser import parse_metadata
 from .models import (
-    ArtifactType,
     DependencyGraph,
     DependencyNode,
     Finding,
     Severity,
     SkillArtifact,
 )
-from .utils import read_text_safe
 
 # Heuristic: a "name" token we look for in body text
 # Format: word chars and dashes, at least 3 chars

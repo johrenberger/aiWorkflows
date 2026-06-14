@@ -21,8 +21,8 @@ Method: BDD-TDD
 """
 from __future__ import annotations
 
-from skill_governance.overlap_analyzer import _recommendation
 from skill_governance.models import OverlapRecommendation
+from skill_governance.overlap_analyzer import _recommendation
 
 
 # ===========================================================================

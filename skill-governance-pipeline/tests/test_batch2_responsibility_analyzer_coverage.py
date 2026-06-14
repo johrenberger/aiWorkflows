@@ -12,17 +12,14 @@ Method: BDD-TDD
 """
 from __future__ import annotations
 
-import json
 from pathlib import Path
 
-import pytest
-
+from skill_governance.models import ArtifactType, SkillArtifact
 from skill_governance.responsibility_analyzer import (
     ResponsibilityFlag,
     _extract_actions,
     analyze,
 )
-from skill_governance.models import ArtifactType, SkillArtifact
 
 
 def _artifact(name: str, body: str = "test body") -> SkillArtifact:

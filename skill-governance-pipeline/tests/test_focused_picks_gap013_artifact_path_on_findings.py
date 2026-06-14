@@ -30,19 +30,12 @@ from pathlib import Path
 
 from skill_governance.cli import _validate_one
 from skill_governance.contract_validator import validate_contract
-from skill_governance.dependency_analyzer import (
-    analyze as analyze_deps,
-    graph_to_findings as dep_findings,
-)
 from skill_governance.discovery import (
     DiscoveryConfig,
     discover,
 )
-from skill_governance.metadata_parser import parse_metadata
 from skill_governance.models import (
     ArtifactType,
-    Finding,
-    Severity,
     SkillArtifact,
 )
 
@@ -98,7 +91,7 @@ def test_validate_one_stamps_artifact_path_on_metadata_finding():
         assert len(missing_findings) >= 1, "expected a missing-metadata finding"
         for f in missing_findings:
             assert f.artifact_path is not None, (
-                f"missing-metadata finding should have artifact_path set, got None"
+                "missing-metadata finding should have artifact_path set, got None"
             )
             assert f.artifact_path == artifacts[0].path, (
                 f"artifact_path should match the source artifact; "
@@ -156,7 +149,7 @@ def test_validate_one_stamps_artifact_path_on_untyped_finding():
         assert len(untyped_findings) >= 1
         for f in untyped_findings:
             assert f.artifact_path is not None, (
-                f"untyped finding should have artifact_path set, got None"
+                "untyped finding should have artifact_path set, got None"
             )
             assert f.artifact_path == unknown[0].path
 
@@ -189,7 +182,7 @@ def test_validate_one_stamps_artifact_path_on_path_missing_finding():
         assert len(path_missing) >= 1
         for f in path_missing:
             assert f.artifact_path is not None, (
-                f"path.missing finding should have artifact_path set, got None"
+                "path.missing finding should have artifact_path set, got None"
             )
             assert f.artifact_path == a.path
 

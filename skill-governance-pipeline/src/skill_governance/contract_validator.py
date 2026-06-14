@@ -16,7 +16,7 @@ import re
 from pathlib import Path
 
 from .metadata_parser import parse_metadata
-from .models import Finding, Metadata, Severity
+from .models import Finding, Severity
 
 # Vague single-word outputs that should be flagged
 VAGUE_OUTPUT_PATTERNS = [

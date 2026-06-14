@@ -105,7 +105,7 @@ def _score_pair(a: SkillArtifact, b: SkillArtifact) -> tuple[int, str]:
     name_ovl = _name_overlap(a.name, b.name)
     # Weighted blend: 60% jaccard, 30% bag, 10% name
     score = int(round(100 * (0.6 * j + 0.3 * bag + 0.1 * name_ovl)))
-    shared = sorted((set(tokens_a) & set(tokens_b)))[:8]
+    shared = sorted(set(tokens_a) & set(tokens_b))[:8]
     rationale = (
         f"Jaccard={j:.2f}, bag={bag:.2f}, name_overlap={name_ovl:.2f}. "
         f"Shared tokens: {', '.join(shared) if shared else '(none)'}."

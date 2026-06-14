@@ -19,8 +19,8 @@ import pytest
 from skill_governance.discovery import (
     DiscoveryConfig,
     DiscoveryError,
-    classify_artifact,
     artifact_name_from_path,
+    classify_artifact,
     discover,
 )
 from skill_governance.models import ArtifactType

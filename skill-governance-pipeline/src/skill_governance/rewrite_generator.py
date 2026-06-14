@@ -30,7 +30,6 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from .metadata_parser import parse_metadata
 from .models import (
     BenchmarkResult,
     Decision,

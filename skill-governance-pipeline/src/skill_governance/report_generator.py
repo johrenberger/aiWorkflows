@@ -38,7 +38,7 @@ def _executive_summary(result: PipelineResult) -> str:
     blocking = sum(1 for f in result.findings if f.severity.value == "blocking")
     warning = sum(1 for f in result.findings if f.severity.value == "warning")
 
-    decisions = {}
+    decisions: dict[str, int] = {}
     for s in result.scorecards:
         decisions[s.decision.value] = decisions.get(s.decision.value, 0) + 1
 

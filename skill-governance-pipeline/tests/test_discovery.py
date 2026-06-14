@@ -82,7 +82,6 @@ def test_no_artifacts_raises_blocking_error():
 
 def test_classify_artifact_by_path():
     """Skills/agents are classified by directory name."""
-    from skill_governance.models import ArtifactType
     assert classify_artifact(FIXTURES / "sample_skills/valid/SKILL.md", FIXTURES).value == "skill"
     assert classify_artifact(FIXTURES / "sample_agents/summarizer/AGENT.md", FIXTURES).value == "agent"
 

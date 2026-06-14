@@ -21,24 +21,22 @@ import sys
 from pathlib import Path
 
 import click
-import yaml
 
+from .benchmark_runner import benchmark_findings, run_benchmarks
 from .ci_gate import count_blocking, evaluate
 from .config_loader import load_config
 from .contract_validator import validate_contract
-from .dependency_analyzer import analyze as analyze_dependencies, graph_to_findings as dep_findings
+from .dependency_analyzer import analyze as analyze_dependencies
+from .dependency_analyzer import graph_to_findings as dep_findings
 from .discovery import DiscoveryConfig, discover
-from .history import snapshot as history_snapshot, append as history_append
+from .history import append as history_append
+from .history import snapshot as history_snapshot
 from .metadata_parser import parse_metadata
 from .models import (
-    ArtifactType,
     Finding,
     PipelineResult,
-    ScorecardEntry,
     Severity,
     SkillArtifact,
-    Decision,
-    ResponsibilityFlag,
 )
 from .overlap_analyzer import analyze as analyze_overlap
 from .recommendation_engine import generate as generate_recommendations
@@ -47,9 +45,8 @@ from .responsibility_analyzer import analyze as analyze_responsibility
 from .rewrite_generator import generate_rewrites
 from .roi_scorer import score as score_roi
 from .token_analyzer import analyze_static, write_static
-from .benchmark_runner import run_benchmarks, benchmark_findings
-from .waiver_store import load_waivers, active_waivers
 from .utils import utc_now_iso, write_json
+from .waiver_store import active_waivers, load_waivers
 
 
 def _validate_one(artifact: SkillArtifact, roots: list[Path]) -> list[Finding]:
@@ -397,8 +394,9 @@ def report(config_path: Path) -> None:
     """Render reports."""
     config = load_config(config_path)
     # Build a minimal result from the inventory
-    from .discovery import DiscoveryConfig
     from pathlib import Path as P
+
+    from .discovery import DiscoveryConfig
     dcfg = DiscoveryConfig(
         skill_directories=[P(p) for p in config.skill_directories],
         agent_directories=[P(p) for p in config.agent_directories],

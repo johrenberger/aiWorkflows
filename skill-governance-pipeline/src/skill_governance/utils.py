@@ -10,11 +10,10 @@ import hashlib
 import json
 import os
 import re
+from collections.abc import Iterator
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Iterable, Iterator
-
 
 # Average characters per token for OpenAI/MiniMax-style tokenizers.
 # 4 chars/token is a common rule of thumb for English prose.

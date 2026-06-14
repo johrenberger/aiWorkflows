@@ -10,7 +10,6 @@ from dataclasses import asdict, dataclass, field
 from enum import Enum
 from typing import Any
 
-
 # ---------------------------------------------------------------------------
 # Enums
 # ---------------------------------------------------------------------------
