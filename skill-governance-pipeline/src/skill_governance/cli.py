@@ -6,6 +6,7 @@ Commands:
 - validate-files
 - benchmark
 - recommend
+- recommend-task
 - rewrite
 - report
 - ci
@@ -19,6 +20,7 @@ wired up in later phases.
 from __future__ import annotations
 
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -583,6 +585,96 @@ def install_hooks(target_repo: Path) -> None:
     click.echo(f"install-hooks: installed SGP pre-commit hook at {hook_dest}")
     click.echo("  The hook will run on every `git commit` in this repo.")
     click.echo("  Bypass with `git commit --no-verify` if needed (not recommended).")
+
+
+@main.command()
+@click.option("--config", "config_path", type=click.Path(exists=True, path_type=Path), required=True)
+@click.option("--top-n", default=3, type=int, help="Number of recommendations to return (default 3).")
+@click.argument("task", nargs=1, type=str)
+def recommend_task(config_path: Path, top_n: int, task: str) -> None:
+    """Recommend agents and skills for a natural-language task.
+
+    Loads the catalog from the configured skill_directories and
+    agent_directories, then matches the TASK string against each
+    artifact's purpose and 'situation' text using a deterministic
+    token-based Jaccard similarity. Returns the top N (default 3)
+    results.
+
+    This is the 'where do I start?' tool for users who don't yet
+    know the catalog. It's deterministic (no LLM), fast, and
+    inspectable. Pair with the CATALOG.md decision guide in
+    test-repo for a complete navigation experience.
+
+    Example:
+        python -m skill_governance.cli recommend-task \\
+            --config config/governance.yaml \\
+            "deploy my app to production"
+    """
+    from .config_loader import load_config
+    from .discovery import DiscoveryConfig, discover
+    from .metadata_parser import parse_metadata
+    from .recommend_task import Artifact
+    from .recommend_task import recommend_task as _recommend_task
+
+    config = load_config(config_path)
+    dcfg = DiscoveryConfig(
+        skill_directories=[Path(p) for p in config.skill_directories],
+        agent_directories=[Path(p) for p in config.agent_directories],
+    )
+    inv = discover(dcfg)
+
+    # Build artifacts with situation + purpose text
+    artifacts: list[Artifact] = []
+    for a in inv:
+        for root in dcfg.skill_directories + dcfg.agent_directories:
+            cand = root / a.path
+            if cand.exists():
+                meta = parse_metadata(cand)
+                purpose = meta.purpose or ""
+                # Pull situation text from the body (the first
+                # meaningful prose paragraph after the frontmatter)
+                body = cand.read_text(encoding="utf-8")
+                # Strip the frontmatter
+                m = re.match(r"^---\s*\n.*?\n---\s*\n", body, re.DOTALL)
+                body_no_fm = body[m.end():] if m else body
+                # First non-empty, non-heading paragraph
+                situation_lines: list[str] = []
+                for line in body_no_fm.splitlines():
+                    s = line.strip()
+                    if not s:
+                        if situation_lines:
+                            break
+                        continue
+                    if s.startswith("#"):
+                        if situation_lines:
+                            break
+                        continue
+                    if s.startswith("-") or s.startswith("*"):
+                        if situation_lines:
+                            break
+                        continue
+                    situation_lines.append(s)
+                situation = " ".join(situation_lines)[:200]
+                artifacts.append(Artifact(
+                    name=a.name,
+                    type=a.artifact_type.value,
+                    situation=situation,
+                    purpose=purpose,
+                ))
+                break
+
+    results = _recommend_task(task, artifacts, top_n=top_n)
+    if not results:
+        click.echo(f"recommend-task: no matches for {task!r}")
+        click.echo("  Try different wording, or check the catalog (agents/CATALOG.md).")
+        return
+
+    click.echo(f"recommend-task: top {len(results)} match(es) for {task!r}")
+    click.echo("")
+    for i, (name, atype, score) in enumerate(results, 1):
+        click.echo(f"  {i}. [{atype}] {name} (score={score:.3f})")
+    if not results:
+        sys.exit(0)
 
 
 if __name__ == "__main__":

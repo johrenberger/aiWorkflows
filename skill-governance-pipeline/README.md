@@ -253,6 +253,64 @@ python3 -m skill_governance.cli validate-files \
 The command exits 0 (clean) or 2 (blocking findings) so it works
 in any pre-commit-style workflow.
 
+## recommend-task
+
+The `recommend-task` subcommand takes a natural-language task
+description and returns the top N agents + skills best suited
+for the task. It's a "where do I start?" tool for users who
+don't yet know the catalog.
+
+### Example
+
+```bash
+python3 -m skill_governance.cli recommend-task \
+    --config config/governance.yaml \
+    --top-n 3 \
+    "deploy my app to production"
+```
+
+Output:
+
+```
+recommend-task: top 3 match(es) for 'deploy my app to production'
+
+  1. [agent] DEVOPS_AGENT (score=0.667)
+  2. [agent] MONITORING_AGENT (score=0.333)
+  3. [agent] PEN_TESTING_AGENT (score=0.333)
+```
+
+### How it works
+
+The matcher is deterministic (no LLM) and inspectable:
+
+1. **Tokenize** the task: lowercase, remove punctuation, remove
+   stopwords, apply lightweight stemming (so "deploy" matches
+   "deployment" and "deployed")
+2. **Index** the catalog: each artifact's `purpose` and body
+   situation text are tokenized into a per-artifact token set
+3. **Score** each artifact by **overlap coefficient**:
+   `|intersection| / min(|task_tokens|, |artifact_tokens|)`.
+   This rewards any overlap regardless of artifact length.
+4. **Sort** by score descending, return the top N (default 3)
+
+### Pair with the catalog guide
+
+The matcher is a fast first pass. For richer navigation, point
+users at the [CATALOG.md](https://github.com/johrenberger/test-repo/blob/main/agents/CATALOG.md)
+in the test-repo: a one-page decision guide that maps
+"you need to..." situations to agents.
+
+### Limitations
+
+- The matcher is keyword-based; paraphrases that don't share
+  vocabulary may not match (e.g. "ship a fix" might miss
+  "deploy"). Pair with the catalog guide for nuanced cases.
+- Templates and references in the catalog (artifact_type
+  `unknown`) are still indexed. They sometimes beat agents
+  in the ranking because their titles are keyword-dense.
+  This is a separate SGP improvement (filter `unknown` from
+  the catalog) and not a matcher bug.
+
 ## Governance operating model
 
 - **Deterministic first**: file hashes, token counts, dependency
