@@ -89,6 +89,21 @@ def parse_metadata(path: Path) -> Metadata:
     elif not isinstance(consumers, list):
         consumers = []
 
+    # Cross-reference fields: uses_skills (on agents) and
+    # used_by_agents (on skills). These are lists of artifact
+    # names. Accept string or list for flexibility.
+    uses_skills = raw.get("uses_skills", [])
+    if isinstance(uses_skills, str):
+        uses_skills = [s.strip() for s in uses_skills.split(",") if s.strip()]
+    elif not isinstance(uses_skills, list):
+        uses_skills = []
+
+    used_by_agents = raw.get("used_by_agents", [])
+    if isinstance(used_by_agents, str):
+        used_by_agents = [a.strip() for a in used_by_agents.split(",") if a.strip()]
+    elif not isinstance(used_by_agents, list):
+        used_by_agents = []
+
     # `last_reviewed` should be a string (ISO date) regardless
     # of YAML auto-parsing into a date/datetime object.
     last_reviewed = raw.get("last_reviewed")
@@ -109,4 +124,6 @@ def parse_metadata(path: Path) -> Metadata:
         intended_consumers=consumers,
         quality_level=raw.get("quality_level"),
         last_reviewed=last_reviewed,
+        uses_skills=uses_skills,
+        used_by_agents=used_by_agents,
     )
