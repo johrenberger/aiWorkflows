@@ -87,17 +87,29 @@ def read_all(history_path: Path) -> list[HistoryEntry]:
 
 
 def trend(history: Iterable[HistoryEntry]) -> dict:
-    """Compute a simple trend summary across the last N entries."""
+    """Compute a simple trend summary across the last N entries.
+
+    The trend dict includes per-metric deltas (delta_health, delta_findings,
+    delta_blocking) computed as (newest - oldest) across the supplied
+    entries. The single-metric `delta` key is preserved for backward
+    compatibility (it equals `delta_health`).
+    """
     entries = list(history)
     if not entries:
         return {"runs": 0}
-    last_health = entries[0].health_score
-    oldest_health = entries[-1].health_score
+    newest = entries[0]
+    oldest = entries[-1]
+    delta_health = newest.health_score - oldest.health_score
+    delta_findings = newest.finding_count - oldest.finding_count
+    delta_blocking = newest.ci_blocking_count - oldest.ci_blocking_count
     return {
         "runs": len(entries),
-        "last_health": last_health,
-        "oldest_health": oldest_health,
-        "delta": last_health - oldest_health,
-        "first_run": entries[-1].timestamp,
-        "last_run": entries[0].timestamp,
+        "last_health": newest.health_score,
+        "oldest_health": oldest.health_score,
+        "delta": delta_health,
+        "delta_health": delta_health,
+        "delta_findings": delta_findings,
+        "delta_blocking": delta_blocking,
+        "first_run": oldest.timestamp,
+        "last_run": newest.timestamp,
     }

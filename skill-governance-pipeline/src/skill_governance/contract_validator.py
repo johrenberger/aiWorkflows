@@ -116,7 +116,7 @@ def validate_contract(artifact_name: str, path: Path) -> list[Finding]:
                 finding_id=f"contract.outputs.vague.{artifact_name}",
                 artifact_name=artifact_name,
                 severity=Severity.BLOCKING,
-                category="contract",
+                category="vague-output",
                 message="Outputs contract is vague (e.g. 'a report', 'analysis', 'summary').",
                 evidence={"outputs": str(metadata.outputs)},
                 suggestion="Specify output format (json/markdown/yaml) and required fields or sections.",
