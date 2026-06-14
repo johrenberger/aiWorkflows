@@ -1,0 +1,4 @@
+source_paths = ["src/skill_governance/overlap_analyzer.py", "src/skill_governance/roi_scorer.py", "src/skill_governance/dependency_analyzer.py", "src/skill_governance/recommend_task.py", "src/skill_governance/cross_references.py"]
+tests_dir = "tests/"
+runner = "python -m pytest -x --no-cov -p no:randomly -q {test_file} {extra_args}"
+total = 100
