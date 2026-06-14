@@ -28,7 +28,7 @@ import click
 
 from .benchmark_runner import benchmark_findings, run_benchmarks
 from .ci_gate import count_blocking, evaluate
-from .config_loader import load_config
+from .config_loader import GovernanceConfig, load_config
 from .contract_validator import validate_contract
 from .dependency_analyzer import analyze as analyze_dependencies
 from .dependency_analyzer import graph_to_findings as dep_findings
@@ -41,6 +41,7 @@ from .models import (
     PipelineResult,
     Severity,
     SkillArtifact,
+    Waiver,
 )
 from .overlap_analyzer import analyze as analyze_overlap
 from .recommendation_engine import generate as generate_recommendations
@@ -259,7 +260,9 @@ def _run_full_pipeline(config_path: Path, render_reports: bool = True) -> Pipeli
     return result
 
 
-def _compute_health(result: PipelineResult, active_waivers: list, config) -> tuple[int, int]:
+def _compute_health(
+    result: PipelineResult, active_waivers: list[Waiver], config: GovernanceConfig
+) -> tuple[int, int]:
     """Compute the catalog health score (0-100).
 
     Phase 6 fix: the original formula was `100 - 5*blocking - warnings`,
@@ -307,7 +310,7 @@ def _compute_health(result: PipelineResult, active_waivers: list, config) -> tup
     if n_artifacts == 0:
         return 100, 0
     # Group findings by artifact_path
-    by_artifact: dict[str, list] = {}
+    by_artifact: dict[str, list[Finding]] = {}
     for f in result.findings:
         key = f.artifact_path or f.artifact_name
         by_artifact.setdefault(key, []).append(f)

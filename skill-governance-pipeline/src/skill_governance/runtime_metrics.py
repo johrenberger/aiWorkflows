@@ -22,7 +22,7 @@ from pathlib import Path
 from .models import RuntimeTokenMetrics
 
 
-def ingest(log_paths) -> list[RuntimeTokenMetrics]:
+def ingest(log_paths: Path | str | list[Path] | list[str] | list[Path | str]) -> list[RuntimeTokenMetrics]:
     """Ingest runtime token metrics from log files.
 
     Args:

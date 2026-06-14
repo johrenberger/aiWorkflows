@@ -8,6 +8,7 @@ grows.
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any
 
 import yaml
 
@@ -20,16 +21,16 @@ class GovernanceConfig:
     falls back to None when the key is missing.
     """
 
-    def __init__(self, raw: dict) -> None:
+    def __init__(self, raw: dict[str, Any]) -> None:
         self._raw = raw
 
-    def __getitem__(self, key: str):
+    def __getitem__(self, key: str) -> Any:
         return self._raw[key]
 
-    def get(self, key: str, default=None):
+    def get(self, key: str, default: Any = None) -> Any:
         return self._raw.get(key, default)
 
-    def __getattr__(self, name: str):
+    def __getattr__(self, name: str) -> Any:
         # __getattr__ is only called when the normal lookup fails,
         # so it doesn't interfere with methods defined here.
         if name.startswith("_"):
@@ -37,10 +38,10 @@ class GovernanceConfig:
         return self._raw.get(name)
 
     @property
-    def raw(self) -> dict:
+    def raw(self) -> dict[str, Any]:
         return self._raw
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         return self._raw
 
 

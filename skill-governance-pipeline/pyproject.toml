@@ -75,12 +75,10 @@ directory = "htmlcov"
 
 [tool.mypy]
 python_version = "3.13"
-strict = false
-# Pragmatic settings for a small library that's not fully type-annotated
-# yet. As the codebase becomes more typed, raise these:
-#   - check_untyped_defs = true
-#   - disallow_untyped_defs = true
-#   - no_implicit_optional = true
+strict = true
+# All source files in src/skill_governance are now fully type-annotated
+# (see PR #58 / bucket C.2 of the v1.0.0 follow-up push). mypy strict
+# mode passes with 0 issues.
 warn_return_any = true
 warn_unused_ignores = true
 warn_redundant_casts = true

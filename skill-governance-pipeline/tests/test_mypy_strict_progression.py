@@ -59,10 +59,10 @@ class TestMypyConfigPersists:
         )
 
 
-class TestMypyPermissiveModeIsDocumented:
+class TestMypyStrictModeIsActive:
     """The mypy config must document WHY it's permissive."""
 
-    def test_mypy_has_strict_false_explainer(self) -> None:
+    def test_mypy_has_strict_true_explainer(self) -> None:
         """Given pyproject.toml
         When we look at the [tool.mypy] section
         Then there's a comment explaining that strict = false
@@ -80,18 +80,17 @@ class TestMypyPermissiveModeIsDocumented:
             f"Expected 'strict' in [tool.mypy] section.\nSection: {section}"
         )
 
-    def test_mypy_strict_flag_is_false(self) -> None:
+    def test_mypy_strict_flag_is_true(self) -> None:
         """Given the mypy config
         When we read it
-        Then strict = false (current state: permissive).
-        This test fails loud if someone flips strict to true
-        without fixing all 16 untyped-def errors first.
+        Then strict = true (current state: all 16 untyped-def
+        errors fixed; full type coverage).
         """
         config = _get_mypy_config()
-        assert config.get("strict") is False, (
-            f"Expected strict = false, got {config.get('strict')!r}. "
-            f"If you flipped to strict=true, fix all 16 untyped-def "
-            f"errors first (see run_mypy_strict.py for the list)."
+        assert config.get("strict") is True, (
+            f"Expected strict = true, got {config.get('strict')!r}. "
+            f"If you flipped to strict=false, document the reason "
+            f"in the mypy config comment and update this test."
         )
 
 

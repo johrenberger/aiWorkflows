@@ -14,6 +14,7 @@ from collections.abc import Iterable
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Any
 
 from .models import PipelineResult
 
@@ -31,7 +32,7 @@ class HistoryEntry:
     waiver_count: int
     note: str = ""
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         return asdict(self)
 
 
@@ -86,7 +87,7 @@ def read_all(history_path: Path) -> list[HistoryEntry]:
     return out
 
 
-def trend(history: Iterable[HistoryEntry]) -> dict:
+def trend(history: Iterable[HistoryEntry]) -> dict[str, Any]:
     """Compute a simple trend summary across the last N entries.
 
     The trend dict includes per-metric deltas (delta_health, delta_findings,
