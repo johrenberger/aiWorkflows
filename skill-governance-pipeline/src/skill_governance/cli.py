@@ -209,6 +209,7 @@ def _run_full_pipeline(config_path: Path, render_reports: bool = True) -> Pipeli
         findings=result.findings,
         token_costs=costs,
         dependency_value_map=dep_value_map,
+        overlap_pairs=result.overlap_pairs,
     )
     # Phase 3: recommendations
     result.recommendations = generate_recommendations(
@@ -411,12 +412,46 @@ def report(config_path: Path) -> None:
 @main.command()
 @click.option("--config", "config_path", type=click.Path(exists=True, path_type=Path), required=True)
 def ci(config_path: Path) -> None:
-    """Run all checks; exit non-zero on blocking findings."""
+    """Run all checks; exit non-zero on blocking findings.
+
+    Phase 7 fix: output is now a multi-line summary (not a single
+    line) plus a machine-readable JSON status block. The summary
+    is for humans reading the CI log; the JSON block is for tools
+    that parse CI output (e.g. dashboarding, alerting).
+    """
     result = _run_full_pipeline(config_path, render_reports=True)
+    config = load_config(config_path)
+    output_dir = Path(config.output_directory)
+    exec_report = output_dir / "executive_report.md"
+    status = "PASS" if result.ci_passed else "FAIL"
+    # Multi-line human summary
+    click.echo(f"=== SGP CI {status} ===")
+    click.echo(f"Artifacts scanned: {len(result.inventory)}")
+    click.echo(f"Total findings: {len(result.findings)}")
+    click.echo(f"Blocking findings: {result.ci_blocking_count}")
+    click.echo(f"Health score: {result.health_score}/100")
+    # Breakdown by category/severity for the top 3 categories
+    from collections import Counter
+    cats = Counter(f.category for f in result.findings if f.severity.value == "blocking")
+    if cats:
+        top3 = ", ".join(f"{c}={n}" for c, n in cats.most_common(3))
+        click.echo(f"Top blocking categories: {top3}")
+    click.echo(f"Report: {exec_report}")
+    # Machine-readable JSON status block (sentinel-delimited)
+    status_block = {
+        "passed": result.ci_passed,
+        "artifacts": len(result.inventory),
+        "findings": len(result.findings),
+        "blocking": result.ci_blocking_count,
+        "health_score": result.health_score,
+        "report": str(exec_report),
+        "timestamp": utc_now_iso(),
+    }
+    click.echo("SGP-CI-STATUS-BEGIN")
+    click.echo(json.dumps(status_block, indent=2))
+    click.echo("SGP-CI-STATUS-END")
     if not result.ci_passed:
-        click.echo(f"CI FAILED: {result.ci_blocking_count} blocking findings. See output/executive_report.md.")
         sys.exit(1)
-    click.echo(f"CI PASSED. {len(result.inventory)} artifacts, {len(result.findings)} findings.")
 
 
 @main.command()

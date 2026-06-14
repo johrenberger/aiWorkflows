@@ -9,12 +9,11 @@
 - **Active waivers:** 0
 - **Proposed rewrites:** 78
 - **Benchmark results:** 0
-- **Started:** 2026-06-13T23:44:13Z
-- **Finished:** 2026-06-13T23:44:13Z
+- **Started:** 2026-06-14T00:03:30Z
+- **Finished:** 2026-06-14T00:03:30Z
 
 ## Decisions
-- **merge:** 64
-- **rewrite:** 35
+- **rewrite:** 99
 
 ## Top risks
 - `warning` **README**: Artifact 'README' is not a skill or agent (path: README.md). Skipping contract validation.
@@ -24,15 +23,14 @@
 - `blocking` **SKILL**: Outputs contract is missing or unstructured.
 
 ## Recommended actions
-- **merge** (architecture-risk-checklist): 0 blocking + 1 warnings on architecture-risk-checklist.
-- **merge** (dotnet-testing): 0 blocking + 1 warnings on dotnet-testing.
-- **merge** (architecture-review-report): 0 blocking + 1 warnings on architecture-review-report.
-- **merge** (secrets-review-checklist): 0 blocking + 1 warnings on secrets-review-checklist.
-- **merge** (incident-triage-report): 0 blocking + 1 warnings on incident-triage-report.
+- **rewrite** (release-gate-checklist): 1 blocking + 1 warnings on release-gate-checklist.
+- **rewrite** (blocker): 1 blocking + 1 warnings on blocker.
+- **rewrite** (task): 1 blocking + 1 warnings on task.
+- **rewrite** (SKILL): 84 blocking + 42 warnings on SKILL.
+- **rewrite** (adr): 1 blocking + 1 warnings on adr.
 
 ## Merge / split / rewrite / deprecate candidates
 
 | Decision | Count |
 | --- | --- |
-| merge | 64 |
-| rewrite | 35 |
+| rewrite | 99 |

@@ -104,6 +104,7 @@ def _score_one(
     benchmark_pass_rate: float,
     business_criticality: int,
     weights: ROIWeights,
+    overlap_pairs: list | None = None,
 ) -> ScorecardEntry:
     """Compute a ScorecardEntry for a single artifact."""
     # Output quality: -50 if any blocking contract finding, -25 if warning, else 100
@@ -141,19 +142,45 @@ def _score_one(
     )
     score = int(round(raw * 100))
     # Decision
-    has_merge_candidate = any(
-        f.category == "overlap" and f.severity == Severity.BLOCKING for f in own_findings
-    )
+    # Phase 7 fix: `has_merge_candidate` used to read from
+    # `f.category == "overlap"` findings, but overlap produces
+    # `OverlapPair` objects (not `Finding`s), so the check was
+    # always False. Combined with `score >= 30 or has_merge_candidate`,
+    # this meant *every* low-scoring skill (score 30-49) was
+    # tagged as a merge candidate regardless of actual overlap.
+    # Now: look at real OverlapPair data. The merge decision fires
+    # ONLY if at least one overlap pair (involving this artifact)
+    # has recommendation == "merge".
+    has_merge_candidate = False
+    merge_partner: str | None = None
+    if overlap_pairs:
+        for p in overlap_pairs:
+            recommendation_value = (
+                p.recommendation.value
+                if hasattr(p.recommendation, "value")
+                else p.recommendation
+            )
+            if recommendation_value == "merge" and (
+                p.artifact_a == artifact.name or p.artifact_b == artifact.name
+            ):
+                has_merge_candidate = True
+                merge_partner = (
+                    p.artifact_b if p.artifact_a == artifact.name else p.artifact_a
+                )
+                break
     has_rewrite_trigger = blocking > 0 or warnings >= 2
     if score >= 70 and not has_rewrite_trigger:
         decision = Decision.KEEP
         rationale = f"Score {score} with no rewrite triggers."
+    elif has_merge_candidate:
+        decision = Decision.MERGE
+        rationale = f"Score {score}; merge with '{merge_partner}' (overlap threshold met)."
     elif score >= 50 or has_rewrite_trigger:
         decision = Decision.REWRITE
         rationale = f"Score {score}; rewrite triggered by {blocking} blocking + {warnings} warnings."
-    elif score >= 30 or has_merge_candidate:
-        decision = Decision.MERGE
-        rationale = f"Score {score}; merge candidate (high overlap detected)."
+    elif score >= 30:
+        decision = Decision.REWRITE
+        rationale = f"Score {score}; rewrite (low score, no merge candidate)."
     elif score >= 10:
         decision = Decision.SPLIT
         rationale = f"Score {score}; consider splitting into narrower skills."
@@ -185,6 +212,7 @@ def score(
     benchmark_map: dict[str, float] | None = None,
     criticality_map: dict[str, int] | None = None,
     weights: ROIWeights | None = None,
+    overlap_pairs: list | None = None,
 ) -> list[ScorecardEntry]:
     """Compute ROI scores for every artifact.
 
@@ -220,6 +248,7 @@ def score(
             benchmark_pass_rate=benchmark_map.get(a.name, 1.0),
             business_criticality=criticality_map.get(a.name, 50),
             weights=weights,
+            overlap_pairs=overlap_pairs,
         )
         for a in artifacts
     ]

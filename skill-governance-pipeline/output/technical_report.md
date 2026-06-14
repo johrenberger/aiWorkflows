@@ -1,7 +1,7 @@
 # Technical Report — Skill Governance Pipeline
 
-Started: 2026-06-13T23:44:13Z
-Finished: 2026-06-13T23:44:13Z
+Started: 2026-06-14T00:03:30Z
+Finished: 2026-06-14T00:03:30Z
 CI: FAIL
 
 ## Inventory
@@ -361,100 +361,100 @@ CI: FAIL
 | --- | --- | --- | --- |
 | README | 41 | rewrite | Score 41; rewrite triggered by 0 blocking + 2 warnings. |
 | SKILL | 34 | rewrite | Score 34; rewrite triggered by 84 blocking + 42 warnings. |
-| decision-quality-checklist | 49 | merge | Score 49; merge candidate (high overlap detected). |
+| decision-quality-checklist | 49 | rewrite | Score 49; rewrite (low score, no merge candidate). |
 | adr | 39 | rewrite | Score 39; rewrite triggered by 1 blocking + 1 warnings. |
-| architecture-options-analysis | 48 | merge | Score 48; merge candidate (high overlap detected). |
+| architecture-options-analysis | 48 | rewrite | Score 48; rewrite (low score, no merge candidate). |
 | SKILL | 34 | rewrite | Score 34; rewrite triggered by 84 blocking + 42 warnings. |
-| architecture-risk-checklist | 49 | merge | Score 49; merge candidate (high overlap detected). |
-| distributed-systems-checklist | 49 | merge | Score 49; merge candidate (high overlap detected). |
-| modular-monolith-checklist | 49 | merge | Score 49; merge candidate (high overlap detected). |
-| architecture-review-report | 48 | merge | Score 48; merge candidate (high overlap detected). |
+| architecture-risk-checklist | 49 | rewrite | Score 49; rewrite (low score, no merge candidate). |
+| distributed-systems-checklist | 49 | rewrite | Score 49; rewrite (low score, no merge candidate). |
+| modular-monolith-checklist | 49 | rewrite | Score 49; rewrite (low score, no merge candidate). |
+| architecture-review-report | 48 | rewrite | Score 48; rewrite (low score, no merge candidate). |
 | SKILL | 34 | rewrite | Score 34; rewrite triggered by 84 blocking + 42 warnings. |
-| dotnet | 49 | merge | Score 49; merge candidate (high overlap detected). |
+| dotnet | 49 | rewrite | Score 49; rewrite (low score, no merge candidate). |
 | go | 50 | rewrite | Score 50; rewrite triggered by 0 blocking + 1 warnings. |
-| java-spring | 49 | merge | Score 49; merge candidate (high overlap detected). |
-| mixed-monolith | 49 | merge | Score 49; merge candidate (high overlap detected). |
-| node-typescript | 49 | merge | Score 49; merge candidate (high overlap detected). |
+| java-spring | 49 | rewrite | Score 49; rewrite (low score, no merge candidate). |
+| mixed-monolith | 49 | rewrite | Score 49; rewrite (low score, no merge candidate). |
+| node-typescript | 49 | rewrite | Score 49; rewrite (low score, no merge candidate). |
 | python | 50 | rewrite | Score 50; rewrite triggered by 0 blocking + 1 warnings. |
-| backend-implementation-report | 49 | merge | Score 49; merge candidate (high overlap detected). |
+| backend-implementation-report | 49 | rewrite | Score 49; rewrite (low score, no merge candidate). |
 | SKILL | 34 | rewrite | Score 34; rewrite triggered by 84 blocking + 42 warnings. |
-| review-severity | 49 | merge | Score 49; merge candidate (high overlap detected). |
-| code-review-report | 49 | merge | Score 49; merge candidate (high overlap detected). |
+| review-severity | 49 | rewrite | Score 49; rewrite (low score, no merge candidate). |
+| code-review-report | 49 | rewrite | Score 49; rewrite (low score, no merge candidate). |
 | SKILL | 34 | rewrite | Score 34; rewrite triggered by 84 blocking + 42 warnings. |
-| migration-risk-checklist | 48 | merge | Score 48; merge candidate (high overlap detected). |
-| migration-safety-report | 49 | merge | Score 49; merge candidate (high overlap detected). |
+| migration-risk-checklist | 48 | rewrite | Score 48; rewrite (low score, no merge candidate). |
+| migration-safety-report | 49 | rewrite | Score 49; rewrite (low score, no merge candidate). |
 | SKILL | 34 | rewrite | Score 34; rewrite triggered by 84 blocking + 42 warnings. |
-| dependency-risk-checklist | 49 | merge | Score 49; merge candidate (high overlap detected). |
-| dependency-change-report | 49 | merge | Score 49; merge candidate (high overlap detected). |
+| dependency-risk-checklist | 49 | rewrite | Score 49; rewrite (low score, no merge candidate). |
+| dependency-change-report | 49 | rewrite | Score 49; rewrite (low score, no merge candidate). |
 | SKILL | 34 | rewrite | Score 34; rewrite triggered by 84 blocking + 42 warnings. |
-| doc-source-of-truth | 48 | merge | Score 48; merge candidate (high overlap detected). |
+| doc-source-of-truth | 48 | rewrite | Score 48; rewrite (low score, no merge candidate). |
 | README | 41 | rewrite | Score 41; rewrite triggered by 0 blocking + 2 warnings. |
 | self | 50 | rewrite | Score 50; rewrite triggered by 0 blocking + 1 warnings. |
-| api-doc-update-checklist | 49 | merge | Score 49; merge candidate (high overlap detected). |
-| documentation-impact-report | 49 | merge | Score 49; merge candidate (high overlap detected). |
-| readme-update-checklist | 49 | merge | Score 49; merge candidate (high overlap detected). |
+| api-doc-update-checklist | 49 | rewrite | Score 49; rewrite (low score, no merge candidate). |
+| documentation-impact-report | 49 | rewrite | Score 49; rewrite (low score, no merge candidate). |
+| readme-update-checklist | 49 | rewrite | Score 49; rewrite (low score, no merge candidate). |
 | SKILL | 34 | rewrite | Score 34; rewrite triggered by 84 blocking + 42 warnings. |
-| angular | 48 | merge | Score 48; merge candidate (high overlap detected). |
-| nextjs | 48 | merge | Score 48; merge candidate (high overlap detected). |
-| react | 48 | merge | Score 48; merge candidate (high overlap detected). |
-| static-ui | 49 | merge | Score 49; merge candidate (high overlap detected). |
-| vue | 49 | merge | Score 49; merge candidate (high overlap detected). |
-| frontend-implementation-report | 49 | merge | Score 49; merge candidate (high overlap detected). |
+| angular | 48 | rewrite | Score 48; rewrite (low score, no merge candidate). |
+| nextjs | 48 | rewrite | Score 48; rewrite (low score, no merge candidate). |
+| react | 48 | rewrite | Score 48; rewrite (low score, no merge candidate). |
+| static-ui | 49 | rewrite | Score 49; rewrite (low score, no merge candidate). |
+| vue | 49 | rewrite | Score 49; rewrite (low score, no merge candidate). |
+| frontend-implementation-report | 49 | rewrite | Score 49; rewrite (low score, no merge candidate). |
 | SKILL | 34 | rewrite | Score 34; rewrite triggered by 84 blocking + 42 warnings. |
-| handoff-packet | 49 | merge | Score 49; merge candidate (high overlap detected). |
+| handoff-packet | 49 | rewrite | Score 49; rewrite (low score, no merge candidate). |
 | SKILL | 34 | rewrite | Score 34; rewrite triggered by 84 blocking + 42 warnings. |
-| handoff-and-forbidden | 49 | merge | Score 49; merge candidate (high overlap detected). |
+| handoff-and-forbidden | 49 | rewrite | Score 49; rewrite (low score, no merge candidate). |
 | stop-and-validation | 50 | rewrite | Score 50; rewrite triggered by 0 blocking + 1 warnings. |
-| workflow | 49 | merge | Score 49; merge candidate (high overlap detected). |
-| implementation-routing-report | 48 | merge | Score 48; merge candidate (high overlap detected). |
+| workflow | 49 | rewrite | Score 49; rewrite (low score, no merge candidate). |
+| implementation-routing-report | 48 | rewrite | Score 48; rewrite (low score, no merge candidate). |
 | SKILL | 34 | rewrite | Score 34; rewrite triggered by 84 blocking + 42 warnings. |
-| incident-severity-guide | 49 | merge | Score 49; merge candidate (high overlap detected). |
-| action-item | 49 | merge | Score 49; merge candidate (high overlap detected). |
-| incident-triage-report | 48 | merge | Score 48; merge candidate (high overlap detected). |
-| timeline | 49 | merge | Score 49; merge candidate (high overlap detected). |
+| incident-severity-guide | 49 | rewrite | Score 49; rewrite (low score, no merge candidate). |
+| action-item | 49 | rewrite | Score 49; rewrite (low score, no merge candidate). |
+| incident-triage-report | 48 | rewrite | Score 48; rewrite (low score, no merge candidate). |
+| timeline | 49 | rewrite | Score 49; rewrite (low score, no merge candidate). |
 | SKILL | 34 | rewrite | Score 34; rewrite triggered by 84 blocking + 42 warnings. |
-| async-messaging | 48 | merge | Score 48; merge candidate (high overlap detected). |
-| contract-testing | 48 | merge | Score 48; merge candidate (high overlap detected). |
-| file-batch | 48 | merge | Score 48; merge candidate (high overlap detected). |
-| rest-api | 48 | merge | Score 48; merge candidate (high overlap detected). |
-| webhook | 48 | merge | Score 48; merge candidate (high overlap detected). |
-| integration-implementation-report | 48 | merge | Score 48; merge candidate (high overlap detected). |
+| async-messaging | 48 | rewrite | Score 48; rewrite (low score, no merge candidate). |
+| contract-testing | 48 | rewrite | Score 48; rewrite (low score, no merge candidate). |
+| file-batch | 48 | rewrite | Score 48; rewrite (low score, no merge candidate). |
+| rest-api | 48 | rewrite | Score 48; rewrite (low score, no merge candidate). |
+| webhook | 48 | rewrite | Score 48; rewrite (low score, no merge candidate). |
+| integration-implementation-report | 48 | rewrite | Score 48; rewrite (low score, no merge candidate). |
 | SKILL | 34 | rewrite | Score 34; rewrite triggered by 84 blocking + 42 warnings. |
-| logging-metrics-tracing-checklist | 48 | merge | Score 48; merge candidate (high overlap detected). |
-| observability-review-report | 48 | merge | Score 48; merge candidate (high overlap detected). |
-| slo-review | 49 | merge | Score 49; merge candidate (high overlap detected). |
+| logging-metrics-tracing-checklist | 48 | rewrite | Score 48; rewrite (low score, no merge candidate). |
+| observability-review-report | 48 | rewrite | Score 48; rewrite (low score, no merge candidate). |
+| slo-review | 49 | rewrite | Score 49; rewrite (low score, no merge candidate). |
 | SKILL | 34 | rewrite | Score 34; rewrite triggered by 84 blocking + 42 warnings. |
 | release-gate-checklist | 39 | rewrite | Score 39; rewrite triggered by 1 blocking + 1 warnings. |
-| go-no-go-checklist | 49 | merge | Score 49; merge candidate (high overlap detected). |
-| release-readiness-report | 48 | merge | Score 48; merge candidate (high overlap detected). |
-| release-risk-register | 49 | merge | Score 49; merge candidate (high overlap detected). |
+| go-no-go-checklist | 49 | rewrite | Score 49; rewrite (low score, no merge candidate). |
+| release-readiness-report | 48 | rewrite | Score 48; rewrite (low score, no merge candidate). |
+| release-risk-register | 49 | rewrite | Score 49; rewrite (low score, no merge candidate). |
 | SKILL | 34 | rewrite | Score 34; rewrite triggered by 84 blocking + 42 warnings. |
-| repo-discovery-report | 49 | merge | Score 49; merge candidate (high overlap detected). |
+| repo-discovery-report | 49 | rewrite | Score 49; rewrite (low score, no merge candidate). |
 | SKILL | 34 | rewrite | Score 34; rewrite triggered by 84 blocking + 42 warnings. |
-| runbook-quality-checklist | 49 | merge | Score 49; merge candidate (high overlap detected). |
+| runbook-quality-checklist | 49 | rewrite | Score 49; rewrite (low score, no merge candidate). |
 | latency-spike | 50 | rewrite | Score 50; rewrite triggered by 0 blocking + 1 warnings. |
-| runbook-authoring-report | 49 | merge | Score 49; merge candidate (high overlap detected). |
-| runbook | 49 | merge | Score 49; merge candidate (high overlap detected). |
-| troubleshooting-guide | 49 | merge | Score 49; merge candidate (high overlap detected). |
+| runbook-authoring-report | 49 | rewrite | Score 49; rewrite (low score, no merge candidate). |
+| runbook | 49 | rewrite | Score 49; rewrite (low score, no merge candidate). |
+| troubleshooting-guide | 49 | rewrite | Score 49; rewrite (low score, no merge candidate). |
 | SKILL | 34 | rewrite | Score 34; rewrite triggered by 84 blocking + 42 warnings. |
-| authz-review-checklist | 49 | merge | Score 49; merge candidate (high overlap detected). |
-| owasp-checklist | 49 | merge | Score 49; merge candidate (high overlap detected). |
-| secrets-review-checklist | 49 | merge | Score 49; merge candidate (high overlap detected). |
-| security-review-report | 49 | merge | Score 49; merge candidate (high overlap detected). |
+| authz-review-checklist | 49 | rewrite | Score 49; rewrite (low score, no merge candidate). |
+| owasp-checklist | 49 | rewrite | Score 49; rewrite (low score, no merge candidate). |
+| secrets-review-checklist | 49 | rewrite | Score 49; rewrite (low score, no merge candidate). |
+| security-review-report | 49 | rewrite | Score 49; rewrite (low score, no merge candidate). |
 | SKILL | 34 | rewrite | Score 34; rewrite triggered by 84 blocking + 42 warnings. |
 | blocker | 40 | rewrite | Score 40; rewrite triggered by 1 blocking + 1 warnings. |
 | decision-log | 50 | rewrite | Score 50; rewrite triggered by 0 blocking + 1 warnings. |
 | state | 50 | rewrite | Score 50; rewrite triggered by 0 blocking + 1 warnings. |
 | task | 45 | rewrite | Score 45; rewrite triggered by 1 blocking + 1 warnings. |
 | SKILL | 34 | rewrite | Score 34; rewrite triggered by 84 blocking + 42 warnings. |
-| risk-weighting | 49 | merge | Score 49; merge candidate (high overlap detected). |
-| test-gap-report | 49 | merge | Score 49; merge candidate (high overlap detected). |
+| risk-weighting | 49 | rewrite | Score 49; rewrite (low score, no merge candidate). |
+| test-gap-report | 49 | rewrite | Score 49; rewrite (low score, no merge candidate). |
 | SKILL | 34 | rewrite | Score 34; rewrite triggered by 84 blocking + 42 warnings. |
-| dotnet-testing | 49 | merge | Score 49; merge candidate (high overlap detected). |
-| go-testing | 49 | merge | Score 49; merge candidate (high overlap detected). |
-| jest-vitest | 49 | merge | Score 49; merge candidate (high overlap detected). |
-| junit-spring | 49 | merge | Score 49; merge candidate (high overlap detected). |
-| pytest-unittest | 49 | merge | Score 49; merge candidate (high overlap detected). |
-| test-generation-report | 49 | merge | Score 49; merge candidate (high overlap detected). |
+| dotnet-testing | 49 | rewrite | Score 49; rewrite (low score, no merge candidate). |
+| go-testing | 49 | rewrite | Score 49; rewrite (low score, no merge candidate). |
+| jest-vitest | 49 | rewrite | Score 49; rewrite (low score, no merge candidate). |
+| junit-spring | 49 | rewrite | Score 49; rewrite (low score, no merge candidate). |
+| pytest-unittest | 49 | rewrite | Score 49; rewrite (low score, no merge candidate). |
+| test-generation-report | 49 | rewrite | Score 49; rewrite (low score, no merge candidate). |
 | SKILL | 34 | rewrite | Score 34; rewrite triggered by 84 blocking + 42 warnings. |
 | validation-report | 50 | rewrite | Score 50; rewrite triggered by 0 blocking + 1 warnings. |
