@@ -189,6 +189,70 @@ All outputs land in `output/`:
 | `remediation_backlog.md` | Prioritized fix list |
 | `proposed_rewrites/` | Generated rewrite proposals |
 
+## Pre-commit hook
+
+SGP can install a git pre-commit hook into a target repo that
+blocks commits when staged skill/agent files have blocking
+governance findings.
+
+### Install
+
+```bash
+# In the target repo (the one containing skills/ and/or agents/):
+python3 -m skill_governance.cli install-hooks .
+
+# Or from the SGP checkout, pointed at a different repo:
+python3 -m skill_governance.cli install-hooks /path/to/your/skill-repo
+```
+
+This copies the hook script from the SGP package into
+`<target-repo>/.git/hooks/pre-commit` and marks it executable.
+
+### What the hook does
+
+On every `git commit`:
+
+1. Reads the staged file list via `git diff --cached --name-only`
+2. Filters to files matching `**/SKILL.md` or `**/*AGENT.md`
+3. If none match, exits 0 (no work to do — fast path)
+4. Otherwise, runs `sgp validate-files` on the staged files
+5. Exits non-zero if any blocking finding is present (commit blocked)
+6. Exits 0 if all staged files pass
+
+### Required config
+
+The hook looks for a governance config in the target repo's root,
+in this order:
+
+1. `governance.yaml`
+2. `governance.local.yaml`
+3. `governance.default.yaml`
+
+If none exists, the hook prints a warning and exits 0 (does not
+block). To enforce SGP validation in the target repo, copy
+`config/governance.default.yaml` from this repo to the target
+repo's root as `governance.yaml` and customize as needed.
+
+### Bypassing the hook
+
+`git commit --no-verify` skips the hook. Use sparingly; usually
+a sign the rule is too strict, not that the commit should be
+bypassed.
+
+### Running validation manually
+
+You can also run the same check without installing the hook:
+
+```bash
+python3 -m skill_governance.cli validate-files \
+    --config /path/to/governance.yaml \
+    path/to/skill1/SKILL.md \
+    path/to/agent1/AGENT.md
+```
+
+The command exits 0 (clean) or 2 (blocking findings) so it works
+in any pre-commit-style workflow.
+
 ## Governance operating model
 
 - **Deterministic first**: file hashes, token counts, dependency

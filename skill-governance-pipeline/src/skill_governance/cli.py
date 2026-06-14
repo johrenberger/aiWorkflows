@@ -3,11 +3,13 @@
 Commands:
 - scan
 - validate
+- validate-files
 - benchmark
 - recommend
 - rewrite
 - report
 - ci
+- install-hooks
 - full
 
 Phase 1 implements scan + ci (the two most useful ones for
@@ -464,6 +466,123 @@ def full(config_path: Path) -> None:
     ctx.invoke(rewrite, config_path=config_path)
     ctx.invoke(report, config_path=config_path)
     ctx.invoke(ci, config_path=config_path)
+
+
+@main.command()
+@click.option("--config", "config_path", type=click.Path(exists=True, path_type=Path), required=True)
+@click.argument("files", nargs=-1, type=click.Path(exists=True, path_type=Path))
+def validate_files(config_path: Path, files: tuple[Path, ...]) -> None:
+    """Run validation scoped to specific files (staged in git, etc).
+
+    Scans the configured directories, runs metadata + contract
+    validation, then filters findings to those whose `artifact_path`
+    matches one of the supplied files. Exits non-zero when any
+    blocking finding remains after filtering.
+
+    This is the surface the pre-commit hook uses: it passes the
+    staged files (via `git diff --cached --name-only`) and gets
+    back a pass/fail signal.
+
+    Usage:
+        python -m skill_governance.cli validate-files \\
+            --config config/governance.yaml path/to/SKILL.md
+    """
+    if not files:
+        click.echo("validate-files: no files specified, nothing to do.")
+        return
+
+    # Compute the set of relative paths that match each input file.
+    # Finding.artifact_path values are relative to the
+    # skill_directories / agent_directories root, so we need to
+    # compute the relative path from each possible root and check
+    # if any of them match.
+    config = load_config(config_path)
+    roots = [Path(p).resolve() for p in config.skill_directories] + [Path(p).resolve() for p in config.agent_directories]
+
+    file_rel_strs: set[str] = set()
+    for input_file in files:
+        input_abs = input_file.resolve()
+        for root in roots:
+            try:
+                rel = input_abs.relative_to(root)
+                file_rel_strs.add(str(rel))
+            except ValueError:
+                continue
+
+    result = _run_validate(config_path)
+    findings_in_scope = [f for f in result.findings if f.artifact_path and f.artifact_path in file_rel_strs]
+    blocking = [f for f in findings_in_scope if f.severity.value == "blocking"]
+    warnings = [f for f in findings_in_scope if f.severity.value == "warning"]
+
+    click.echo(f"validate-files: {len(files)} file(s) in scope")
+    click.echo(f"  Total findings in scope: {len(findings_in_scope)}")
+    click.echo(f"  Blocking: {len(blocking)}")
+    click.echo(f"  Warnings: {len(warnings)}")
+
+    if blocking:
+        click.echo("")
+        click.echo("Blocking findings:")
+        for f in blocking:
+            click.echo(f"  - {f.artifact_path}: [{f.category}] {f.message}")
+        click.echo("")
+        click.echo("Run `python -m skill_governance.cli rewrite --config <config>` "
+                   "for proposed fixes, or fix manually.")
+        sys.exit(2)
+    elif warnings:
+        click.echo("")
+        click.echo("Warnings (non-blocking):")
+        for f in warnings:
+            click.echo(f"  - {f.artifact_path}: [{f.category}] {f.message}")
+
+
+@main.command()
+@click.argument("target_repo", type=click.Path(exists=True, path_type=Path))
+def install_hooks(target_repo: Path) -> None:
+    """Install the SGP pre-commit hook into a target repo.
+
+    Copies the hook script (shipped with SGP at `hooks/pre-commit`)
+    into the target repo's `.git/hooks/pre-commit` and marks it
+    executable. The hook runs `sgp validate-files` on staged files
+    when you commit, blocking commits that introduce blocking
+    governance findings.
+
+    Usage:
+        cd path/to/your/skill-repo
+        python -m skill_governance.cli install-hooks .
+
+    The target repo must be a git repository (i.e. have a .git/
+    directory). If `.git/` is missing, the command exits non-zero
+    with an error.
+    """
+    git_dir = target_repo / ".git"
+    if not git_dir.is_dir():
+        click.echo(f"install-hooks: error: {target_repo} is not a git repository (no .git/ directory).", err=True)
+        click.echo("  Initialize a repo with `git init` first, or run from a different directory.", err=True)
+        sys.exit(1)
+
+    hooks_dir = git_dir / "hooks"
+    hooks_dir.mkdir(parents=True, exist_ok=True)
+    hook_dest = hooks_dir / "pre-commit"
+
+    # Locate the hook script shipped with SGP. It's at
+    # <sgp-package>/hooks/pre-commit. We can find the package root
+    # via the import location of `skill_governance`.
+    import skill_governance
+    sgp_root = Path(skill_governance.__file__).resolve().parent.parent.parent
+    hook_src = sgp_root / "hooks" / "pre-commit"
+
+    if not hook_src.exists():
+        click.echo(f"install-hooks: error: hook script not found at {hook_src}.", err=True)
+        click.echo("  This is an SGP installation issue. Try reinstalling.", err=True)
+        sys.exit(1)
+
+    # Copy the hook and make it executable.
+    hook_dest.write_text(hook_src.read_text(encoding="utf-8"), encoding="utf-8")
+    hook_dest.chmod(hook_dest.stat().st_mode | 0o111)
+
+    click.echo(f"install-hooks: installed SGP pre-commit hook at {hook_dest}")
+    click.echo("  The hook will run on every `git commit` in this repo.")
+    click.echo("  Bypass with `git commit --no-verify` if needed (not recommended).")
 
 
 if __name__ == "__main__":
