@@ -21,32 +21,27 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Fetch base branch and compute merge-base
+      - name: Fetch base and head branches, compute merge-base
         id: base
         run: |
           set -e
-          git fetch origin "${{ github.base_ref }}" --depth=1
-          # On a push event to the dreaming branch, base_ref may be unset; fall back to main.
           BASE="${GITHUB_BASE_REF:-main}"
-          HEAD_REF="${GITHUB_HEAD_REF:-${GITHUB_REF_NAME:-HEAD}}"
-          # For PR events, the current commit on disk is a merge commit; use the head SHA
-          # we know about, but the simplest robust approach is to use the parent-most
-          # commit on origin/$BASE as the divergence point.
-          if [ -n "${GITHUB_HEAD_REF:-}" ] && [ -n "${GITHUB_BASE_REF:-}" ]; then
-            DREAMING_BRANCH="origin/${GITHUB_HEAD_REF}"
-            BASE_BRANCH="origin/${GITHUB_BASE_REF}"
-          else
-            DREAMING_BRANCH="HEAD"
-            BASE_BRANCH="origin/${BASE}"
+          HEAD_REF="${GITHUB_HEAD_REF:-}"
+          if [ -n "$HEAD_REF" ]; then
+            git fetch origin "$HEAD_REF" --depth=1
           fi
-          MB=$(git merge-base "$DREAMING_BRANCH" "$BASE_BRANCH" 2>/dev/null || echo "")
+          git fetch origin "$BASE" --depth=1
+          if [ -n "$HEAD_REF" ]; then
+            MB=$(git merge-base "origin/$HEAD_REF" "origin/$BASE" 2>/dev/null || echo "")
+          else
+            MB=$(git merge-base HEAD "origin/$BASE" 2>/dev/null || echo "")
+          fi
           if [ -z "$MB" ]; then
             echo "WARN: could not compute merge-base; commits prefix test will skip"
           else
             echo "merge-base=$MB"
           fi
           echo "merge_base=$MB" >> "$GITHUB_OUTPUT"
-          echo "head_ref=${GITHUB_HEAD_REF:-}" >> "$GITHUB_OUTPUT"
 
       - name: Set up Python
         uses: actions/setup-python@v5

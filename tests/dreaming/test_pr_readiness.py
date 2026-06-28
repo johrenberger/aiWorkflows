@@ -101,19 +101,32 @@ def test_only_one_dreaming_branch_exists() -> None:
 
 
 def test_commits_use_chore_dreaming_prefix() -> None:
-    branch = _git("rev-parse", "--abbrev-ref", "HEAD").strip()
-    if branch == "HEAD":
-        branch = os.environ.get("GITHUB_HEAD_REF") or "HEAD"
-    base_ref = _resolve_base_ref()
-    try:
-        merge_base = _git("merge-base", branch, base_ref).strip()
-    except subprocess.CalledProcessError:
-        pytest.skip(f"Cannot compute merge-base of {branch} and {base_ref}.")
-    if not merge_base:
-        pytest.skip(f"Empty merge-base of {branch} and {base_ref}.")
-    log = _git("log", "--pretty=%s", f"{merge_base}..{branch}").strip()
+    """All commits on this branch ahead of its base must use the chore(dreaming): prefix.
+
+    In CI on a PR, the workflow pre-computes DREAMING_MERGE_BASE (the SHA of the
+    common ancestor). In a local checkout, we compute it from refs.
+    """
+    merge_base = os.environ.get("DREAMING_MERGE_BASE", "").strip()
+    head = os.environ.get("GITHUB_HEAD_REF", "").strip()
+    if merge_base and head:
+        # CI path: pre-computed merge-base from the workflow; head ref comes from GHA env.
+        spec = f"{merge_base}..origin/{head}"
+    else:
+        # Local path: discover from refs.
+        branch = _git("rev-parse", "--abbrev-ref", "HEAD").strip()
+        if branch == "HEAD":
+            pytest.skip("DREAMING_MERGE_BASE and GITHUB_HEAD_REF not set; cannot compute diff on detached HEAD.")
+        base_ref = _resolve_base_ref()
+        try:
+            merge_base = _git("merge-base", branch, base_ref).strip()
+        except subprocess.CalledProcessError as e:
+            pytest.skip(f"Cannot compute merge-base: {e}")
+        if not merge_base:
+            pytest.skip("Empty merge-base.")
+        spec = f"{merge_base}..{branch}"
+    log = _git("log", "--pretty=%s", spec).strip()
     subjects = [s for s in log.splitlines() if s]
-    assert subjects, "Branch has no commits ahead of base"
+    assert subjects, f"No commits in range {spec}"
     for s in subjects:
         assert s.startswith("chore(dreaming):"), (
             f"Commit subject {s!r} does not use chore(dreaming): prefix"
