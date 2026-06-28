@@ -32,22 +32,26 @@ def _resolve_base_ref() -> str:
     """Resolve the ref that 'main' (or whatever the PR targets) points to.
 
     Order of preference:
-      1. GITHUB_BASE_REF environment variable (set on PR runs).
-      2. Local 'main' branch (developer-machine case).
-      3. 'origin/main' (fetched in CI).
-      4. The merge-base of the current branch with origin/HEAD as a last resort.
+      1. CI-provided DREAMING_MERGE_BASE commit SHA (workflow pre-computes it).
+      2. GITHUB_BASE_REF (a branch name). Use it directly if it resolves.
+      3. Local 'main' branch (developer-machine case).
+      4. 'origin/main' (CI fallback).
     """
+    sha = os.environ.get("DREAMING_MERGE_BASE", "").strip()
+    if sha and _git_silent("cat-file", "-e", f"{sha}^{{commit}}"):
+        return sha
     base = os.environ.get("GITHUB_BASE_REF")
     if base:
         if _git_silent("rev-parse", "--verify", f"{base}^{{commit}}"):
             return base
-    # Local main
+        # In detached CI checkout the base ref may be at origin/<base_ref>
+        if _git_silent("rev-parse", "--verify", f"origin/{base}^{{commit}}"):
+            return f"origin/{base}"
     if _git_silent("rev-parse", "--verify", "main^{commit}"):
         return "main"
-    # Origin main (CI)
     if _git_silent("rev-parse", "--verify", "origin/main^{commit}"):
         return "origin/main"
-    pytest.skip("Could not resolve a base ref (main / origin/main / GITHUB_BASE_REF).")
+    pytest.skip("Could not resolve a base ref (main / origin/main / GITHUB_BASE_REF / DREAMING_MERGE_BASE).")
 
 
 def test_pr_change_log_exists() -> None:
