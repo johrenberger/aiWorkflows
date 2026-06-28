@@ -139,6 +139,12 @@ def test_commits_use_chore_dreaming_prefix() -> None:
         # (`make dreaming-pr-ready`) is intended to run BEFORE the first commit
         # too, so a clean branch must skip, not fail.
         pytest.skip(f"No commits yet in range {spec}.")
+    # Filter out merge commits: in CI on a PR, the runner checks out a merge commit
+    # GitHub auto-creates; its subject is not authored by us and is not subject to
+    # the chore(dreaming): prefix convention.
+    subjects = [s for s in subjects if not s.startswith("Merge ")]
+    if not subjects:
+        pytest.skip(f"No non-merge commits in range {spec}.")
     for s in subjects:
         assert s.startswith("chore(dreaming):"), (
             f"Commit subject {s!r} does not use chore(dreaming): prefix"
