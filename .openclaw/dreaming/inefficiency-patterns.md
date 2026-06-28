@@ -1,31 +1,38 @@
 # Inefficiency Patterns
 
-Each pattern has a single evidence reference.
+P-IP-001 through P-IP-002 are carried from cycle 1; P-IP-003 is new in cycle 2.
 
 ---
 
-## P-IP-001 — Dreaming Stage 1 ran without structured run logs
+## P-IP-001 — Dreaming Stage 1 ran without structured run logs (carried; **unchanged in cycle 2**)
 
 - **Pattern ID:** P-IP-001
 - **Evidence reference:** EV-004
-- **Affected workflow / skill:** dreaming workflow itself
-- **Observed inefficiency:** First cycle produced useful but coarse-grained findings because it could only use Git history and `memory/*.md` notes. Per-tool-call retries, timeouts, blocked states, and selected skills at the run level were not directly observable.
-- **Was the output still successful:** Yes — the artifacts are useful and evidence-backed; patterns surfaced are real.
-- **Cause:** No structured OpenClaw run log existed in the workspace. The dreaming spec assumes raw OpenClaw logs as Stage-1 input.
-- **Recommended improvement:** Add a structured OpenClaw run log that records (at minimum) start, completion, selected skills, tool errors, retries, and outcome for each turn. Subsequent dreaming cycles should consume this log.
-- **Deterministic tooling opportunity:** yes — the log format should be JSONL with a fixed schema; dreaming Stage 1 should parse it deterministically rather than grepping `memory/`.
+- **Cycle-2 status:** unchanged. `find` across the workspace still returns no structured run logs. PI-006 still proposed.
+- **Recommended improvement:** Add a JSONL run log (PI-006). Until then, dreaming's per-tool-call retry/timeout/blocked-state findings are unavailable.
+- **Deterministic tooling opportunity:** yes — JSONL with fixed schema; parser in deterministic Stage 1.
 - **Regression scenario link:** RS-008
 
 ---
 
-## P-IP-002 — Slice N ships before slice N review, requiring slice N.1
+## P-IP-002 — Slice N ships before sub-agent review, requiring slice N.1 (carried)
 
 - **Pattern ID:** P-IP-002
-- **Evidence reference:** EV-003 (slice 3 → slice 3.1 → slice 4.1)
-- **Affected workflow / skill:** `code-review-slice-N` sub-agent workflow (emergent)
-- **Observed inefficiency:** Slice 3 shipped and was reviewed post-hoc, requiring a `slice 3.1` follow-up commit. Slice 4 followed the same pattern (`slice 4.1`). The cost is small (one extra commit, one extra review cycle) but real.
-- **Was the output still successful:** Yes — slice 3.1 caught 2 CRITICAL + 4 HIGH + 5 MEDIUM + 3 LOW findings.
-- **Cause:** The review-before-ship step is not yet enforced as part of the slice workflow; it happens when the main session decides to spawn a reviewer.
-- **Recommended improvement:** Standardize the spawn-reviewer step as part of the slice workflow itself (see PI-005). Make "slice N ships only after sub-agent review" a routing rule.
-- **Deterministic tooling opportunity:** not directly; the workflow is sub-agent-based. The improvement is workflow-level, not tool-level.
-- **Regression scenario link:** RS-005 (the slice 3 CRITICAL itself), RS-007 (the slice 4 idempotency scenario)
+- **Evidence reference:** EV-003
+- **Cycle-2 status:** unchanged. PI-004 still proposed; PI-005 still proposed.
+- **Recommended improvement:** Standardize spawn-reviewer step as part of slice workflow (PI-005, review-required).
+- **Regression scenario link:** RS-005, RS-007
+
+---
+
+## P-IP-003 — CI-only fix-up loop on workflows that lack local validation (NEW)
+
+- **Pattern ID:** P-IP-003
+- **Evidence reference:** EV-006, EV-008
+- **Affected workflow / skill:** dreaming workflow (in cycle 1); extensible to any workflow whose CI is the only place its tests run
+- **Observed inefficiency:** Cycle 1 generated 5 fix-up commits (out of 9 total) because CI-only validation does not run before push. Each fix-up is a re-push → wait for CI → fix → re-push cycle. Wasted ~30 minutes per fix-up in cycle 1.
+- **Was the output still successful:** Yes — cycle 1 landed. But the cost was real.
+- **Cause:** No local equivalent of the CI validation. The CI workflow has the tests but the developer has no ergonomic way to run them locally before pushing.
+- **Recommended improvement:** Add a Makefile target mirroring the CI workflow's tests (PI-008 applied; PI-009 NEW extends the pattern to other workflows).
+- **Deterministic tooling opportunity:** not directly applicable; the improvement is a developer-tool one.
+- **Regression scenario link:** RS-010 (Makefile prereq degradation), and indirectly RS-011, RS-012 (the Makefile's first use caught both).

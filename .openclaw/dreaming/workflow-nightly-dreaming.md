@@ -6,9 +6,10 @@ Standalone offline workflow that reviews prior OpenClaw / MiniMax activity, extr
 
 Observable evidence only:
 
-- Raw OpenClaw logs
+- Raw OpenClaw logs (PI-006)
 - Saved handoff packets
 - Git history
+- **(Cycle 2)** PR-review activity (`gh pr list --state all --json ...`, `gh pr view <N>`) — single-event evidence can hide arc-scale patterns; PR traces un-collapse them
 
 Hidden chain-of-thought is **never** evidence.
 
@@ -16,7 +17,11 @@ Hidden chain-of-thought is **never** evidence.
 
 All outputs under `.openclaw/dreaming/` plus the root-level `DREAMING.md` entry point.
 
-## Stages
+## Stage 0: Local pre-push validation (PI-008, cycle 2)
+
+Before opening or pushing the PR-ready branch, run `make dreaming-validate` from the repo root. The target mirrors the CI workflow's `pytest tests/dreaming/` step and the marker-scan / merge-base steps, locally. PRs that fail locally should not be pushed.
+
+This step is the durable fix for the cycle-1 fix-up loop (5 of 9 commits were CI-only corrections).
 
 ### Stage 1: Collect Evidence
 

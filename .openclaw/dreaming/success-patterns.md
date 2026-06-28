@@ -1,39 +1,36 @@
 # Success Patterns
 
-Each pattern has a single evidence reference.
+P-S-001 through P-S-003 are carried from cycle 1; P-S-004 is new in cycle 2.
 
 ---
 
-## P-S-001 — Sub-agent code-review loop
+## P-S-001 — Sub-agent code-review loop (carried)
 
 - **Pattern ID:** P-S-001
-- **Evidence reference:** EV-002 (PR #17 review cycle), EV-003 (slice 1+2, slice 3.1, slice 4.1 review cycles)
-- **Affected workflow / skill:** `code-review-slice-N` sub-agent (emergent; not yet registered as a skill)
-- **Observed success behavior:** Main session spawns a sub-agent with `mode=run`, `timeout=900s`. Sub-agent reviews the slice and produces a categorized finding list. Main session applies CRITICAL > HIGH > MEDIUM > LOW, re-verifies BDD/stage green, commits as `slice N.1`. Loop terminates when slice + slice.N.1 are both green.
-- **Why it worked:** Different validator (sub-agent) catches a different class of bugs than BDD/unit tests. The `slice N.1` commit makes the fixes auditable.
-- **How to preserve:** Document as a registered skill with explicit frontmatter, triggers ("after a feature slice ships BDD-green"), outputs (categorized finding list), and stop conditions ("BDD still green after fixes"). Standardize the spawn payload.
+- **Evidence reference:** EV-002, EV-003
 - **Standardization path:** routing rule + validation rule + documentation update. See PI-005.
 
----
-
-## P-S-002 — BDD-first development with per-scenario fresh SQLite
+## P-S-002 — BDD-first development with per-scenario fresh SQLite (carried)
 
 - **Pattern ID:** P-S-002
-- **Evidence reference:** EV-003 (slice 1 → slice 4.1)
-- **Affected workflow / skill:** `BusinessOperationsDashboard` (and presumably generic)
-- **Observed success behavior:** cucumber.cjs picks up `tests/support/**/*.ts` and `tests/steps/**/*.ts`; per-scenario fresh SQLite + Fastify on port 0; `tests/support/migrate.ts` runs `prisma db push --skip-generate --accept-data-loss`. Total runtime ~4:35 for 74/74 scenarios.
-- **Why it worked:** Fresh DB per scenario eliminates cross-test pollution; port 0 eliminates port conflicts; Prisma `db push` is fast for SQLite. BDD scenarios double as documentation.
-- **How to preserve:** Document the stack (`tsx/esm` loader, `cucumber.cjs`, fresh DB per scenario, port 0) as a reusable BDD bootstrap for any Node + Prisma project.
+- **Evidence reference:** EV-003
 - **Standardization path:** documentation update + optional reusable script (`bdd-bootstrap/`).
+
+## P-S-003 — Permissive-to-strict progression with locked-in permissive tests (carried + reinforced)
+
+- **Pattern ID:** P-S-003
+- **Evidence reference:** EV-001, EV-007 (cycle 2)
+- **Cycle-2 update:** The cycle-1 single-event evidence for this pattern (the mypy strict flip in PR #58) was correct but underspecified. EV-007 traces the 16-PR SGP quality-tightening arc and shows the pattern applied **across multiple gates**: mypy, ruff, branch coverage, hypothesis testing. The pattern is canonical; a candidate promotion to a generic validation-discipline skill is now well-evidenced.
+- **Standardization path:** documentation update + validation rule. Cycle-1's PI-001 is now better-scoped; renamed intent: "tie L-001's pattern to a reusable CI check that asserts the ordering invariant (permissive test → progression script → strict flip)."
 
 ---
 
-## P-S-003 — Permissive-to-strict progression with locked-in permissive tests
+## P-S-004 — Additive CI gates without regression (NEW)
 
-- **Pattern ID:** P-S-003
-- **Evidence reference:** EV-001 (commits `efd083d` then `a965c13`)
-- **Affected workflow / skill:** SGP, generic validation discipline
-- **Observed success behavior:** Before flipping mypy to strict, the permissive state was captured as a test (`test(sgp): lock in mypy permissive state`), then a progression script tracked the elimination of permissive allowances, then strict mode was flipped.
-- **Why it worked:** The permissive-state test makes the change observable; the progression script makes the goal concrete; the strict flip is the smallest possible step.
-- **How to preserve:** When tightening any validation gate (mypy strict, mutation budget, lint budget, coverage threshold), use this three-step pattern.
-- **Standardization path:** documentation update + validation rule (require permissive-state test before strict flip).
+- **Pattern ID:** P-S-004
+- **Evidence reference:** EV-007 (PRs #47, #50)
+- **Affected workflow / skill:** SGP CI; extensible to any project
+- **Observed success behavior:** PR #47 (2026-06-14T15:03) adds a branch coverage gate + GitHub Actions workflow. PR #50 (2026-06-14T15:58) adds mypy + ruff type-check and lint. Each addition is **independent of the others** — the existing test suite keeps passing, the new gate passes on its own merit, and no existing CI step is rewritten. By the time of the v1.0.0 release (PR #55, 2026-06-14T19:40), the CI workflow has 3 distinct gates each guarding a different dimension.
+- **Why it worked:** Each gate was added as a **separate commit on a separate PR**, so bisecting a CI failure points at the gate that introduced it. The gates are also ordered: low-cost first (branch coverage) → moderate-cost (mypy+ruff) → expensive (Hypothesis property tests in PR #49). The ordering matters — fast feedback gates come first.
+- **How to preserve:** When adding a CI gate to an existing project, ship it as a *new commit on a new PR* (not a rewrite of an existing step). Order new gates by feedback cost (cheap first). Document each gate's purpose in `docs/ci-gates.md`.
+- **Standardization path:** documentation update + reusable `.github/workflows/ci-gates.yml` template that other projects can copy.

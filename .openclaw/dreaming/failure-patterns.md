@@ -2,54 +2,64 @@
 
 Each pattern has a single evidence reference. Severity comes from observed impact in the review window; recurrence classification follows `workflow-nightly-dreaming.md` §Stage 4.
 
+P-F-001 through P-F-004 are carried from cycle 1; P-F-005 is new in cycle 2.
+
 ---
 
-## P-F-001 — Concurrency race conditions not caught by BDD
+## P-F-001 — Concurrency race conditions not caught by BDD (carried)
 
 - **Pattern ID:** P-F-001
-- **Evidence reference:** EV-003 (CRITICAL #1 in slice 3.1 review)
-- **Affected workflow / skill:** any feature touching `finalize*` / `findFirst` / `findUnique` paths; observed in `BusinessOperationsDashboard` sync runner
-- **Observed failure:** `findFirst({status:'failure'})` returned the wrong SyncRun under concurrent finalize. BDD scenarios had 43/43 green; sub-agent review caught the race.
+- **Evidence reference:** EV-003
 - **Recurrence:** one_off (this cycle), but matches a known class; candidate_regression
-- **Impact:** CRITICAL — silent data integrity corruption (wrong SyncRun updated)
-- **Prevention strategy:** Always run a sub-agent code review on finalize/finalizeFailure paths before declaring a slice done. Add at least one concurrency BDD scenario per finalize path.
+- **Impact:** CRITICAL — silent data integrity corruption
+- **Prevention strategy:** Sub-agent code review on finalize/finalizeFailure paths before declaring a slice done; at least one concurrency BDD scenario per finalize path.
 - **Regression scenario link:** RS-005
 
 ---
 
-## P-F-002 — Undocumented state-machine transitions in skill specs
+## P-F-002 — Undocumented state-machine transitions in skill specs (carried)
 
 - **Pattern ID:** P-F-002
-- **Evidence reference:** EV-002 (Finding 1)
-- **Affected workflow / skill:** `task-state-management`
-- **Observed failure:** Allowed-transitions table listed no forward path to `closed` from any post-`in_progress` state. The transition.py validator implemented what the table said.
-- **Recurrence:** one_off, but generic to any skill with a state machine; candidate_regression
-- **Impact:** warning — feature works after fix; pre-fix, tasks could not close via the forward path
-- **Prevention strategy:** SKILL.md must include a complete transition table or an explicit "no path" assertion for every (from, to) pair.
+- **Evidence reference:** EV-002
+- **Recurrence:** one_off; generic; candidate_regression
+- **Impact:** warning — feature works after fix
+- **Prevention strategy:** SKILL.md must include a complete transition table.
 - **Regression scenario link:** RS-003
 
 ---
 
-## P-F-003 — DOTALL regex matching across section boundaries
+## P-F-003 — DOTALL regex matching across section boundaries (carried)
 
 - **Pattern ID:** P-F-003
-- **Evidence reference:** EV-002 (Finding 2)
-- **Affected workflow / skill:** `task-state-management/scripts/lint-task-state.py`
-- **Observed failure:** `re.DOTALL` regex matched content from `## Notes` into `## Resolution`, allowing placeholder text to satisfy the validator.
+- **Evidence reference:** EV-002
 - **Recurrence:** one_off; candidate_regression
-- **Impact:** warning — validator passed without the artifact being valid
-- **Prevention strategy:** Prefer line-by-line scanners with explicit section detection over `re.DOTALL` for structured-document validators.
+- **Impact:** warning
+- **Prevention strategy:** Prefer line-by-line scanners over `re.DOTALL`.
 - **Regression scenario link:** RS-004
 
 ---
 
-## P-F-004 — Multi-tenant info leak in `/health` endpoint
+## P-F-004 — Multi-tenant info leak in `/health` endpoint (carried)
 
 - **Pattern ID:** P-F-004
-- **Evidence reference:** EV-003 (HIGH #3 in slice 3.1 review)
-- **Affected workflow / skill:** `BusinessOperationsDashboard` worker `/health`
-- **Observed failure:** `/health` returned a `tenants` count derived from per-tenant rows on a `0.0.0.0`-bound service.
-- **Recurrence:** one_off; systemic in pattern (any management endpoint on multi-tenant code); candidate_regression
-- **Impact:** HIGH — information disclosure to unauthenticated callers
-- **Prevention strategy:** Strict `/health` and `/ready` contracts: no tenant-derived fields, no row counts. Probe only `SELECT 1` (or equivalent).
+- **Evidence reference:** EV-003
+- **Recurrence:** one_off; systemic pattern; candidate_regression
+- **Impact:** HIGH — info disclosure
+- **Prevention strategy:** Strict `/health` and `/ready` contracts.
 - **Regression scenario link:** RS-006
+
+---
+
+## P-F-005 — CI-environment mismatch causing false-positive test failures (NEW)
+
+- **Pattern ID:** P-F-005
+- **Evidence reference:** EV-006, EV-008
+- **Affected workflow / skill:** dreaming workflow (cycle 1, cycle 2); extensible to any workflow with CI validation
+- **Observed failure:** Three classes of false-positive that ship locally but fail in CI:
+  1. Tests that hardcode `main` in `git merge-base` calls fail when CI checkout is detached HEAD with no local `main` ref
+  2. Marker-scan greps (e.g., for hidden-reasoning) match docs that legitimately describe the rule they enforce
+  3. "Ensure X is not configured" greps match docs that legitimately say "do not configure X"
+- **Recurrence:** repeated (cycle 1: 5 fix-up commits; cycle 2 before PI-008: 2 fix-up commits caught locally)
+- **Impact:** medium — wastes CI cycles; pollutes PR history with fix-ups; reviews look messier
+- **Prevention strategy:** Mirror CI validation as a local Makefile target (PI-008). Run that target before push. Tests and greps designed to anticipate environment variants: detached HEAD, allowlist of rule-documenting files, tighter regexes for forbidden-config verbs (vs. forbidding any mention).
+- **Regression scenario link:** RS-010, RS-011, RS-012

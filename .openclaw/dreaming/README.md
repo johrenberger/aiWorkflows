@@ -33,4 +33,9 @@ See `DREAMING.md` at the repo root for the entry point and full specification.
 
 ## Version
 
-- Cycle 1: 2026-06-29
+- Cycle 1: 2026-06-29 (merged as PR #59)
+- Cycle 2: 2026-06-29 cycle-2 (PI-008 applied; PR-review activity added as evidence source)
+
+## Local validation
+
+Run `make dreaming-validate` (PI-008) to execute the same pytest suite as CI, locally, before pushing. See `validation-checklist.md` for the full pre-push gate.
