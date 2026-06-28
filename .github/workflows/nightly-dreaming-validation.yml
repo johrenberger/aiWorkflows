@@ -21,20 +21,19 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Fetch base and head branches, compute merge-base
+      - name: Compute merge-base via GitHub API
         id: base
+        # Use the GitHub compare API to get the merge-base SHA; avoids fragile
+        # local-ref state that depends on fetch-depth and PR ref shape.
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -e
-          BASE="${GITHUB_BASE_REF:-main}"
-          HEAD_REF="${GITHUB_HEAD_REF:-}"
-          if [ -n "$HEAD_REF" ]; then
-            git fetch origin "$HEAD_REF" --depth=1
-          fi
-          git fetch origin "$BASE" --depth=1
-          if [ -n "$HEAD_REF" ]; then
-            MB=$(git merge-base "origin/$HEAD_REF" "origin/$BASE" 2>/dev/null || echo "")
+          if [ -n "${GITHUB_HEAD_REF:-}" ] && [ -n "${GITHUB_BASE_REF:-}" ]; then
+            MB=$(gh api "repos/${{ github.repository }}/compare/${GITHUB_BASE_REF}...${GITHUB_HEAD_REF}" --jq '.merge_base_commit.sha' 2>/dev/null || echo "")
           else
-            MB=$(git merge-base HEAD "origin/$BASE" 2>/dev/null || echo "")
+            # push event fallback
+            MB=$(git merge-base HEAD origin/main 2>/dev/null || echo "")
           fi
           if [ -z "$MB" ]; then
             echo "WARN: could not compute merge-base; commits prefix test will skip"
