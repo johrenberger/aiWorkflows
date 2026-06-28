@@ -42,8 +42,26 @@ jobs:
         run: pytest tests/dreaming/ -v
 
       - name: Check for forbidden hidden-reasoning markers
+        # The grep below scans all artifact files. Files whose job is to document the
+        # rule itself (README.md, validation-checklist.md) are excluded by name because
+        # they necessarily mention the marker strings as part of describing the rule.
         run: |
-          ! grep -rEn "<<<REASONING>>>|<<<HIDDEN>>>|<reasoning>|</reasoning>|\[\[INTERNAL_THINKING\]\]" .openclaw/dreaming/ DREAMING.md || (echo "Forbidden hidden-reasoning marker found" && exit 1)
+          bash -c '
+            set -e
+            ALLOWLIST=(
+              ".openclaw/dreaming/README.md"
+              ".openclaw/dreaming/validation-checklist.md"
+              ".openclaw/dreaming/workflow-nightly-dreaming.md"
+            )
+            EXCLUDES=""
+            for f in "${ALLOWLIST[@]}"; do
+              EXCLUDES+="--exclude=$(basename "$f") "
+            done
+            if grep -rEn $EXCLUDES "<<<REASONING>>>|<<<HIDDEN>>>|<reasoning>|</reasoning>|\[\[INTERNAL_THINKING\]\]" .openclaw/dreaming/ DREAMING.md; then
+              echo "Forbidden hidden-reasoning marker found"
+              exit 1
+            fi
+          '
 
       - name: Check exactly one dreaming branch in this PR
         env:
