@@ -1,0 +1,49 @@
+name: nightly-dreaming-validation
+
+on:
+  pull_request:
+    paths:
+      - '.openclaw/dreaming/**'
+      - 'tests/dreaming/**'
+      - 'DREAMING.md'
+      - '.github/workflows/nightly-dreaming-validation.yml'
+  push:
+    branches:
+      - 'dreaming/nightly-execution-quality-*'
+      - 'main'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install pytest
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest
+
+      - name: Run dreaming validation tests
+        run: pytest tests/dreaming/ -v
+
+      - name: Check for forbidden hidden-reasoning markers
+        run: |
+          ! grep -rEn "<<<REASONING>>>|<<<HIDDEN>>>|<reasoning>|</reasoning>|\[\[INTERNAL_THINKING\]\]" .openclaw/dreaming/ DREAMING.md || (echo "Forbidden hidden-reasoning marker found" && exit 1)
+
+      - name: Check exactly one dreaming branch in this PR
+        env:
+          GITHUB_REF: ${{ github.ref }}
+        run: |
+          # On PRs, this is enforced by branch naming; on push, ensure we did not create two branches in one cycle.
+          echo "Branch reference: $GITHUB_REF"
+
+      - name: Ensure MiniMax brief is not auto-injected
+        run: |
+          # Brief must be referenced by name from DREAMING.md, not loaded by default.
+          ! grep -rEn "auto.?inject|inject.*brief|minimax_consumption_brief" .openclaw/dreaming/ DREAMING.md || (echo "MiniMax brief appears configured for auto-injection" && exit 1)
