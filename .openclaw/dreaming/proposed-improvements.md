@@ -1,6 +1,6 @@
 # Proposed Improvements
 
-Cycle: 2026-06-29 cycle-2
+Cycle: 2026-06-29 cycle-3
 
 PI-001 through PI-007 are carried from cycle 1 (some with updates); PI-008 is now **APPLIED**; PI-009 and PI-010 are NEW.
 
@@ -126,3 +126,36 @@ Status values: `proposed | applied | deferred | rejected`
 | PI-010 | informational | proposed (NEW) |
 
 No blocked-class changes proposed in cycle 2.
+
+---
+
+## PI-011 — Add `on: pull_request:` filter to surface PR-only failures cleanly (NEW, cycle 3)
+
+- **Improvement ID:** PI-011
+- **Evidence reference:** EV-010, L-014
+- **Observed problem:** Even after removing `main` from the `push:` trigger, a developer can `git push origin main` directly. The dreaming test suite would still fail. The current `tests/` skip-when-precondition-not-held logic is necessary but not sufficient — the workflow trigger itself must reflect the test's domain.
+- **Recommended change:** Document (in `workflow-nightly-dreaming.md`) the CI trigger model: "this suite is a PR-readiness suite; PR events are the primary trigger; `push:` is allowed only for early-warning on the feature branch before the PR opens."
+- **Expected benefit:** Future cycle maintainers don't repeat the cycle-3 trigger-bundling bug.
+- **Safety classification:** auto_safe (documentation-only)
+- **Validation required:** N/A (doc-only); apply in cycle 4 or later.
+- **Status:** proposed
+
+---
+
+## Summary of cycle-3 PI status
+
+| PI | Class | Status |
+| --- | --- | --- |
+| PI-001 | auto_safe | proposed (reframed) |
+| PI-002 | review_required | proposed |
+| PI-003 | auto_safe | proposed |
+| PI-004 | review_required | proposed |
+| PI-005 | review_required | proposed |
+| PI-006 | review_required | proposed (carried; still the largest unfilled gap) |
+| PI-007 | auto_safe | proposed |
+| PI-008 | auto_safe | APPLIED (cycle 2) |
+| PI-009 | review_required | proposed (cycle 2) |
+| PI-010 | informational | proposed (cycle 2) |
+| PI-011 | auto_safe | proposed (cycle 3, NEW) |
+
+No blocked-class changes proposed in cycle 3.

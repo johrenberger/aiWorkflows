@@ -1,6 +1,6 @@
 # Lessons Learned
 
-Cycle: 2026-06-29 cycle-2
+Cycle: 2026-06-29 cycle-3
 
 Compact, evidence-backed. No vague lessons. Each lesson has a single evidence reference.
 
@@ -136,3 +136,16 @@ L-001 through L-008 are carried from cycle 1; L-009 through L-013 are new in cyc
 - **Future execution guidance:** Write tests such that the precondition-empty case skips gracefully. Otherwise the test prevents the very workflow it is supposed to support.
 - **Affected workflow / skill:** dreaming workflow
 - **Regression scenario link:** RS-012
+
+---
+
+## L-014 — Workflow triggers must distinguish PR from base branch (NEW)
+
+- **Evidence:** EV-010
+- **Observed behavior:** `nightly-dreaming-validation.yml`'s `on: push:` block listed both `dreaming/nightly-execution-quality-*` and `main`. After PR #60 merged to main, GitHub fired a `push` CI run on main. The PR-readiness tests (`test_current_branch_uses_dreaming_prefix`, `test_commits_use_chore_dreaming_prefix`) are nonsensical on main because:
+  - there is no PR head ref to assert against
+  - the commit range `[merge-base..HEAD]` is empty when merge-base == HEAD, immediately after a merge
+- **Interpretation:** A CI workflow's trigger list is part of its tested surface. Bundling `main` into a workflow that contains PR-readiness assertions causes those assertions to fire in environments where the precondition does not hold.
+- **Future execution guidance:** When writing a CI workflow that contains PR-readiness assertions (branch naming, commit-prefix, scan-vs-PR-base), restrict the `push:` trigger to the branches that own the PRs; leave `pull_request:` to cover main-becoming-PR-base. Independently, the tests themselves should skip gracefully when the precondition does not hold, so that ad-hoc triggers do not become firefights.
+- **Affected workflow / skill:** dreaming workflow; extensible (PI-009 — generalization to other workflows)
+- **Regression scenario link:** RS-013, RS-014

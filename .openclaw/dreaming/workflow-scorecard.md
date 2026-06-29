@@ -1,6 +1,6 @@
 # Workflow Scorecard
 
-Cycle: 2026-06-29 cycle-2
+Cycle: 2026-06-29 cycle-3
 
 Same 1–5 dimensions as cycle 1. Cycle-2 deltas marked with **(updated)** or **(NEW)**.
 

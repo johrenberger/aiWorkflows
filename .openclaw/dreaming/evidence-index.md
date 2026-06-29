@@ -1,9 +1,9 @@
 # Evidence Index
 
-Cycle: 2026-06-29 cycle-2
-Review window: 2026-06-29 → 2026-06-29 (cycle 2 anchored to cycle-1 close event)
+Cycle: 2026-06-29 cycle-3
+Review window: 2026-06-29 → 2026-06-29 (cycle 3 anchored to cycle-2 close event)
 
-Cycle 2's evidence base is narrower than cycle 1: no new memory/, no new commits on `origin/main` since cycle 1's PR #59 merge. However, **cycle 1's evidence (EV-001, the SGP v1.0 ship) was coarse-grained — a snapshot of the merge moment rather than the arc of work**. Cycle 2 expands EV-001 into a richer traceable record (EV-007) and adds EV-006 (cycle 1 close event).
+Cycle 3 was triggered by a single concrete event: **CI was failing on `main` after cycle 2's merge** (run `28341536379`), because the dreaming workflow's `push` trigger included `main` and the PR-readiness tests are nonsensical on `main`. Cycle 3's evidence base is therefore narrow but specific: the failed CI run plus the local-validation pass (PI-008 caught yet another real bug).
 
 Each entry is an evidence record. Every recommendation, lesson, pattern, scenario, and proposed improvement in other artifacts references one of the `EV-####` IDs below.
 
@@ -159,3 +159,32 @@ Each entry is an evidence record. Every recommendation, lesson, pattern, scenari
   - The evidence-traceability test (`test_evidence_traceability.py`) caught a near-miss where cycle 2's proposed EV-006 referenced EV-004 — the test currently requires every scenario's EV to exist in the evidence-index; without this invariant, cross-cycle linkage would silently rot.
   - The hidden-reasoning test caught one of my own draft phrasings during cycle-2 draft (caught in `make dreaming-validate`, not in review).
 - **Linked lessons:** L-013 (NEW) — "the spec's evidence rules protect against self-application drift when re-instantiated."
+
+---
+
+## EV-010 — Post-merge `main` CI failure (cycle-3 trigger)
+
+- **Run identifier:** ci-2026-06-29T00-37-39Z-main-push
+- **Date:** 2026-06-29 (cycle 3)
+- **Source files reviewed:** GitHub Actions run `28341536379`; nightly-dreaming-validation workflow v1 (cycle-2); tests/dreaming/test_pr_readiness.py
+- **Task type:** build failure (CI); user-initiated ("Execute cycle 3 after fixing build failure")
+- **Outcome:** failure on `main` push: `test_current_branch_uses_dreaming_prefix` (branch is `main`) and `test_commits_use_chore_dreaming_prefix` (range empty because merge-base == HEAD on a fresh main checkout)
+- **Summary:** After PR #60 merged to `main`, GitHub fired a `push` CI run on main. The nightly-dreaming-validation workflow's `on: push:` block included `- 'main'`, so the dreaming test suite ran on main with no PR-side context. Two distinct failures; only one (merge-base == HEAD) was implicitly defended by the pre-existing skip-on-empty-merge-base logic. The branch-name test had no skip path. **Root cause: the workflow config bundled "main" into the push branches, but the PR-readiness tests are PR-side assertions.** Cycle 3 closes the gap two ways: (a) remove `main` from the push trigger; (b) add skip-when-HEAD-equals-merge-base and exclude-current-branch-from-count as belt-and-suspenders.
+- **Linked lessons:** L-014 (NEW) — "a CI workflow that runs the same suite on both a PR and its base branch must explicitly distinguish them; PR-readiness assertions are nonsensical on the base."
+- **Linked patterns:** P-F-005 reinforced (CI-env mismatch class); P-IP-003 reinforced (CI-only fix-up loop)
+- **Linked regression scenarios:** RS-013 (NEW) — "branch-name test must not execute on main pushes"
+
+---
+
+## EV-011 — PI-008 third-cycle validation (cycle-3 self-application)
+
+- **Run identifier:** pi-008-third-use-2026-06-29
+- **Date:** 2026-06-29 (cycle 3)
+- **Source files reviewed:** second `make dreaming-validate` run on the cycle-3 branch
+- **Task type:** Validation after one-line fix to `test_only_one_dreaming_branch_exists`
+- **Outcome:** success on third use; one additional local bug (the `only_one_dreaming_branch` test counted the current branch against itself) caught before push
+- **Summary:** Cycle-3 added the cycle-3 branch without first deleting the cycle-2 branch on the local machine. The `test_only_one_dreaming_branch_exists` test then saw two dreaming branches and failed. **PI-008 caught this on the first run of cycle 3**. With it, cycle 3 stays zero-fix-up locally until the PR-side CI surfaces anything specific to the PR environment. Without it, we would have started cycle 3 with another CI-only fix-up commit.
+- **Linked lessons:** L-014 (NEW) — "PI-008's payoff keeps compounding across cycles: three cycles of use, three cycles with reduced CI-only commits."
+- **Linked patterns:** P-S-004 reinforced — "additive CI gates" includes making local CI tests more robust over time, not just adding new ones.
+- **Linked regression scenarios:** RS-014 (NEW) — "branch-uniqueness test must exclude the current branch from the count."
+- **Linked proposed improvements:** PI-009 (carry forward, status: review_required); PI-010 (carry forward, status: informational)
