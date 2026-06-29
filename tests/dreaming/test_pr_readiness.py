@@ -78,16 +78,20 @@ def test_pr_change_log_separates_safety_classes() -> None:
 
 
 def test_current_branch_uses_dreaming_prefix() -> None:
+    """The dreaming branch name must match dreaming/nightly-execution-quality-YYYY-MM-DD
+    plus an optional -N cycle suffix."""
     branch = _git("rev-parse", "--abbrev-ref", "HEAD").strip()
     if branch == "HEAD":
         # Detached HEAD (CI checkout) — fall back to env var on PR.
-        base = os.environ.get("GITHUB_HEAD_REF") or branch
-        branch = base
+        branch = os.environ.get("GITHUB_HEAD_REF") or branch
     assert branch.startswith(BRANCH_PREFIX), (
         f"Current branch {branch!r} does not start with {BRANCH_PREFIX!r}"
     )
-    m = BRANCH_DATE_RE.match(branch)
-    assert m, f"Current branch {branch!r} does not match {BRANCH_DATE_RE.pattern!r}"
+    # Strip the BRANCH_PREFIX and accept either YYYY-MM-DD or YYYY-MM-DD-suffix.
+    suffix = branch[len(BRANCH_PREFIX):]
+    assert re.match(r"^\d{4}-\d{2}-\d{2}(-.+)?$", suffix), (
+        f"Current branch {branch!r}: suffix {suffix!r} does not match YYYY-MM-DD or YYYY-MM-DD-..."
+    )
 
 
 def test_only_one_dreaming_branch_exists() -> None:
@@ -103,30 +107,44 @@ def test_only_one_dreaming_branch_exists() -> None:
 def test_commits_use_chore_dreaming_prefix() -> None:
     """All commits on this branch ahead of its base must use the chore(dreaming): prefix.
 
-    In CI on a PR, the workflow pre-computes DREAMING_MERGE_BASE (the SHA of the
-    common ancestor). In a local checkout, we compute it from refs.
+    Uses HEAD explicitly (not the branch name) because the branch ref may point at
+    the same commit as the merge-base on a freshly-checked-out branch.
     """
     merge_base = os.environ.get("DREAMING_MERGE_BASE", "").strip()
     head = os.environ.get("GITHUB_HEAD_REF", "").strip()
+    head_commit = _git("rev-parse", "HEAD").strip()  # always defined, regardless of ref state
     if merge_base and head:
-        # CI path: pre-computed merge-base from the workflow; head ref comes from GHA env.
-        spec = f"{merge_base}..origin/{head}"
+        # CI path: pre-computed merge-base from the workflow; the head commit is on disk.
+        spec = f"{merge_base}..{head_commit}"
+    elif merge_base:
+        # Local path with explicit merge-base provided.
+        spec = f"{merge_base}..{head_commit}"
     else:
-        # Local path: discover from refs.
+        # Local path: discover base from refs.
         branch = _git("rev-parse", "--abbrev-ref", "HEAD").strip()
         if branch == "HEAD":
-            pytest.skip("DREAMING_MERGE_BASE and GITHUB_HEAD_REF not set; cannot compute diff on detached HEAD.")
+            pytest.skip("DREAMING_MERGE_BASE not set and detached HEAD; cannot compute diff.")
         base_ref = _resolve_base_ref()
         try:
-            merge_base = _git("merge-base", branch, base_ref).strip()
+            merge_base = _git("merge-base", head_commit, base_ref).strip()
         except subprocess.CalledProcessError as e:
             pytest.skip(f"Cannot compute merge-base: {e}")
         if not merge_base:
             pytest.skip("Empty merge-base.")
-        spec = f"{merge_base}..{branch}"
+        spec = f"{merge_base}..{head_commit}"
     log = _git("log", "--pretty=%s", spec).strip()
     subjects = [s for s in log.splitlines() if s]
-    assert subjects, f"No commits in range {spec}"
+    if not subjects:
+        # No commits yet on this branch — not an error. The Makefile target
+        # (`make dreaming-pr-ready`) is intended to run BEFORE the first commit
+        # too, so a clean branch must skip, not fail.
+        pytest.skip(f"No commits yet in range {spec}.")
+    # Filter out merge commits: in CI on a PR, the runner checks out a merge commit
+    # GitHub auto-creates; its subject is not authored by us and is not subject to
+    # the chore(dreaming): prefix convention.
+    subjects = [s for s in subjects if not s.startswith("Merge ")]
+    if not subjects:
+        pytest.skip(f"No non-merge commits in range {spec}.")
     for s in subjects:
         assert s.startswith("chore(dreaming):"), (
             f"Commit subject {s!r} does not use chore(dreaming): prefix"

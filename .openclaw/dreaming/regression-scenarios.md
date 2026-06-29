@@ -5,11 +5,13 @@ BDD-style Given/When/Then. Each scenario has a single evidence reference, severi
 Severities: `blocker | warning | informational`
 Owners: `MiniMax | deterministic_tool | human`
 
+RS-001 through RS-009 are carried from cycle 1. RS-010 through RS-012 are new in cycle 2.
+
 ---
 
 ## RS-001 — SGP mypy permissive-to-strict progression
 
-- **Evidence reference:** EV-001
+- **Evidence reference:** EV-001, EV-007
 - **Affected workflow or skill:** SGP, generic validation discipline
 - **Severity:** blocker
 - **Given** a project is about to flip a validation gate (mypy, lint, coverage, mutation budget) from permissive to strict
@@ -24,15 +26,15 @@ Owners: `MiniMax | deterministic_tool | human`
 
 ## RS-002 — SGP mutation-testing survival budget
 
-- **Evidence reference:** EV-001
+- **Evidence reference:** EV-001, EV-007
 - **Affected workflow or skill:** SGP, any decision-making module
 - **Severity:** blocker
 - **Given** a module contains routing, scoring, classification, or recommendation logic
 - **When** mutation testing is run against that module
-- **Then** the survivor rate must be at or below the configured budget (default: ≤50% survivors)
-- **Expected behavior:** CI fails when survivor rate exceeds budget.
-- **Pass / fail criteria:** Pass if survivor rate ≤ budget. Fail otherwise.
-- **Validation method:** mutation-testing CI job
+- **Then** the survivor rate must be at or below the configured budget (default: ≤50% survivors); **additionally the project's gate-stack (unit + branch coverage + mutation + mypy strict + ruff + ≥1 property test for invariants) must survive** — see cycle-2 reframing in L-002 and L-011.
+- **Expected behavior:** CI fails when survivor rate exceeds budget; failing on any single gate without the others also fails the gate-stack.
+- **Pass / fail criteria:** Pass if the gate-stack as a whole passes. Fail if any single gate is missing from the stack.
+- **Validation method:** mutation-testing CI job + gate-stack presence check
 - **Owner:** deterministic_tool
 
 ---
@@ -138,4 +140,49 @@ Owners: `MiniMax | deterministic_tool | human`
 - **Expected behavior:** After a configured interval without any other activity, the side-effect is present and equal to the most recent tick.
 - **Pass / fail criteria:** Pass if a deterministic side-effect can be observed for a tick. Fail if the tick is silent (no observable trace).
 - **Validation method:** BDD scenario with time-based assertion
+- **Owner:** deterministic_tool
+
+---
+
+## RS-010 (NEW) — Makefile local-validation prereq degradation
+
+- **Evidence reference:** EV-008, EV-009
+- **Affected workflow or skill:** dreaming workflow + any workflow following PI-008 pattern
+- **Severity:** warning
+- **Given** the Makefile target (`make dreaming-validate` or equivalent) needs `gh` CLI to fetch the merge-base via GitHub API
+- **When** a developer runs the target on a machine without `gh`
+- **Then** the target must degrade to `git merge-base HEAD origin/main` (or skip gracefully), not fail
+- **Expected behavior:** Target exits 0 with a clear message that the API path was skipped and the local-merge-base path was used. If neither is available, the target prompts the developer to install `gh` or set `DREAMING_MERGE_BASE` explicitly.
+- **Pass / fail criteria:** Pass if `gh` missing → degrades to `git merge-base` path → exit 0; if both unavailable → exit 0 with "skip" message. Fail if missing `gh` causes hard exit.
+- **Validation method:** Run `make dreaming-validate` with `PATH` stripped of `gh` (or with `gh` aliased to `false`).
+- **Owner:** deterministic_tool
+
+---
+
+## RS-011 (NEW) — branch-name regex accepts cycle suffix
+
+- **Evidence reference:** EV-008, L-010
+- **Affected workflow or skill:** dreaming workflow
+- **Severity:** informational
+- **Given** a dreaming branch is named `dreaming/nightly-execution-quality-YYYY-MM-DD`
+- **When** an optional `-N` cycle suffix is appended (e.g., `-cycle-2`, `-r2`)
+- **Then** the test must accept the suffix and not fail
+- **Expected behavior:** Test passes for `dreaming/nightly-execution-quality-2026-06-29`, `dreaming/nightly-execution-quality-2026-06-29-cycle-2`, `dreaming/nightly-execution-quality-2026-06-29-r2`, etc.
+- **Pass / fail criteria:** Pass for all three forms above. Fail for branch names not matching the prefix.
+- **Validation method:** parametrized pytest case (currently `test_current_branch_uses_dreaming_prefix`).
+- **Owner:** deterministic_tool
+
+---
+
+## RS-012 (NEW) — commit-prefix test skips on empty range
+
+- **Evidence reference:** EV-008, L-013
+- **Affected workflow or skill:** dreaming workflow
+- **Severity:** informational
+- **Given** a branch has no commits ahead of its merge-base (e.g., freshly-checked-out or pre-first-commit)
+- **When** `test_commits_use_chore_dreaming_prefix` is run
+- **Then** the test must skip, not fail
+- **Expected behavior:** `pytest.skip("No commits yet in range ...")` is emitted. Exit code 0. Test is reported as `s` (skipped), not `F` (failed).
+- **Pass / fail criteria:** Pass on freshly-checked-out branch with no commits. Fail only when there ARE commits and at least one does not start with `chore(dreaming):`.
+- **Validation method:** checkout a freshly-created branch without committing; run `make dreaming-validate`.
 - **Owner:** deterministic_tool
