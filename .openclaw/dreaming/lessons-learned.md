@@ -1,6 +1,6 @@
 # Lessons Learned
 
-Cycle: 2026-06-29 cycle-4
+Cycle: 2026-06-29 cycle-5
 
 Compact, evidence-backed. No vague lessons. Each lesson has a single evidence reference.
 
@@ -160,3 +160,14 @@ L-001 through L-008 are carried from cycle 1; L-009 through L-013 are new in cyc
 - **Future execution guidance:** When a state condition is "the kind of thing you wish you'd checked before pushing," make it visible at session-start (or PR-start), not at validation-time. PI-012 is the first instance of this pattern in dreaming.
 - **Affected workflow / skill:** dreaming workflow, generic PR-readiness discipline
 - **Regression scenario link:** RS-015
+
+---
+
+## L-016 — A long-running PI's scope is often two things; surface the split (NEW, cycle 5)
+
+- **Evidence:** EV-014, EV-015
+- **Observed behavior:** PI-006 ("Add structured OpenClaw run log") was first written in cycle 1 and carried forward through cycles 2, 3, 4 as the largest unfilled gap. Cycle 5 surfaced that PI-006 implicitly bundles two things: (a) OpenClaw-runtime code that emits structured logs, (b) downstream tools that parse those logs. (a) was always outside dreaming's scope (lives in OpenClaw core). (b) was inside dreaming's scope and was always the missing piece.
+- **Interpretation:** When a PI's title says "add X" but the work clearly belongs in two packages, list both pieces explicitly in the PI body. Future apply-pass readers can choose one piece at a time, with the rationale spelled out.
+- **Future execution guidance:** For any PI carried forward 3+ cycles, audit it for hidden scope splits. Splitting a single PI into two named PIs is cheaper than continuing to carry.
+- **Affected workflow / skill:** dream-workflow proposed-improvements discipline
+- **Regression scenario link:** RS-016

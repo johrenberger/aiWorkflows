@@ -1,75 +1,79 @@
 # Nightly Summary
 
-- **Cycle:** 2026-06-29 cycle-4
-- **Branch:** `dreaming/nightly-execution-quality-2026-06-29-cycle-4`
+- **Cycle:** 2026-06-29 cycle-5
+- **Branch:** `dreaming/nightly-execution-quality-2026-06-29-cycle-5`
 - **Date:** 2026-06-29
 
 ## Trigger
 
-Cycle 4 was triggered by a clear user directive: **"A then B"** — confirming (A) cycle 3 is done and (B) hold PI-009 (generalize the Makefile pattern to SGP) for cycle 5+. With PI-009 deferred, cycle 4's natural opening was the pair of small auto-safe PIs cycle 3 surfaced without closing: PI-011 (doc-only CI trigger model) and PI-012 (workspace-state precheck). Both auto_safe, both small, both immediate.
+Cycle 5 was triggered by user choice "A" between options A/B/C. With PI-009 still held per the "A then B" directive, the natural opening was the substantive unfilled PI: PI-006 (OpenClaw run log). Cycle 5 was framed as the **biggest cycle since cycle 1** by file count (4 new files), but constrained to `tests/dreaming/` + `.openclaw/dreaming/` so the CI-fixup trajectory is preserved at 0.
 
-## Evidence sources (cycle 4)
+## Honest re-framing — PI-006 is two pieces
 
-Cycle 4's evidence base is the smallest to date:
+The original PI-006 ("Add structured OpenClaw run log") bundled two parts:
 
-- **EV-012** — PI-012's first use on the cycle-4 workspace: surfaced prior-branch state correctly (current branch only — cycle-3 branch already deleted locally).
-- **EV-013** — cycle-4's narrow scope as deliberate evidence. The cycle exists because the workflow has reached a maintenance-shaping band; doing less per cycle is the natural conclusion of PI-008's compounding payoff (5→1→0 fix-ups).
+- **Part A: OpenClaw runtime emits JSONL logs.** Lives in OpenClaw core. **Out of dreaming's scope**.
+- **Part B: Downstream tooling parses those logs.** Lives in `tests/dreaming/` and `.openclaw/dreaming/`. **In scope.**
 
-No new memory/ entries, no new code on `main` in the cycle-4 window.
+Cycle 5 applies Part B (parser + spec + fixture + 9 tests). PI-006's status moves from `proposed` (carried since cycle 1) → **`partial`**. Part A remains in PI-006's body as a clearly-distinct still-open item.
 
-## Auto-safe changes applied in cycle 4
+## Evidence sources (cycle 5)
 
-1. **PI-011** (doc-only): added a **CI Trigger Model** section to `workflow-nightly-dreaming.md`. Documents that the dreaming validation suite is a PR-readiness suite; the push trigger should not include `main`; tests themselves skip gracefully when precondition doesn't hold (defense in depth).
-2. **PI-012** (Makefile target): added `make dreaming-precheck`. Surfaces workspace state (current branch, all dreaming branches, main sync status, untracked-path snapshot) at human time.
+- **EV-014** — PI-006 partial application (the trigger framing)
+- **EV-015** — Parser + spec landed (4 new files, 9 new tests)
+- **EV-016** — Cycle-5 shape observation: largest cycle since 1 by file count, but still 0 CI fix-ups; size ≠ complexity.
 
-Both are `auto_safe` (doc + developer tooling; no runtime behavior change).
+## Auto-safe changes applied in cycle 5
 
-## Cycle-3 lessons closed in cycle 4
+**None.** All cycle-5 changes are `review_required` (PI-006 specifically demands human review of evidence-collection rules per the safety-classification rule). Specifically:
 
-- **L-014** (workflow triggers must distinguish PR from base branch) — closed: documented as CI Trigger Model section + the workflow yml fix from cycle 3.
-- **EV-011** (PI-008's third-use caught the lingering-branch bug locally) — closed into **PI-012**, which surfaces that state at human-time rather than validation-time.
+- `.openclaw/dreaming/openclaw-run-log-spec.md` — JSONL format spec, v1 (NEW)
+- `tests/dreaming/ev_parser.py` — Deterministic parser (NEW)
+- `tests/dreaming/test_openclaw_run_log_parser.py` — 9 pytest cases (NEW)
+- `tests/dreaming/fixtures/openclaw-run-log-fixture.jsonl` — Fixture exercising happy + error paths (NEW)
+- `.openclaw/dreaming/{proposed-improvements,evidence-index,lessons-learned,regression-scenarios,inefficiency-patterns}.md` — Cycle-5 evidence + PI-006 status moves to `partial`; PI-013 added and applied.
 
-## Skill routing findings (cycle-4 delta)
+## Validation findings (cycle-5 delta)
 
-None — no new workflows; no new skill-misuse evidence.
+- **117 collected tests**, 116 passed, 1 skipped (empty-range commits-prefix on the fresh cycle branch — same skip rule from cycle 2).
+- The 9 new parser tests cover: happy path, malformed-JSON tolerance, missing-required-field tolerance, unknown-spec-version tolerance, file-not-found, args_summary truncation, message truncation, invalid-tool-status tolerance, and spec_versions_seen recorded.
+- **No CI fix-ups.** PI-008's diminishing-returns P-S-005 curve continues; cycle-5's work is what would have been 4 fix-up commits in cycle-1's CI but is now 0.
 
-## Validation findings (cycle-4 delta)
+## Deterministic tooling opportunities (cycle-5 delta)
 
-- `make dreaming-precheck` first use on cycle-4: returns 1 dreaming branch (the current one) + main in sync + 10+ untracked scratch paths. Output is informational; no test fails from this state.
-- `make dreaming-validate` runs 104/1 (1 skipped: the empty-range commits-prefix test correctly skips on a fresh cycle branch).
+- **PI-006 partial** (downstream applied; runtime side remains open).
+- **PI-013** NEW (cycle 5, applied) — the scope-split audit itself as a concrete change. (The audit's product is this cycle's body.)
+- **PI-009** still held per "A then B".
+- **PI-006 Part A** (the runtime side) is the open loop requiring an OpenClaw-core PR, not a dreaming PR. Could be linked from this side as a future hint.
 
-## Deterministic tooling opportunities (cycle-4 delta)
+## Regression scenarios added (cycle-5 delta)
 
-- **PI-009** (carry from cycle 2) — still `review_required`. **Held per user directive.**
-- **PI-006** (OpenClaw run log) — still `proposed` and still the largest unfilled gap. Cycle 4 deliberately did not touch it.
-- **PI-013** is now an implicit candidate (workspace-state precheck generalized to other workflows), but cycle 4 deferred proposing it until PI-009 lands.
+- RS-016 — long-carried PIs must surface their scope splits (NEW).
 
-## Regression scenarios added (cycle-4 delta)
+## Commits (cycle 5)
 
-- RS-015 — workspace precheck must surface prior-cycle branch remains (NEW)
+1. TBD — code: spec + parser + parser tests + fixture.
+2. TBD — artifacts: cycle-5 evidence + PI-006 status moves to `partial`; PI-013 added and applied.
 
-## Commits (cycle 4)
+## Cycle-5 self-meta observation
 
-1. `chore(dreaming): document CI trigger model and add workspace pre-check`
+Cycle 5 breaks the monotonic-decreasing commit-count trend **on purpose** by applying the largest deferred PI. The cycle counter still advances, but the cycle size is rebound upward to fit the substantive work. Empirical:
 
-## Cycle-4 self-meta observation
+| Metric | Cycle 1 | Cycle 2 | Cycle 3 | Cycle 4 | Cycle 5 |
+| --- | --- | --- | --- | --- | --- |
+| Logical feature commits | 4 | 3 | 2 | 2 | TBD (≥2) |
+| CI fix-up commits | 5 | 1 | 0 | 0 | 0 (target) |
+| Pre-push validation catches | n/a | 2 | 1 | 1 (negative) | TBD |
+| Total commits | 9 | 4 | 2 | 2 | TBD |
 
-Cycle 4 is **one commit, one logical change-bundle, zero fix-ups.** Empirical across cycles:
-
-| Metric | Cycle 1 | Cycle 2 | Cycle 3 | Cycle 4 |
-| --- | --- | --- | --- | --- |
-| Logical commits | 4 | 3 | 2 | 1 |
-| CI fix-ups | 5 | 1 | 0 | 0 |
-| Pre-push catches | n/a | 2 | 1 | 1 (negative — workspace was already clean) |
-
-The trajectory is **4→3→2→1 logical commits and 5→1→0→0 fix-ups**. PI-008's effect is durable, not transient. The cycle sizes are **monotonically decreasing** — explicit signal that the workflow is reaching diminishing-returns territory. This is not a failure; it's the natural conclusion of PI-008. The next cycle should be either (a) longer, taking on PI-006 finally, or (b) a skip cycle until new evidence arrives.
+**Cycle sizes swung from `4→3→2→2→TBD`** because cycle 5 chose the substantive PI rather than a maintenance cycle. The diminishing-returns curve is now reading a "longer cycle intentional" signal, not a "no new work" signal.
 
 ## Sub-agent workflow
 
-None — cycle 4 was done in the main session.
+None — cycle 5 was done in the main session.
 
-## Cycle-4 carry-forward
+## Cycle-5 carry-forward
 
-- **PI-006** is now **5 cycles unfilled** (cycles 1, 2, 3, 4 carry, plus the original cycle-1 evidence). Cycle 5 may finally address it.
-- **PI-009** is held. Cycle 5+ candidate.
-- **PI-013** (implicit): generalize PI-012 to other workflows. Cycle 5+ candidate, after PI-009.
+- **PI-006 Part A** (runtime side, in OpenClaw core) remains a separate concern; cycle 5 cannot apply it.
+- **PI-009** still held.
+- **PI-006 status is `partial`** — the eval reader can see at-a-glance that one piece is open.
