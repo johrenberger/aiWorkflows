@@ -1,6 +1,6 @@
 # PR Change Log
 
-Cycle: 2026-06-29 cycle-4
+Cycle: 2026-06-29 cycle-5
 Branch: `dreaming/nightly-execution-quality-2026-06-29-cycle-2`
 Base: `main` (`63ac32b`, the PR #59 merge commit)
 
@@ -176,3 +176,62 @@ None.
 ## Cycle-4 self-meta observation
 
 One commit, zero fix-ups. Cycle-4 sizes align with `P-S-005`. The cycle counter is **1B→2,PI-008→3,CI-fix→4,PI-011+PI-012**. The trend is converging; a future cycle should either take on PI-006 directly or skip until evidence forces the issue.
+
+---
+
+## Cycle 5 entries
+
+This cycle applies the long-deferred PI-006 partially: the downstream side (parser + spec) is in scope; the runtime side (OpenClaw core) is explicitly out.
+
+---
+
+## Commit: `chore(dreaming): add OpenClaw run log spec and deterministic parser (PI-006 partial)`
+
+- **Change IDs:** C5-001 through C5-004
+- **Files added:**
+  - `.openclaw/dreaming/openclaw-run-log-spec.md` — JSONL format spec, v1 (C5-001)
+  - `tests/dreaming/ev_parser.py` — Deterministic parser (C5-002)
+  - `tests/dreaming/test_openclaw_run_log_parser.py` — 9 pytest cases (C5-003)
+  - `tests/dreaming/fixtures/openclaw-run-log-fixture.jsonl` — Fixture exercising happy + 3 error paths (C5-004)
+- **Change type:** review_required (PI-006 specifically demands human review of evidence-collection rules)
+- **Evidence references:** EV-014, EV-015, L-016, P-IP-004, RS-016
+- **Reason for change:** PI-006 was the single largest unfilled gap from cycle 1 onward. The cycle-5 audit (per RS-016) surfaced that PI-006 bundles two units; this commit applies the downstream one.
+- **Expected impact:** When OpenClaw core emits JSONL logs (separate package, separate PR there), dreaming's Stage 1 can read from them instead of `git log`-and-`grep`. The format spec is a stable contract; future runtime work doesn't require spec changes.
+- **Validation performed:** `make dreaming-validate` returns 116 passed, 1 skipped. The 9 parser tests cover happy path + 4 error/edge cases + 2 truncation tests.
+- **Rollback notes:** `git revert` if the spec's truncation rules or versioning policy turn out to be wrong. The parser itself is well-tested and isolated.
+- **Status:** applied on branch, awaiting PR
+
+---
+
+## Commit: `chore(dreaming): populate cycle-5 nightly artifacts; mark PI-006 partial`
+
+- **Change IDs:** C5-005 through C5-007
+- **Files changed:**
+  - `.openclaw/dreaming/evidence-index.md` — EV-014, EV-015, EV-016 (cycle 5 evidence)
+  - `.openclaw/dreaming/lessons-learned.md` — L-016
+  - `.openclaw/dreaming/regression-scenarios.md` — RS-016
+  - `.openclaw/dreaming/inefficiency-patterns.md` — P-IP-004
+  - `.openclaw/dreaming/proposed-improvements.md` — PI-013 added and APPLIED; PI-006 status changed from `proposed` to **`partial`** in both summary tables; cycle markers bumped cycle-4→cycle-5 across all artifacts
+  - `.openclaw/dreaming/nightly-summary.md` (replaced)
+  - `.openclaw/dreaming/pr-change-log.md` (replaced — this file)
+- **Change type:** review_required (artifact population + scope-status change of PI-006)
+- **Evidence references:** EV-014, EV-015, EV-016, L-016, P-IP-004, RS-016
+- **Reason for change:** Per cycle-1 spec, every cycle's evidence and PI status is reflected in the artifacts. The PI-006 status change is the most consequential artifact edit — it signals to future readers that part of PI-006 is done and part is not.
+- **Expected impact:** Cycle 6 reads `partial` and understands the scope split without redoing the audit.
+- **Validation performed:** `make dreaming-validate` returns 116 passed, 1 skipped locally.
+- **Rollback notes:** `git revert` the commit.
+- **Status:** applied on branch, awaiting PR
+
+---
+
+## Cycle-5 review-required changes
+
+- PI-006 itself → **partial** (cycle 5; downstream applied, runtime side still unfilled in OpenClaw core)
+
+## Cycle-5 blocked changes
+
+None.
+
+## Cycle-5 self-meta observation
+
+Cycle 5 rebroke the monotonically-decreasing commit-count trend (`4→3→2→2→TBD`) by applying the largest deferred PI. The diminishing-returns P-S-005 curve now reads "longer cycle intentional" rather than "no new work".

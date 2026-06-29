@@ -1,6 +1,6 @@
 # Evidence Index
 
-Cycle: 2026-06-29 cycle-4
+Cycle: 2026-06-29 cycle-5
 Review window: 2026-06-29 → 2026-06-29 (cycle 4 anchored to cycle-3 close event)
 
 Cycle 4's evidence base is the smallest so far. Cycle 3 just landed (PI-008 caught cycle-3's lingering-branch bug locally; the workflow-yaml CI fix landed in main via PR #61). Cycle 4's only concrete evidence is the *absence* of new activity on main: there's nothing new to react to. The natural cycle-4 opening is therefore to retroactively close out the small-but-clear gaps that cycle 3 surfaced but did not close: the CI trigger model was not documented; the workspace-state pre-check was not added.
@@ -213,3 +213,44 @@ Each entry is an evidence record. Every recommendation, lesson, pattern, scenari
 - **Summary:** Cycle 4 is a maintenance cycle by design (per "B" confirmation at cycle 4 entry). Two `auto_safe` PIs (PI-011, PI-012) and 0 review-required changes. This is the smallest cycle so far by line count (+69/-1 across 2 files), the lowest commit count (1), and the smallest evidence base (EV-012, EV-013). Cycle 4's existence as a one-commit cycle is itself evidence: the workflow is reaching diminishing-returns territory, and the natural next cycle is either (a) a longer cycle to take on PI-006 finally, or (b) a skip-cycle to wait for new evidence.
 - **Linked lessons:** L-015 (NEW) — "diminishing returns on small cycles is a signal; not a failure."
 - **Linked patterns:** P-S-005 (NEW) — "narrow-scope maintenance cycle" pattern.
+
+---
+
+## EV-014 — PI-006 partial application (cycle 5 trigger)
+
+- **Run identifier:** pi-006-partial-cycle-5
+- **Date:** 2026-06-29 (cycle 5)
+- **Source files reviewed:** `.openclaw/dreaming/proposed-improvements.md` (PI-006 history across cycles 1-4); user message "A" at 03:21:30 GMT+2 (per inbound metadata)
+- **Task type:** Major PI apply (the cycle series' biggest deferred PI)
+- **Outcome:** partial success — downstream side (parser + spec) applied; runtime side remains in OpenClaw core, out of dreaming's scope
+- **Summary:** Cycle 5 was triggered by user choice "A" between options A/B/C. The framing surfaced an ambiguity in PI-006's history: the original "Add structured OpenClaw run log" PI bundles two parts — code in OpenClaw core to emit logs, and downstream tooling to parse them. Dreaming's scope covers only the second. **PI-006 status moves from `proposed` (carried since cycle 1) to `partial`** in cycle 5.
+- **Linked lessons:** L-016 (NEW) — "a long-running PI's scope is often two things; surface the split before applying."
+- **Linked patterns:** P-IP-004 (NEW)
+- **Linked regression scenarios:** RS-016 (NEW)
+- **Linked proposed improvements:** PI-006 → partial; PI-013 (NEW) applies the downstream side
+
+---
+
+## EV-015 — OpenClaw run log parser + spec landed (cycle 5)
+
+- **Run identifier:** ev-parser-cycle-5
+- **Date:** 2026-06-29 (cycle 5)
+- **Source files reviewed:** `.openclaw/dreaming/openclaw-run-log-spec.md` (NEW); `tests/dreaming/ev_parser.py` (NEW); `tests/dreaming/test_openclaw_run_log_parser.py` (NEW); `tests/dreaming/fixtures/openclaw-run-log-fixture.jsonl` (NEW)
+- **Task type:** Self-application of the dream-workflow principle (PI-006 partial)
+- **Outcome:** success on first validation run — 116 tests pass, fixture exercises happy + error paths, parser_errors contract verified
+- **Summary:** The parser is a strict-required schema, extensible optional-fields contract, with explicit `parser_errors` handling for malformed lines. The fixture covers happy path (3 sessions, 5 tool calls, 1 error, 1 retry), one malformed JSON line, one unknown spec_version, and oversize-field truncation.
+- **Linked lessons:** L-016 (NEW)
+- **Linked patterns:** P-IP-004 (NEW)
+- **Linked regression scenarios:** RS-016 (NEW)
+
+---
+
+## EV-016 — Spec size relationship to cycle size (cycle 5)
+
+- **Run identifier:** cycle-5-shape-evidence
+- **Date:** 2026-06-29 (cycle 5)
+- **Source files reviewed:** PR diff cycle-5 vs prior cycles; user message "Seed cycle 5" at 03:20:39; "A" at 03:21:30
+- **Task type:** Cycle-shape observation
+- **Outcome:** documented; no functional change
+- **Summary:** Cycle 5 is the **biggest cycle since cycle 1 by file count** (4 new files: spec, parser, parser tests, fixture), but **does not break the diminishing-returns P-S-005 pattern** because the new files are additive and constrained to `tests/dreaming/` + `.openclaw/dreaming/`. The CI fix-up count is still 0; this is the first cycle since 1 to add genuinely new surface area (4 files) without a fix-up.
+- **Linked lessons:** L-016 — "size != complexity; a 4-file cycle can be self-contained."

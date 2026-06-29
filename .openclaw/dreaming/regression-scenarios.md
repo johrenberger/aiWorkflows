@@ -231,3 +231,18 @@ RS-001 through RS-009 are carried from cycle 1. RS-010 through RS-012 are new in
 - **Pass / fail criteria:** Pass if `make dreaming-precheck` reports the lingering branch by name. Fail if it only reports a count.
 - **Validation method:** `make dreaming-precheck` run on a workspace with two dreaming branches.
 - **Owner:** deterministic_tool
+
+---
+
+## RS-016 — Long-carried PIs must surface their scope splits (NEW)
+
+- **Evidence reference:** EV-014, L-016
+- **Affected workflow or skill:** `.openclaw/dreaming/proposed-improvements.md`
+- **Severity:** informational
+- **Given** a PI is carried forward through 3+ cycles without applying
+- **When** it's reviewed in any later cycle
+- **Then** the PI body must either (a) list all its constituent scope pieces as separate sub-items, or (b) explicitly note it is unified (single owner, single package)
+- **Expected behavior:** PIs in `proposed-improvements.md` either enumerate their work packages or carry a "single-package" note.
+- **Pass / fail criteria:** Pass if the carried PI either enumerates packages or says "single package". Fail if it lumps multiple work units behind one PI title.
+- **Validation method:** Manual review of `proposed-improvements.md`; cycle-5 audit produced the PI-006 split.
+- **Owner:** human

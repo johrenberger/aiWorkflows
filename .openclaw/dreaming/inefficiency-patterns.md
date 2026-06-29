@@ -36,3 +36,12 @@ P-IP-001 through P-IP-002 are carried from cycle 1; P-IP-003 is new in cycle 2.
 - **Recommended improvement:** Add a Makefile target mirroring the CI workflow's tests (PI-008 applied; PI-009 NEW extends the pattern to other workflows).
 - **Deterministic tooling opportunity:** not directly applicable; the improvement is a developer-tool one.
 - **Regression scenario link:** RS-010 (Makefile prereq degradation), and indirectly RS-011, RS-012 (the Makefile's first use caught both).
+
+## P-IP-004 — Bundled-scope PIs as deferral vector (NEW, cycle 5)
+
+- **Pattern ID:** P-IP-004
+- **Cycle:** 2026-06-29 cycle-5
+- **Description:** When a long-deferred PI bundles multiple work units behind a single title, the deferral hides which units are actually applicable. Each subsequent cycle reads the PI title and silently walks past it, treating the work as "not yet actionable" when in fact one of the bundled units is perfectly actionable.
+- **When to apply:** Any time you see a PI carried forward with a single sentence for its scope. The fix is the audit described in RS-016 / L-016.
+- **Counter-example:** Cycle 5 surfaced that PI-006 (long-carried since cycle 1) had two units, one of which (the parser) was apply-able from day 1. The downstream piece is now applied; the upstream piece is genuinely out-of-scope and stays open with that clarity.
+- **Mitigation:** Audit long-carried PIs at the end of each cycle.
