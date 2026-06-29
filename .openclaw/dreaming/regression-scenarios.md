@@ -186,3 +186,33 @@ RS-001 through RS-009 are carried from cycle 1. RS-010 through RS-012 are new in
 - **Pass / fail criteria:** Pass on freshly-checked-out branch with no commits. Fail only when there ARE commits and at least one does not start with `chore(dreaming):`.
 - **Validation method:** checkout a freshly-created branch without committing; run `make dreaming-validate`.
 - **Owner:** deterministic_tool
+
+---
+
+## RS-013 — Branch-name test must not execute on `main` pushes (NEW)
+
+- **Evidence reference:** EV-010
+- **Affected workflow or skill:** `nightly-dreaming-validation.yml`, `tests/dreaming/test_pr_readiness.py::test_current_branch_uses_dreaming_prefix`
+- **Severity:** blocker
+- **Given** the nightly-dreaming-validation workflow runs the dreaming test suite
+- **When** it is triggered by a push to `main`
+- **Then** `test_current_branch_uses_dreaming_prefix` must either skip or be filtered by a workflow-level guard; it must not fail with "Current branch 'main' does not start with 'dreaming/nightly-execution-quality-'"
+- **Expected behavior:** On a `push` event where the ref is `main`, the test for branch naming either (a) does not run because the workflow `on: push: branches:` excludes main, or (b) skips if it does run, with a clear "skipped on main push" message.
+- **Pass / fail criteria:** Pass if the suite reports 0 failures on a push to `main`. Fail otherwise.
+- **Validation method:** `gh run list --workflow=nightly-dreaming-validation --limit=10 --json conclusion,headBranch` shows zero `failure` rows on `headBranch=main`.
+- **Owner:** deterministic_tool
+
+---
+
+## RS-014 — Branch-uniqueness test must exclude the current branch from the count (NEW)
+
+- **Evidence reference:** EV-011
+- **Affected workflow or skill:** `tests/dreaming/test_pr_readiness.py::test_only_one_dreaming_branch_exists`
+- **Severity:** warning
+- **Given** a developer has more than one dreaming branch on their local checkout (e.g., cycle-2 not yet deleted; cycle-3 freshly created)
+- **When** the test enumerates dreaming branches
+- **Then** the current branch must be excluded from the count
+- **Expected behavior:** The test counts "other dreaming branches" — never the branch we are on. A pre-existing cycle's branch is fine; only multiple *other* branches fails the invariant.
+- **Pass / fail criteria:** Pass if the test passes with cycle-2 and cycle-3 both on disk, on a fresh cycle-3 checkout. Fail otherwise.
+- **Validation method:** `git checkout dreaming/nightly-execution-quality-2026-06-29-cycle-3 && make dreaming-validate` returns 105 passed, 0 failed.
+- **Owner:** deterministic_tool

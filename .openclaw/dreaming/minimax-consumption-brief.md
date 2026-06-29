@@ -1,6 +1,6 @@
 # MiniMax Consumption Brief
 
-Cycle: 2026-06-29 cycle-2
+Cycle: 2026-06-29 cycle-3
 
 This file is **not** loaded by default. It is referenced by name from `DREAMING.md`. MiniMax should read this file only when explicitly told it is relevant to the current request.
 
