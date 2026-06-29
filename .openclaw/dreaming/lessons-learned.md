@@ -1,6 +1,6 @@
 # Lessons Learned
 
-Cycle: 2026-06-29 cycle-3
+Cycle: 2026-06-29 cycle-4
 
 Compact, evidence-backed. No vague lessons. Each lesson has a single evidence reference.
 
@@ -149,3 +149,14 @@ L-001 through L-008 are carried from cycle 1; L-009 through L-013 are new in cyc
 - **Future execution guidance:** When writing a CI workflow that contains PR-readiness assertions (branch naming, commit-prefix, scan-vs-PR-base), restrict the `push:` trigger to the branches that own the PRs; leave `pull_request:` to cover main-becoming-PR-base. Independently, the tests themselves should skip gracefully when the precondition does not hold, so that ad-hoc triggers do not become firefights.
 - **Affected workflow / skill:** dreaming workflow; extensible (PI-009 — generalization to other workflows)
 - **Regression scenario link:** RS-013, RS-014
+
+---
+
+## L-015 — Workspace-state assertions should surface at human time (NEW, cycle 4)
+
+- **Evidence:** EV-012, EV-013
+- **Observed behavior:** Cycle 3's `test_only_one_dreaming_branch_exists` issue (a lingering cycle-2 branch on disk) was caught only when `make dreaming-validate` ran. The same fact was true at cycle 3's start: the cycle-2 branch was already on disk. The fact that it existed was *not* part of cycle 3's evidence; only its consequence (a failing test) entered the evidence stream.
+- **Interpretation:** Validation-time assertions and human-time assertions differ in cost. A test that fires only at validation time exposes a state problem at the wrong moment; a precheck surfaces the same fact earlier, when it can be addressed preventively.
+- **Future execution guidance:** When a state condition is "the kind of thing you wish you'd checked before pushing," make it visible at session-start (or PR-start), not at validation-time. PI-012 is the first instance of this pattern in dreaming.
+- **Affected workflow / skill:** dreaming workflow, generic PR-readiness discipline
+- **Regression scenario link:** RS-015

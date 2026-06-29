@@ -1,75 +1,75 @@
 # Nightly Summary
 
-- **Cycle:** 2026-06-29 cycle-3
-- **Branch:** `dreaming/nightly-execution-quality-2026-06-29-cycle-3`
+- **Cycle:** 2026-06-29 cycle-4
+- **Branch:** `dreaming/nightly-execution-quality-2026-06-29-cycle-4`
 - **Date:** 2026-06-29
 
 ## Trigger
 
-Cycle 3 was not run on a timer — it was triggered by a concrete event: **CI failed on `main` after PR #60 merged**. The user reported this ("Execute cycle 3 after fixing build failure"). The fix had two parts:
+Cycle 4 was triggered by a clear user directive: **"A then B"** — confirming (A) cycle 3 is done and (B) hold PI-009 (generalize the Makefile pattern to SGP) for cycle 5+. With PI-009 deferred, cycle 4's natural opening was the pair of small auto-safe PIs cycle 3 surfaced without closing: PI-011 (doc-only CI trigger model) and PI-012 (workspace-state precheck). Both auto_safe, both small, both immediate.
 
-1. **Workflow:** remove `main` from `nightly-dreaming-validation.yml`'s `on: push:` block. The PR-readiness tests are nonsensical on `main`.
-2. **Tests (defense in depth):** skip-on-HEAD-equals-merge-base + exclude-current-branch-from-count in `test_only_one_dreaming_branch_exists`. The workflow fix is the primary; the test fixes are belt-and-suspenders.
+## Evidence sources (cycle 4)
 
-## Evidence sources (cycle 3)
+Cycle 4's evidence base is the smallest to date:
 
-The cycle-3 evidence base is small but specific:
+- **EV-012** — PI-012's first use on the cycle-4 workspace: surfaced prior-branch state correctly (current branch only — cycle-3 branch already deleted locally).
+- **EV-013** — cycle-4's narrow scope as deliberate evidence. The cycle exists because the workflow has reached a maintenance-shaping band; doing less per cycle is the natural conclusion of PI-008's compounding payoff (5→1→0 fix-ups).
 
-- **EV-010** — post-merge `main` CI failure (run `28341536379`)
-- **EV-011** — PI-008's third use caught the lingering-cycle-2-branch bug locally before any push
+No new memory/ entries, no new code on `main` in the cycle-4 window.
 
-No new memory/ entries, no new code on `main` in the cycle-3 window. Cycle 3 is **maintenance** in the same way cycle 2 was tied to PI-008 specifically.
+## Auto-safe changes applied in cycle 4
 
-## Auto-safe changes applied in cycle 3
+1. **PI-011** (doc-only): added a **CI Trigger Model** section to `workflow-nightly-dreaming.md`. Documents that the dreaming validation suite is a PR-readiness suite; the push trigger should not include `main`; tests themselves skip gracefully when precondition doesn't hold (defense in depth).
+2. **PI-012** (Makefile target): added `make dreaming-precheck`. Surfaces workspace state (current branch, all dreaming branches, main sync status, untracked-path snapshot) at human time.
 
-- `.github/workflows/nightly-dreaming-validation.yml`: removed `main` from `push:` branches
-- `tests/dreaming/test_pr_readiness.py`:
-  - `test_commits_use_chore_dreaming_prefix`: skip when HEAD equals merge-base
-  - `test_only_one_dreaming_branch_exists`: exclude current branch from the count
+Both are `auto_safe` (doc + developer tooling; no runtime behavior change).
 
-All three are `auto_safe` (CI/test config; documented in `pr-change-log.md`).
+## Cycle-3 lessons closed in cycle 4
 
-## Skill routing findings (cycle-3 delta)
+- **L-014** (workflow triggers must distinguish PR from base branch) — closed: documented as CI Trigger Model section + the workflow yml fix from cycle 3.
+- **EV-011** (PI-008's third-use caught the lingering-branch bug locally) — closed into **PI-012**, which surfaces that state at human-time rather than validation-time.
 
-All cycle-1 and cycle-2 skill findings stand. No new workflows were built in the cycle-3 window; no new skill misuse evidence is possible.
+## Skill routing findings (cycle-4 delta)
 
-## Validation findings (cycle-3 delta)
+None — no new workflows; no new skill-misuse evidence.
 
-- **CI-env mismatch class (P-F-005) reinforced.** Cycle 1 had 5 fix-up commits in this class; cycle 2 had 1 (merge-commit prefix quirk); cycle 3 had 0 fix-ups after applying PI-008 + the workflow yml fix.
-- **Local CI compounding-returns (P-S-004, L-014).** PI-008 caught another real issue before push: `test_only_one_dreaming_branch_exists` was over-strict.
+## Validation findings (cycle-4 delta)
 
-## Deterministic tooling opportunities (cycle-3 delta)
+- `make dreaming-precheck` first use on cycle-4: returns 1 dreaming branch (the current one) + main in sync + 10+ untracked scratch paths. Output is informational; no test fails from this state.
+- `make dreaming-validate` runs 104/1 (1 skipped: the empty-range commits-prefix test correctly skips on a fresh cycle branch).
 
-- **PI-009 (carry forward):** generalize the Makefile pattern to SGP. Cycle 3 still did not apply this; the next cycle's "easy win" candidate.
-- **PI-011 (NEW):** document the CI trigger model in `workflow-nightly-dreaming.md`. Doc-only; `auto_safe`.
+## Deterministic tooling opportunities (cycle-4 delta)
 
-## Regression scenarios added (cycle-3 delta)
+- **PI-009** (carry from cycle 2) — still `review_required`. **Held per user directive.**
+- **PI-006** (OpenClaw run log) — still `proposed` and still the largest unfilled gap. Cycle 4 deliberately did not touch it.
+- **PI-013** is now an implicit candidate (workspace-state precheck generalized to other workflows), but cycle 4 deferred proposing it until PI-009 lands.
 
-- RS-013 — branch-name test must not execute on `main` pushes (NEW)
-- RS-014 — branch-uniqueness test must exclude current branch from count (NEW)
+## Regression scenarios added (cycle-4 delta)
 
-## Commits (cycle 3, recorded so far)
+- RS-015 — workspace precheck must surface prior-cycle branch remains (NEW)
 
-1. TBD — workflow yml + test changes (currently in branch, uncommitted at draft time)
+## Commits (cycle 4)
 
-## Cycle-3 self-meta observation
+1. `chore(dreaming): document CI trigger model and add workspace pre-check`
 
-This is the third cycle on this branch. Empirical:
+## Cycle-4 self-meta observation
 
-| Metric | Cycle 1 | Cycle 2 | Cycle 3 |
-| --- | --- | --- | --- |
-| Logical feature commits | 4 | 3 | 1 (so far) |
-| CI fix-up commits | 5 | 1 | 0 |
-| Pre-push validation (PI-008) caught | n/a (no PI-008 yet) | 2 | 1 |
+Cycle 4 is **one commit, one logical change-bundle, zero fix-ups.** Empirical across cycles:
 
-The fix-up count has fallen **5 → 1 → 0**. This is the kind of empirical evidence L-011 predicted would matter — and PI-008 is the proximate cause. PI-008 has not yet been generalized (PI-009); this remains the open loop.
+| Metric | Cycle 1 | Cycle 2 | Cycle 3 | Cycle 4 |
+| --- | --- | --- | --- | --- |
+| Logical commits | 4 | 3 | 2 | 1 |
+| CI fix-ups | 5 | 1 | 0 | 0 |
+| Pre-push catches | n/a | 2 | 1 | 1 (negative — workspace was already clean) |
+
+The trajectory is **4→3→2→1 logical commits and 5→1→0→0 fix-ups**. PI-008's effect is durable, not transient. The cycle sizes are **monotonically decreasing** — explicit signal that the workflow is reaching diminishing-returns territory. This is not a failure; it's the natural conclusion of PI-008. The next cycle should be either (a) longer, taking on PI-006 finally, or (b) a skip cycle until new evidence arrives.
 
 ## Sub-agent workflow
 
-None — cycle 3 was done in the main session.
+None — cycle 4 was done in the main session.
 
-## Cycle-3 carry-forward
+## Cycle-4 carry-forward
 
-- PI-006 (OpenClaw run log) is **still** the largest unfilled gap. It has been on the list since cycle 1; cycle 3 made no attempt to close it.
-- PI-009 (generalize the Makefile pattern) is **still** review-required and unapplied.
-- PI-011 is doc-only and would close in 5 minutes when applied; cycle 4 candidate.
+- **PI-006** is now **5 cycles unfilled** (cycles 1, 2, 3, 4 carry, plus the original cycle-1 evidence). Cycle 5 may finally address it.
+- **PI-009** is held. Cycle 5+ candidate.
+- **PI-013** (implicit): generalize PI-012 to other workflows. Cycle 5+ candidate, after PI-009.

@@ -1,6 +1,6 @@
 # PR Change Log
 
-Cycle: 2026-06-29 cycle-3
+Cycle: 2026-06-29 cycle-4
 Branch: `dreaming/nightly-execution-quality-2026-06-29-cycle-2`
 Base: `main` (`63ac32b`, the PR #59 merge commit)
 
@@ -138,3 +138,41 @@ None.
 ## Cycle-3 self-meta observation
 
 TBD after PR push.
+
+---
+
+## Cycle 4 entries
+
+This cycle is a maintenance cycle (`P-S-005` NEW): no new evidence on `main` since cycle 3; the two auto_safe PIs cycle 3 surfaced without closing become cycle 4's body.
+
+---
+
+## Commit: `chore(dreaming): document CI trigger model and add workspace pre-check`
+
+- **Change IDs:** C4-001, C4-002
+- **Files changed:**
+  - `.openclaw/dreaming/workflow-nightly-dreaming.md` — added **CI Trigger Model** section (PI-011, C4-001)
+  - `Makefile` — added `dreaming-precheck` target (PI-012, C4-002)
+- **Change type:** auto_safe (doc + developer tooling; no runtime behavior change)
+- **Evidence references:** EV-012, EV-013, L-015, RS-015
+- **Reason for change:** Cycle 3 surfaced the rule that the dreaming validation suite is a PR-readiness suite; the workflow trigger must reflect that. Cycle 3 also surfaced the lagging-branch issue, which PI-012 closes by surfacing workspace state at human time. Both changes were carried in `proposed-improvements.md` as PIs across cycles 3 and 4.
+- **Expected impact:** Future cycles don't repeat the trigger-bundle bug (PI-011) and don't trip on lingering branches (PI-012). The PI-012 path also serves as the empirical first instance of the **L-015** pattern: surface workspace-state assertions at human time, not validation time.
+- **Validation performed:** `make dreaming-precheck` runs cleanly on the cycle-4 workspace and reports the expected single-branch state. `make dreaming-validate` returns 105 passed, 0 failed locally.
+- **Rollback notes:** `git revert` the commit if the doc section is misleading or the precheck target's surface area grows beyond what a one-second check should be.
+- **Status:** applied on branch, awaiting PR
+
+---
+
+## Cycle-4 review-required changes (proposed but NOT applied on this branch)
+
+- PI-009 (generalize PI-008 to SGP) — held per user directive ("A then B" reading).
+- PI-002, PI-004, PI-005, PI-006 (cycle-1 carry) — none implemented in cycle 4. PI-006 has been proposed for 4 consecutive cycles; cycle 5 candidate.
+- PI-010 (cycle-2 informational) — N/A.
+
+## Cycle-4 blocked changes
+
+None.
+
+## Cycle-4 self-meta observation
+
+One commit, zero fix-ups. Cycle-4 sizes align with `P-S-005`. The cycle counter is **1B→2,PI-008→3,CI-fix→4,PI-011+PI-012**. The trend is converging; a future cycle should either take on PI-006 directly or skip until evidence forces the issue.

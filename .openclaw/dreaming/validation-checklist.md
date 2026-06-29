@@ -1,6 +1,6 @@
 # Validation Checklist
 
-Cycle: 2026-06-29 cycle-3
+Cycle: 2026-06-29 cycle-4
 Branch: `dreaming/nightly-execution-quality-2026-06-29-cycle-2`
 
 Run before finalizing the PR-ready branch. Each item must pass.

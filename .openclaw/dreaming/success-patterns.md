@@ -34,3 +34,11 @@ P-S-001 through P-S-003 are carried from cycle 1; P-S-004 is new in cycle 2.
 - **Why it worked:** Each gate was added as a **separate commit on a separate PR**, so bisecting a CI failure points at the gate that introduced it. The gates are also ordered: low-cost first (branch coverage) → moderate-cost (mypy+ruff) → expensive (Hypothesis property tests in PR #49). The ordering matters — fast feedback gates come first.
 - **How to preserve:** When adding a CI gate to an existing project, ship it as a *new commit on a new PR* (not a rewrite of an existing step). Order new gates by feedback cost (cheap first). Document each gate's purpose in `docs/ci-gates.md`.
 - **Standardization path:** documentation update + reusable `.github/workflows/ci-gates.yml` template that other projects can copy.
+
+## P-S-005 — Narrow-scope maintenance cycle (NEW, cycle 4)
+
+- **Pattern ID:** P-S-005
+- **Cycle:** 2026-06-29 cycle-4
+- **Description:** A cycle whose evidence base consists only of the **absence** of new activity since the prior cycle, and whose scope is bounded to closing out small auto-safe PIs surfaced (but not closed) by that prior cycle. Cycle 4 is the canonical instance: no new commits on `main`, no new memory/, but two real auto-safe gaps (PI-011, PI-012) cycle 3 surfaced without closing.
+- **When to apply:** When (a) the prior cycle's evidence has been fully consumed; (b) at least one auto-safe PI from the prior cycle remains open; (c) there is no new review-required work that demands its own PR. A maintenance cycle is *not* a "skip cycle" — it still commits, ships, and increments the cycle counter; its distinguishing feature is its small diff.
+- **Counter-example:** Pushing PI-006 (OpenClaw run log) into a maintenance cycle would be wrong — PI-006 is large, review-required, and deserves its own PR. Pushing PI-009 (Makefile pattern to SGP) into cycle 4 would also be wrong because it's `review_required` per the cycle-2 spec.
