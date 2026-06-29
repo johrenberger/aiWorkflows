@@ -244,5 +244,5 @@ RS-001 through RS-009 are carried from cycle 1. RS-010 through RS-012 are new in
 - **Then** the PI body must either (a) list all its constituent scope pieces as separate sub-items, or (b) explicitly note it is unified (single owner, single package)
 - **Expected behavior:** PIs in `proposed-improvements.md` either enumerate their work packages or carry a "single-package" note.
 - **Pass / fail criteria:** Pass if the carried PI either enumerates packages or says "single package". Fail if it lumps multiple work units behind one PI title.
-- **Validation method:** Manual review of `proposed-improvements.md`; cycle-5 audit produced the PI-006 split.
+- **Validation method:** Manual review of `proposed-improvements.md`; cycle-5 audit produced the PI-006 split; cycle-6 elevated the runtime piece to **PI-006a** (own entry, own status, own handoff document).
 - **Owner:** human

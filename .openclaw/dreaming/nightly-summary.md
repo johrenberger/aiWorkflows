@@ -52,8 +52,8 @@ Cycle 5 applies Part B (parser + spec + fixture + 9 tests). PI-006's status move
 
 ## Commits (cycle 5)
 
-1. TBD — code: spec + parser + parser tests + fixture.
-2. TBD — artifacts: cycle-5 evidence + PI-006 status moves to `partial`; PI-013 added and applied.
+1. `da531f0` — code: spec + parser + parser tests + fixture.
+2. `271d64b` — artifacts: cycle-5 evidence + PI-006 status moves to `partial`; PI-013 added and applied.
 
 ## Cycle-5 self-meta observation
 
@@ -61,12 +61,12 @@ Cycle 5 breaks the monotonic-decreasing commit-count trend **on purpose** by app
 
 | Metric | Cycle 1 | Cycle 2 | Cycle 3 | Cycle 4 | Cycle 5 |
 | --- | --- | --- | --- | --- | --- |
-| Logical feature commits | 4 | 3 | 2 | 2 | TBD (≥2) |
-| CI fix-up commits | 5 | 1 | 0 | 0 | 0 (target) |
-| Pre-push validation catches | n/a | 2 | 1 | 1 (negative) | TBD |
-| Total commits | 9 | 4 | 2 | 2 | TBD |
+| Logical feature commits | 4 | 3 | 2 | 2 | 2 |
+| CI fix-up commits | 5 | 1 | 0 | 0 | 0 |
+| Pre-push validation catches | n/a | 2 | 1 | 1 (negative) | 0 |
+| Total commits | 9 | 4 | 2 | 2 | 2 |
 
-**Cycle sizes swung from `4→3→2→2→TBD`** because cycle 5 chose the substantive PI rather than a maintenance cycle. The diminishing-returns curve is now reading a "longer cycle intentional" signal, not a "no new work" signal.
+**Cycle sizes swung from `4→3→2→2→2`** because cycle 5 chose the substantive PI rather than a maintenance cycle. The diminishing-returns curve is now reading a "longer cycle intentional" signal, not a "no new work" signal.
 
 ## Sub-agent workflow
 
@@ -74,6 +74,6 @@ None — cycle 5 was done in the main session.
 
 ## Cycle-5 carry-forward
 
-- **PI-006 Part A** (runtime side, in OpenClaw core) remains a separate concern; cycle 5 cannot apply it.
+- **PI-006 Part A** (runtime side, in OpenClaw core) remains a separate concern; cycle 5 cannot apply it. Cycle 6 split this out as **PI-006a** (per L-016) and shipped a spec-grounded handoff at `.openclaw/dreaming/openclaw-run-log-emitter-handoff.md` (cycle 6).
 - **PI-009** still held.
 - **PI-006 status is `partial`** — the eval reader can see at-a-glance that one piece is open.

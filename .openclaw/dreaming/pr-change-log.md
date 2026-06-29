@@ -234,4 +234,4 @@ None.
 
 ## Cycle-5 self-meta observation
 
-Cycle 5 rebroke the monotonically-decreasing commit-count trend (`4→3→2→2→TBD`) by applying the largest deferred PI. The diminishing-returns P-S-005 curve now reads "longer cycle intentional" rather than "no new work".
+Cycle 5 rebroke the monotonically-decreasing commit-count trend (`4→3→2→2→2`) by applying the largest deferred PI. The diminishing-returns P-S-005 curve now reads "longer cycle intentional" rather than "no new work".
