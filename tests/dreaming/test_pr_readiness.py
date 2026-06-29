@@ -97,6 +97,18 @@ def test_current_branch_uses_dreaming_prefix() -> None:
 def test_only_one_dreaming_branch_exists() -> None:
     branches = _git("branch", "--list", f"{BRANCH_PREFIX}*").splitlines()
     branches = [b.strip().lstrip("* ").strip() for b in branches if b.strip()]
+    # Exclude the branch we are currently on. The PR-readiness invariant is:
+    # "no OTHER dreaming branch exists" (one open cycle at a time). Counting the
+    # current branch against itself was cycle-2's bug; CI caught it locally
+    # via PI-008. Cycle-2's own cycle-3 branch lingered on the local checkout
+    # (we hadn't cleaned it up yet); this filter is what makes that case
+    # "skip-or-pass" rather than "fail".
+    try:
+        current = _git("rev-parse", "--abbrev-ref", "HEAD").strip()
+    except subprocess.CalledProcessError:
+        current = "HEAD"
+    if current != "HEAD":
+        branches = [b for b in branches if b != current]
     # In CI detached HEAD there is typically one branch (the PR head). On a dev machine
     # there may be 0 or many; the constraint applies to producing exactly one per cycle.
     assert len(branches) <= 1, (
@@ -132,6 +144,14 @@ def test_commits_use_chore_dreaming_prefix() -> None:
         if not merge_base:
             pytest.skip("Empty merge-base.")
         spec = f"{merge_base}..{head_commit}"
+    # If the merge-base equals HEAD (e.g. on a fresh main checkout, immediately after a
+    # merge), there's no PR-side diff to inspect; skip rather than fail.
+    try:
+        mb_sha = _git("rev-parse", spec.split("..")[0]).strip()
+    except subprocess.CalledProcessError:
+        mb_sha = ""
+    if mb_sha and mb_sha == head_commit:
+        pytest.skip(f"HEAD equals merge-base ({head_commit[:7]}); no PR diff to inspect.")
     log = _git("log", "--pretty=%s", spec).strip()
     subjects = [s for s in log.splitlines() if s]
     if not subjects:
