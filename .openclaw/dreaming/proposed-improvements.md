@@ -1,6 +1,6 @@
 # Proposed Improvements
 
-Cycle: 2026-06-29 cycle-3
+Cycle: 2026-06-29 cycle-4
 
 PI-001 through PI-007 are carried from cycle 1 (some with updates); PI-008 is now **APPLIED**; PI-009 and PI-010 are NEW.
 
@@ -156,6 +156,7 @@ No blocked-class changes proposed in cycle 2.
 | PI-008 | auto_safe | APPLIED (cycle 2) |
 | PI-009 | review_required | proposed (cycle 2) |
 | PI-010 | informational | proposed (cycle 2) |
-| PI-011 | auto_safe | proposed (cycle 3, NEW) |
+| PI-011 | auto_safe | APPLIED (cycle 4) |
+| PI-012 | auto_safe | APPLIED (cycle 4, NEW) |
 
-No blocked-class changes proposed in cycle 3.
+No blocked-class changes proposed in cycle 3 or cycle 4.

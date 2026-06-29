@@ -216,3 +216,18 @@ RS-001 through RS-009 are carried from cycle 1. RS-010 through RS-012 are new in
 - **Pass / fail criteria:** Pass if the test passes with cycle-2 and cycle-3 both on disk, on a fresh cycle-3 checkout. Fail otherwise.
 - **Validation method:** `git checkout dreaming/nightly-execution-quality-2026-06-29-cycle-3 && make dreaming-validate` returns 105 passed, 0 failed.
 - **Owner:** deterministic_tool
+
+---
+
+## RS-015 — Workspace precheck must surface prior-cycle branch remains (NEW)
+
+- **Evidence reference:** EV-012
+- **Affected workflow or skill:** `Makefile::dreaming-precheck`
+- **Severity:** informational
+- **Given** a developer starts a new dreaming cycle while a prior cycle's branch remains on disk
+- **When** they run `make dreaming-precheck`
+- **Then** the output must list the prior branch by name (not just the total count)
+- **Expected behavior:** The precheck `Dreaming branches on disk:` section enumerates all matching branches; the dev sees the lingering branch and removes it before validation-time.
+- **Pass / fail criteria:** Pass if `make dreaming-precheck` reports the lingering branch by name. Fail if it only reports a count.
+- **Validation method:** `make dreaming-precheck` run on a workspace with two dreaming branches.
+- **Owner:** deterministic_tool

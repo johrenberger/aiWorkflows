@@ -1,9 +1,9 @@
 # Evidence Index
 
-Cycle: 2026-06-29 cycle-3
-Review window: 2026-06-29 → 2026-06-29 (cycle 3 anchored to cycle-2 close event)
+Cycle: 2026-06-29 cycle-4
+Review window: 2026-06-29 → 2026-06-29 (cycle 4 anchored to cycle-3 close event)
 
-Cycle 3 was triggered by a single concrete event: **CI was failing on `main` after cycle 2's merge** (run `28341536379`), because the dreaming workflow's `push` trigger included `main` and the PR-readiness tests are nonsensical on `main`. Cycle 3's evidence base is therefore narrow but specific: the failed CI run plus the local-validation pass (PI-008 caught yet another real bug).
+Cycle 4's evidence base is the smallest so far. Cycle 3 just landed (PI-008 caught cycle-3's lingering-branch bug locally; the workflow-yaml CI fix landed in main via PR #61). Cycle 4's only concrete evidence is the *absence* of new activity on main: there's nothing new to react to. The natural cycle-4 opening is therefore to retroactively close out the small-but-clear gaps that cycle 3 surfaced but did not close: the CI trigger model was not documented; the workspace-state pre-check was not added.
 
 Each entry is an evidence record. Every recommendation, lesson, pattern, scenario, and proposed improvement in other artifacts references one of the `EV-####` IDs below.
 
@@ -188,3 +188,28 @@ Each entry is an evidence record. Every recommendation, lesson, pattern, scenari
 - **Linked patterns:** P-S-004 reinforced — "additive CI gates" includes making local CI tests more robust over time, not just adding new ones.
 - **Linked regression scenarios:** RS-014 (NEW) — "branch-uniqueness test must exclude the current branch from the count."
 - **Linked proposed improvements:** PI-009 (carry forward, status: review_required); PI-010 (carry forward, status: informational)
+
+---
+
+## EV-012 — Cycle-4 workspace pre-check catches lingering dreaming branches (cycle-4 self-application)
+
+- **Run identifier:** pi-012-first-use-2026-06-29
+- **Date:** 2026-06-29 (cycle 4)
+- **Source files reviewed:** `make dreaming-precheck` first run on the cycle-4 branch, against a workspace where the cycle-3 branch had been deleted locally but the cycle-2 branch remained
+- **Task type:** Validation of the PI-012 target on first use
+- **Outcome:** success on first use; the precheck surfaced exactly the state cycle-3 had hidden (lingering dreaming branch, untracked scratch paths)
+- **Summary:** PI-012's first run reported a single dreaming branch (cycle-4, the new one) — which was the expected state after `git branch -d` cleanup earlier in this session. Without this target, that branch-lingering class of issue would only surface inside `test_only_one_dreaming_branch_exists` at validation time. With PI-012, the same information is available at *human* time, before the validation target is even run.
+- **Linked lessons:** L-015 (NEW) — "moving workspace-state assertions from validation-time to human-time reduces their cost: the same facts surface earlier and prompt preventive action rather than reactive debugging."
+- **Linked regression scenarios:** RS-015 (NEW) — "workspace precheck must surface prior-cycle branch remains."
+- **Linked proposed improvements:** PI-012 → **APPLIED in cycle 4**.
+
+---
+
+## EV-013 — Cycle 4's narrow scope as deliberate evidence (cycle-4)
+
+- **Run identifier:** dreaming-cycle-4-narrow-scope
+- **Date:** 2026-06-29 (cycle 4)
+- **Source files reviewed:** origin/main log between cycles 3 and 4: 1 merge (PR #61, cycle 3) + 0 new commits otherwise. No new memory/, no new task files, no new PRs in flight.
+- **Summary:** Cycle 4 is a maintenance cycle by design (per "B" confirmation at cycle 4 entry). Two `auto_safe` PIs (PI-011, PI-012) and 0 review-required changes. This is the smallest cycle so far by line count (+69/-1 across 2 files), the lowest commit count (1), and the smallest evidence base (EV-012, EV-013). Cycle 4's existence as a one-commit cycle is itself evidence: the workflow is reaching diminishing-returns territory, and the natural next cycle is either (a) a longer cycle to take on PI-006 finally, or (b) a skip-cycle to wait for new evidence.
+- **Linked lessons:** L-015 (NEW) — "diminishing returns on small cycles is a signal; not a failure."
+- **Linked patterns:** P-S-005 (NEW) — "narrow-scope maintenance cycle" pattern.

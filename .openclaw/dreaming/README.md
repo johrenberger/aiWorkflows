@@ -36,6 +36,7 @@ See `DREAMING.md` at the repo root for the entry point and full specification.
 - Cycle 1: 2026-06-29 (merged as PR #59)
 - Cycle 2: 2026-06-29 cycle-2 (PI-008 applied; PR-review activity added as evidence source)
 - Cycle 3: 2026-06-29 cycle-3 (post-merge `main` CI failure fixed; workflow trigger model documented as PI-011)
+- Cycle 4: 2026-06-29 cycle-4 (PI-011 + PI-012 applied; maintenance cycle per P-S-005)
 
 ## Local validation
 

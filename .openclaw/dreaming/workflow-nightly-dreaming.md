@@ -23,6 +23,30 @@ Before opening or pushing the PR-ready branch, run `make dreaming-validate` from
 
 This step is the durable fix for the cycle-1 fix-up loop (5 of 9 commits were CI-only corrections).
 
+## Stage -1: Workspace state pre-check (PI-012, cycle 4)
+
+Before starting a dreaming cycle, verify the local workspace is in a known clean shape relative to this workflow:
+
+- **Prior-cycle dreaming branches:** deleted locally and remotely.
+  - `git branch --list 'dreaming/nightly-execution-quality-*'` should show only the new cycle's branch.
+  - Delete with `git push origin --delete dreaming/nightly-execution-quality-<prior-date>[-<suffix>]` and `git branch -D <local>`.
+  - **Why:** `test_only_one_dreaming_branch_exists` is a PR-readiness invariant; lingering branches have caused local-validation noise in cycle 3 (RS-014).
+- **Local main fast-forwarded:** `git fetch origin main && git merge --ff-only origin/main` so that merge-base refs resolve cleanly. Cycle 1's fragile local merge-base was a recurring fix-up source.
+- **`git status` on main is clean** (or only contains the deliberately-untracked paths documented in `README.md` / `DREAMING.md`).
+- **`DREAMING.md` and `MEMORY.md` policies reviewed** for any new constraints since the prior cycle.
+
+This step is a checklist, not automation. Its purpose is to make CI failures from state, not from policy, visible at human time, not at push time.
+
+## CI Trigger Model
+
+The dreaming validation suite is a **PR-readiness suite**. Its CI configuration must reflect this:
+
+- `on: pull_request:` with appropriate `paths:` filter — primary trigger (PR-side context is where the suite's invariants apply).
+- `on: push: branches:` — restricted to the branches that own the PRs (`dreaming/nightly-execution-quality-*`), so pre-PR pushes get an early-warning run. **Do not include `main`**; the base branch is the union of every prior cycle's diffs, not the natural site for PR-readiness checks.
+- The suite tests themselves should skip gracefully when their precondition does not hold (current branch == main, HEAD == merge-base, etc.). Defense in depth: the workflow trigger is the primary guard; the test skips are a backstop against ad-hoc triggers.
+
+This model was learned in cycle 3 (L-014), after the prior cycle's merge to `main` triggered a CI run that failed on PR-readiness assertions. The bundle of `main` into the `push:` block was the latent bug for two cycles before it was caught.
+
 ### Stage 1: Collect Evidence
 
 For each candidate run, gather observable artifacts:
