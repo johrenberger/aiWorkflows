@@ -119,7 +119,8 @@ Status values: `proposed | applied | deferred | rejected`
 | PI-003 | auto_safe | proposed |
 | PI-004 | review_required | proposed |
 | PI-005 | review_required | proposed |
-| PI-006 | review_required | **partial** (cycle 5; downstream applied, runtime still unfilled) |
+| PI-006 | review_required | **partial** (cycle 5; downstream applied, runtime split into PI-006a) |
+| PI-006a | review_required | proposed (cycle 6, NEW; out-of-repo) |
 | PI-007 | auto_safe | proposed |
 | **PI-008** | **auto_safe** | **APPLIED** ✅ |
 | PI-009 | review_required | proposed (NEW) |
@@ -152,7 +153,8 @@ No blocked-class changes proposed in cycle 2.
 | PI-003 | auto_safe | proposed |
 | PI-004 | review_required | proposed |
 | PI-005 | review_required | proposed |
-| PI-006 | review_required | **partial** (cycle 5; downstream applied, runtime still unfilled) |
+| PI-006 | review_required | **partial** (cycle 5; downstream applied, runtime split into PI-006a) |
+| PI-006a | review_required | proposed (cycle 6, NEW; out-of-repo) |
 | PI-007 | auto_safe | proposed |
 | PI-008 | auto_safe | APPLIED (cycle 2) |
 | PI-009 | review_required | proposed (cycle 2) |
@@ -162,3 +164,42 @@ No blocked-class changes proposed in cycle 2.
 | PI-013 | review_required | APPLIED (cycle 5, NEW) |
 
 No blocked-class changes proposed in cycle 3, cycle 4, or cycle 5.
+
+---
+
+## PI-006a — OpenClaw runtime emits JSONL run logs (NEW, cycle 6; split out of PI-006 per L-016)
+
+- **Improvement ID:** PI-006a
+- **Evidence reference:** EV-014, EV-015, L-016, RS-016, P-IP-004, `.openclaw/dreaming/openclaw-run-log-spec.md`, `.openclaw/dreaming/openclaw-run-log-emitter-handoff.md`
+- **Observed problem:** PI-006 was carried from cycle 1 as a single sentence. Cycle 5 surfaced that PI-006 actually bundles two units across two repos: (a) the OpenClaw runtime emits JSONL logs, (b) downstream tooling parses them. (b) was applied in cycle 5 (PR #63, status `partial`). (a) was declared out-of-scope for `aiWorkflows` and is the work this PI describes.
+- **Affected package:** `openclaw/openclaw` runtime (NOT `aiWorkflows`).
+- **Recommended change:** Implement the JSONL run-log emitter in the OpenClaw runtime, against the spec shipped in cycle 5. A complete, self-contained handoff is at `.openclaw/dreaming/openclaw-run-log-emitter-handoff.md` (cycle 6) — the implementer does not need to read this repo beyond that document and the spec.
+- **Expected benefit:** Closes PI-006's open half. RS-008 (the OpenClaw run log evidence minimum, currently `warning`) flips to `passing` the moment a runtime-emitted file lands in the dreaming fixture path. The dream-workflow's per-tool-call retry/timeout/blocker findings become available for the first time.
+- **Risk level:** medium (touches a different repo; the contract is locked in this repo, the implementer just has to honor it)
+- **Safety classification:** review_required (touches a runtime path; the anti-CoT invariant on `args_summary` is a hard rule, not a guideline)
+- **Validation required:** Per the handoff's "Validation" section — 7 steps; step 7 is the dream-workflow's `make dreaming-validate` on a runtime-emitted fixture.
+- **Status:** proposed (NEW; out-of-repo; cannot be applied from `aiWorkflows`)
+
+---
+
+## Summary of cycle-6 PI status
+
+| PI | Class | Status |
+| --- | --- | --- |
+| PI-001 | auto_safe | proposed (reframed) |
+| PI-002 | review_required | proposed |
+| PI-003 | auto_safe | proposed |
+| PI-004 | review_required | proposed |
+| PI-005 | review_required | proposed |
+| PI-006 | review_required | **partial** (cycle 5; downstream applied, runtime split into PI-006a) |
+| PI-006a | review_required | proposed (cycle 6, NEW; out-of-repo) |
+| PI-007 | auto_safe | proposed |
+| PI-008 | auto_safe | APPLIED (cycle 2) |
+| PI-009 | review_required | proposed (cycle 2; held per "A then B") |
+| PI-010 | informational | proposed (cycle 2) |
+| PI-011 | auto_safe | APPLIED (cycle 4) |
+| PI-012 | auto_safe | APPLIED (cycle 4) |
+| PI-013 | review_required | APPLIED (cycle 5) |
+
+No blocked-class changes proposed in cycle 6. The cycle-6 PR is a hygiene pass (close cycle-5 TBDs) plus a spec-grounded handoff for PI-006a; no code changes to the parser, spec, or test suite.
+

@@ -74,6 +74,6 @@ None — cycle 5 was done in the main session.
 
 ## Cycle-5 carry-forward
 
-- **PI-006 Part A** (runtime side, in OpenClaw core) remains a separate concern; cycle 5 cannot apply it.
+- **PI-006 Part A** (runtime side, in OpenClaw core) remains a separate concern; cycle 5 cannot apply it. Cycle 6 split this out as **PI-006a** (per L-016) and shipped a spec-grounded handoff at `.openclaw/dreaming/openclaw-run-log-emitter-handoff.md` (cycle 6).
 - **PI-009** still held.
 - **PI-006 status is `partial`** — the eval reader can see at-a-glance that one piece is open.
