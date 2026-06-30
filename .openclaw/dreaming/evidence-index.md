@@ -337,3 +337,27 @@ Each entry is an evidence record. Every recommendation, lesson, pattern, scenari
   - cycle-7 closeout memo: `memory/2026-07-01-cycle-7-final.md`
   - cycle-8 closeout memo: `memory/2026-07-01-cycle-8-final.md`
   - cycle-8 merge closeout memo (correction entry): `memory/2026-07-01-cycle-8-closeout.md` § "Honest disclosure"
+
+
+---
+
+## EV-019 — Cycles 8 and 9 closeouts both disclosed post-amend working-tree drift (cycle 10)
+
+- **Run identifier:** cycle-10-post-amend-verify-evidence
+- **Date:** 2026-07-01 (cycle 10)
+- **Source files reviewed:** `memory/2026-07-01-cycle-8-closeout.md` § "State rescue during closeout"; `memory/2026-07-01-cycle-9-closeout.md` § "State rescue during closeout (worth documenting)"
+- **Task type:** Self-meta audit (closeout-memo state-rescue pattern)
+- **Outcome:** documented; PI-017 filed; Stage -3 added to `.openclaw/dreaming/workflow-nightly-dreaming.md`; RS-019 added; `test_no_post_amend_working_tree_drift` added
+- **Summary:** Cycles 8 and 9 closeouts both hit the same working-tree state-rescue pattern:
+
+  - **Cycle 8's closeout memo** (`memory/2026-07-01-cycle-8-closeout.md`) § "State rescue during closeout (worth documenting)" described the pattern: "When the user reported PR #67 merged, I tried to switch from `dreaming/...cycle-8` to `main` for the closeout. `git checkout main` failed silently because there was an **uncommitted change** in `nightly-summary.md` (the commit-back-fill from the cycle-8 amend that I thought had landed cleanly — it had, but the local `nightly-summary.md` had a stale line showing `065a3f6` instead of the post-amend `b87aa15`)."
+
+  - **Cycle 9's closeout memo** (`memory/2026-07-01-cycle-9-closeout.md`) § "State rescue during closeout (worth documenting)" described the same pattern: "Same pattern as cycle 8's closeout: when I tried to switch from `dreaming/...cycle-9` to `main` for the closeout, the working tree had an uncommitted change in `nightly-summary.md` (the commit-back-fill from the cycle-9 amend that I thought had landed cleanly — it had, but the local working tree had a stale line showing `87f9a6b` instead of the post-amend `d5abbb6`)."
+
+  The pattern is two-cycle-stale. Both occurrences required the cycle author to manually `git checkout -- .openclaw/dreaming/nightly-summary.md` to discard the stale working-tree state before the next branch switch. PI-017 codifies the discipline: after `git commit --amend`, verify working-tree cleanliness. The corresponding test `test_no_post_amend_working_tree_drift` runs as part of `make dreaming-validate` and asserts no modified tracked files in `.openclaw/dreaming/`.
+- **Linked PIs:** PI-017 (NEW, cycle 10, auto_safe, applied-this-cycle)
+- **Linked regression scenarios:** RS-019 (NEW, cycle 10)
+- **Linked workflow stages:** Stage -3 in `.openclaw/dreaming/workflow-nightly-dreaming.md`
+- **Evidence links:**
+  - cycle-8 closeout memo: `memory/2026-07-01-cycle-8-closeout.md` § "State rescue during closeout (worth documenting)"
+  - cycle-9 closeout memo: `memory/2026-07-01-cycle-9-closeout.md` § "State rescue during closeout (worth documenting)"

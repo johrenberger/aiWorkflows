@@ -232,3 +232,44 @@ def test_declares_surface_scope_in_trigger() -> None:
         f"All four required labels must appear (case-insensitive): {required_labels}. "
         f"See workflow-nightly-dreaming.md Stage -2 for the schema."
     )
+
+
+def test_no_post_amend_working_tree_drift() -> None:
+    """No tracked file in .openclaw/dreaming/ should be in a modified state relative to HEAD.
+
+    Enforces Stage -3 (PI-017, cycle 10): after a commit (and especially after
+    `git commit --amend`), the working tree must be clean relative to the
+    most recent commit. A modified tracked file indicates a state mismatch
+    that will block the next `git checkout` with "Please commit your changes
+    or stash them before you switch branches."
+
+    The check is scoped to `.openclaw/dreaming/` because that's the cycle's
+    working area. Other directories (e.g., `workflows/`) may have
+    intentionally-uncommitted local edits that are out of cycle scope.
+
+    This test is most useful after a `git commit --amend` or before the
+    next checkout. It is a hygiene check, not a structural invariant.
+    """
+    status_output = _git_silent("status", "--short", "--", ".openclaw/dreaming/")
+    if not status_output:
+        # Clean working tree in scope. Test passes.
+        return
+
+    # Parse `git status --short` output. Lines look like:
+    #   " M path/to/file"  (modified, unstaged)
+    #   "M  path/to/file"  (modified, staged)
+    #   "MM path/to/file"  (modified, both staged and unstaged)
+    #   "?? path/to/file"  (untracked — ignored, not a drift)
+    drift_lines = [
+        line for line in status_output.splitlines()
+        if line.strip() and not line.startswith("??")
+    ]
+    assert not drift_lines, (
+        f"Working tree has modified tracked files in .openclaw/dreaming/ "
+        f"relative to HEAD (Stage -3 violation):\n"
+        + "\n".join(drift_lines)
+        + "\n\nThis usually means a `git commit --amend` produced a state "
+        "mismatch. Run `git status` to inspect, then either `git add` the "
+        "file (if the amend didn't capture the latest content) or "
+        "`git checkout -- <file>` (if the file should match HEAD)."
+    )

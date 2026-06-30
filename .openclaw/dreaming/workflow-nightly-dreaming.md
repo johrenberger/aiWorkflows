@@ -23,6 +23,22 @@ Before opening or pushing the PR-ready branch, run `make dreaming-validate` from
 
 This step is the durable fix for the cycle-1 fix-up loop (5 of 9 commits were CI-only corrections).
 
+## Stage -3: Post-amend verify (PI-017, cycle 10)
+
+After `git commit --amend`, the cycle author must verify the working tree is clean before the next checkout (e.g., `git checkout main` for the merge closeout, or `git checkout -b` for a new cycle). The check is:
+
+```bash
+git status --short
+```
+
+If any tracked file shows as `M ` (modified, staged) or ` M` (modified, unstaged), the amend produced a state mismatch between the working tree and the commit. This is a footgun: a subsequent checkout will fail with "Please commit your changes or stash them before you switch branches."
+
+Why this stage exists (cycle 10 retrofitted justification): cycles 8 and 9 closeouts both hit this pattern. The cycle-8 closeout memo (`memory/2026-07-01-cycle-8-closeout.md`) disclosed it as "a real workflow-disclosure, not a process failure." The cycle-9 closeout memo (`memory/2026-07-01-cycle-9-closeout.md`) flagged it as "two-cycle-stale, not a one-off." Stage -3 codifies the discipline so cycle 11+ doesn't reproduce the pattern.
+
+Why this stage is -3 (not -2.5 or -2.1): the dream workflow's stage numbering uses integers. Stage -3 sits before Stage -2 (pre-declaration) in the sense that "amend hygiene" applies to the cycle author's own workflow between cycles, before any new cycle's pre-declaration begins. In practice, the check fires only when an amend happens; for cycles without amend, Stage -3 is a no-op.
+
+Validation: enforced by `tests/dreaming/test_pr_readiness.py::test_no_post_amend_working_tree_drift` (cycle 10). The test reads the most recent commit on the current branch and asserts that the working tree (relative to that commit) has no modified tracked files in `.openclaw/dreaming/`.
+
 ## Stage -2: Surface-Scope Pre-Declaration (PI-015, cycle 8)
 
 Before Stage -1 (workspace pre-check), the cycle author declares the cycle's surface scope. This is a 4-line declaration at the top of the cycle's `nightly-summary.md` Trigger section.
