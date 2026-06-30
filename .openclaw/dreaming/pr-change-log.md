@@ -299,3 +299,72 @@ Cycle 7 is the first cycle whose substantive work is **outside the dreaming-work
 
 Whether cycle 7 should expand into a 3-commit cycle (artifacts + fetch script + cron adjustment) is a scope decision deferred to a future cycle. Cycle 7 keeps it tight: 2 commits, artifacts-only, PI body explicitly notes "fix is on the gateway, not in this repo's package."
 
+
+
+---
+
+## Cycle-8 (2026-07-01) — add Stage -2 Surface-Scope Pre-Declaration (PI-015)
+
+- **Cycle:** 8
+- **Branch:** `dreaming/nightly-execution-quality-2026-07-01-cycle-8`
+- **Originating user request:** "let's define cycle 8 to evolve workflow" (Telegram msg #11587, 2026-07-01 00:51 GMT+2), with clarifications at #11589 and #11592.
+- **Trigger context:** "evolve workflow" was ambiguous until clarified to mean the dream workflow's own procedure document (`.openclaw/dreaming/workflow-nightly-dreaming.md`), not a neighboring workflow. Q1: yes (scope-pre-declaration direction), Q2: substantive (modify workflow doc + tests + RS + EV), Q3: no (no off-limits items in cycles 1–7).
+- **Safety classification:** all cycle-8 changes are `auto_safe` (workflow-doc change + test addition + RS + EV + PI). No code changes; no production-runtime changes; no schema migrations.
+
+### Cycle-8 review-required changes
+
+None. All changes are `auto_safe`.
+
+### Cycle-8 blocked changes
+
+None.
+
+### Cycle-8 artifacts changed
+
+- `.openclaw/dreaming/workflow-nightly-dreaming.md` — Stage -2 added before Stage -1 (NEW, PI-015); ~25 lines.
+- `tests/dreaming/test_pr_readiness.py` — `test_declares_surface_scope_in_trigger` added (NEW); ~55 lines.
+- `.openclaw/dreaming/regression-scenarios.md` — RS-018 entry (NEW).
+- `.openclaw/dreaming/evidence-index.md` — EV-017 entry (NEW).
+- `.openclaw/dreaming/proposed-improvements.md` — PI-015 entry (NEW, cycle 8, auto_safe, APPLIED this cycle); cycle-8 status table appended.
+- `.openclaw/dreaming/nightly-summary.md` — cycle-8 body prepended (uses Stage -2 schema, dogfooding); cycle-7 body preserved below.
+- `.openclaw/dreaming/pr-change-log.md` — this section.
+
+### Cycle-8 evidence references
+
+- EV-017 (cycle 8, NEW) — cycles 5/6/7 each retrofitted scope justification; no pre-declaration stage existed.
+- RS-018 (cycle 8, NEW) — most recent cycle's Trigger section must declare surface scope.
+- PI-015 (cycle 8, NEW, APPLIED this cycle) — Stage -2 Surface-Scope Pre-Declaration.
+
+### Cycle-8 reason for change
+
+Cycles 5, 6, and 7 each shipped a self-meta observation justifying scope decisions that were not surfaced until close-out. Stage -2 (PI-015, cycle 8) makes the scope decision a pre-cycle artifact, not a post-cycle observation. The new test `test_declares_surface_scope_in_trigger` enforces ongoing compliance: the most recent cycle's Trigger section must contain all four field labels (Workflow target, Surface area, Dreaming-ledger scope, Cycle-size budget). Past cycles' Trigger sections are preserved as historical record; the test is forward-looking.
+
+### Cycle-8 expected impact
+
+- Future cycles pre-declare scope at human time (when planning) instead of justifying at audit time (when closing).
+- Cross-repo work (cycle 6 pattern) and non-dreaming-ledger work (cycle 7 pattern) become structural artifacts registered before the cycle ships, not afterthoughts.
+- The diminishing-returns P-S-005 curve is preserved at 0 CI fix-ups; cycle 8 is a single-commit cycle.
+
+### Cycle-8 validation performed
+
+- **Pre-commit:** ran `test_declares_surface_scope_in_trigger` against the cycle-7 nightly-summary.md (before cycle-8 edits) — confirmed it **fails** with the expected diagnostic ("Missing Stage -2 fields: ['Workflow target', 'Surface area', 'Dreaming-ledger scope', 'Cycle-size budget']"). This proves the test is actually checking what it claims.
+- **Pre-push:** `make dreaming-validate` on the cycle-8 branch — expected: **123 passed, 0 failed, 1 skipped** (the empty-range commits-prefix test, same skip rule). The new test must pass because cycle-8's Trigger is written in the new format.
+- **Post-merge on main:** the new test continues to pass because cycle-8's Trigger is the most recent in the file.
+
+### Cycle-8 rollback notes
+
+`git revert` the cycle-8 commit. The Stage -2 docstring is forward-looking; reverting the cycle-8 commit removes Stage -2 from the workflow doc, removes the test, removes RS-018/EV-017/PI-015 from their respective ledgers, and reverts nightly-summary.md to its pre-cycle-8 state. Past cycles' Trigger sections are not affected.
+
+### Cycle-8 status
+
+applied on branch, awaiting PR (cycle-8 branch `dreaming/nightly-execution-quality-2026-07-01-cycle-8`; awaiting commit + push + PR creation)
+
+### Cycle-8 self-meta observation
+
+Cycle 8 is the first cycle where the workflow-doc change is the deliverable, not just a side effect. Cycles 2 and 4 added workflow stages (Stage 0, Stage -1) as part of broader PI rollouts; cycle 8 adds Stage -2 as the cycle's entire substantive work. The cycle-size table stays at `4→3→2→2→2→2→2→1` (logical feature commits = 1).
+
+Cycle 7's bookkeeping nit (table said 2 commits, actual was 1) is reconciled in cycle 8's row of the cycle-size table.
+
+### Pre-push catch (cycle 8)
+
+Same as cycle 7's pre-push catch: `test_only_one_dreaming_branch_exists` flagged lingering dreaming branches locally (cycle 5 and cycle 6 from prior sessions). Cleaned with `git branch -D`. PI-008 pattern from cycle 2; the test docstring at `tests/dreaming/test_pr_readiness.py::test_only_one_dreaming_branch_exists` explicitly references this precedent.

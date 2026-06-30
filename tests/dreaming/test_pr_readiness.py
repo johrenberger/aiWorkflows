@@ -179,3 +179,56 @@ def test_no_blocked_changes_applied_in_pr_change_log() -> None:
     assert "None" in body or "not applied" in body.lower(), (
         f"Blocked changes section must explicitly state none are applied; got: {body!r}"
     )
+
+
+def test_declares_surface_scope_in_trigger() -> None:
+    """The most recent cycle's Trigger section in nightly-summary.md must declare surface scope.
+
+    Enforces Stage -2 (PI-015, cycle 8): every cycle must pre-declare its surface
+    scope in the Trigger section of nightly-summary.md, before Stage -1's
+    workspace pre-check. The test is forward-looking: it requires the **most
+    recent cycle's** Trigger section to have the new format. Past cycles'
+    Trigger sections are preserved as historical record and not retroactively
+    restructured (per workflow-nightly-dreaming.md Stage -2 docstring).
+
+    Required field labels (case-insensitive substring match in the first
+    `## Trigger` section):
+      - "Workflow target"
+      - "Surface area"
+      - "Dreaming-ledger scope"
+      - "Cycle-size budget"
+
+    The most recent cycle's Trigger section is defined as: the first
+    `## Trigger` heading encountered when reading nightly-summary.md
+    top-to-bottom.
+    """
+    nightly_summary = REPO_ROOT / ".openclaw" / "dreaming" / "nightly-summary.md"
+    assert nightly_summary.is_file(), f"Missing required artifact: {nightly_summary}"
+    text = nightly_summary.read_text(encoding="utf-8")
+
+    # Find the first `## Trigger` heading.
+    match = re.search(r"^## Trigger\s*$", text, flags=re.MULTILINE)
+    assert match is not None, (
+        "nightly-summary.md has no `## Trigger` section at the top of the file. "
+        "Stage -2 (PI-015, cycle 8) requires the most recent cycle to have a "
+        "Trigger section pre-declaring surface scope."
+    )
+
+    # Extract content from that heading up to the next `## ` heading (or EOF).
+    start = match.end()
+    next_heading = re.search(r"^## ", text[start:], flags=re.MULTILINE)
+    end = start + next_heading.start() if next_heading else len(text)
+    trigger_section = text[start:end]
+
+    required_labels = [
+        "Workflow target",
+        "Surface area",
+        "Dreaming-ledger scope",
+        "Cycle-size budget",
+    ]
+    missing = [label for label in required_labels if label.lower() not in trigger_section.lower()]
+    assert not missing, (
+        f"Most recent cycle's Trigger section is missing Stage -2 fields: {missing}. "
+        f"All four required labels must appear (case-insensitive): {required_labels}. "
+        f"See workflow-nightly-dreaming.md Stage -2 for the schema."
+    )

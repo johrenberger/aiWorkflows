@@ -281,3 +281,32 @@ Each entry is an evidence record. Every recommendation, lesson, pattern, scenari
   - cron `runs` history: 97 total runs; consistent "stale" notes from 2026-06-11 onward
   - `ls /data/.openclaw/workspace/scripts/` returns ENOENT
   - `cyber-signal-daily` runs on 2026-06-25, 2026-06-26, 2026-06-27, 2026-06-28 all explicitly note staleness
+
+
+---
+
+## EV-017 — Cycles 5/6/7 each retrofitted scope justification; no pre-declaration stage (cycle 8)
+
+- **Run identifier:** cycle-8-workflow-evolution-evidence
+- **Date:** 2026-07-01 (cycle 8)
+- **Source files reviewed:** `.openclaw/dreaming/nightly-summary.md` (cycles 5, 6, 7); `.openclaw/dreaming/pr-change-log.md` (cycle-5/6/7 self-meta sections); `.openclaw/dreaming/workflow-nightly-dreaming.md` (Stage -1, Stage 0; absence of pre-declaration stage)
+- **Task type:** Workflow-doc evolution evidence
+- **Outcome:** documented; PI-015 filed; Stage -2 added to `workflow-nightly-dreaming.md`; RS-018 added; `test_declares_surface_scope_in_trigger` added
+- **Summary:** Three consecutive cycles (5, 6, 7) each shipped a self-meta observation explaining scope decisions that were not surfaced until close-out:
+
+  - **Cycle 5** — `nightly-summary.md` "Cycle-5 self-meta observation": "Cycle 5 breaks the monotonic-decreasing commit-count trend **on purpose** by applying the largest deferred PI." The scope decision (apply the largest deferred PI) was made implicitly and justified at the end.
+
+  - **Cycle 6** — `memory/2026-06-29-cycle-6.md` "Why cycle 6's framing matters": "Cycle 5's PR body said the runtime side 'would be a separate PR against the OpenClaw runtime package. I cannot do that from this repo.' Cycle 6 turns 'I cannot do that from this repo' into a concrete deliverable." The cross-repo handoff was discovered mid-cycle, then formalized as H-001 + PI-006a at the end.
+
+  - **Cycle 7** — `memory/2026-06-30-cycle-7-final.md` § "Cycle-7 self-meta observation": "Cycle 7 is the first cycle whose **substantive work is outside the dreaming-workflow's own surface area**." The non-dreaming-ledger pattern (PI-014) was discovered mid-cycle and justified at the end.
+
+  All three observations are post-hoc. None of them was triggered by a workflow-doc requirement to surface the decision at human time. Stage -2 (PI-015, cycle 8) is the workflow-doc change that requires the cycle author to pre-declare scope (Workflow target, Surface area, Dreaming-ledger scope, Cycle-size budget) before Stage -1's workspace pre-check.
+
+  The cycle-8 test `test_declares_surface_scope_in_trigger` enforces this on the most recent cycle's Trigger section. Past cycles' Trigger sections are preserved as historical record (cycle 7's body remains in `nightly-summary.md` as it was written); only new cycles must use the new format.
+- **Linked PIs:** PI-015 (NEW, cycle 8, auto_safe, applied-this-cycle)
+- **Linked regression scenarios:** RS-018 (NEW, cycle 8)
+- **Linked workflow stages:** Stage -2 in `.openclaw/dreaming/workflow-nightly-dreaming.md`
+- **Evidence links:**
+  - cycle-5 self-meta: `.openclaw/dreaming/nightly-summary.md` "Cycle-5 self-meta observation"
+  - cycle-6 self-meta: `.openclaw/dreaming/nightly-summary.md` "Cycle-6 self-meta observation"; `memory/2026-06-29-cycle-6.md` "Why cycle 6's framing matters"
+  - cycle-7 self-meta: `.openclaw/dreaming/nightly-summary.md` "Cycle-7 self-meta observation"; `memory/2026-06-30-cycle-7-final.md` § "Cycle-7 self-meta observation"

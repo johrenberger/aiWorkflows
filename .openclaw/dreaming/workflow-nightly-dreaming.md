@@ -23,6 +23,27 @@ Before opening or pushing the PR-ready branch, run `make dreaming-validate` from
 
 This step is the durable fix for the cycle-1 fix-up loop (5 of 9 commits were CI-only corrections).
 
+## Stage -2: Surface-Scope Pre-Declaration (PI-015, cycle 8)
+
+Before Stage -1 (workspace pre-check), the cycle author declares the cycle's surface scope. This is a 4-line declaration at the top of the cycle's `nightly-summary.md` Trigger section.
+
+Required fields (all four must appear, case-insensitive, in the Trigger section of the cycle author writes):
+
+- **Workflow target** — which workflow is being evolved. Default: `dream` (the current cycle's own workflow).
+- **Surface area** — `in-repo` | `out-of-repo` | `cross-repo`. `cross-repo` requires a `cross-repo-handoff-index.md` entry (cycle-6 pattern, H-001).
+- **Dreaming-ledger scope** — `in-ledger` | `non-dreaming`. `non-dreaming` requires an explicit rationale (cycle-7 pattern, PI-014).
+- **Cycle-size budget** — `1` | `2` | `3` commits (planned; reconciled at close).
+
+Constraints:
+
+- Out-of-repo work requires a handoff-index entry before the cycle ships.
+- Non-dreaming-ledger work requires the rationale to cite either the surfacing-cycle (e.g., "surfaced by dream-workflow because cron is gateway-local") or a precedent (e.g., "follows PI-014 pattern").
+- Cycle-size budget `>= 3` requires a substantive-work justification (e.g., "3 commits because one each for spec, code, and tests").
+
+Why this stage exists (cycle 8 retrofitted justification): cycles 5, 6, and 7 each added a self-meta paragraph at close-out explaining what the cycle's scope had been. Cycle 5 was "biggest since cycle 1." Cycle 6 was "substantive-by-handoff." Cycle 7 was "first cycle with out-of-scope work." Pre-declaration forces the author to confront "is this in-scope?" at human time, not at audit time. The honest constraint "I cannot do that from this repo" becomes a structural artifact (handoff-index entry) rather than a self-meta justification.
+
+Validation: enforced by `tests/dreaming/test_pr_readiness.py::test_declares_surface_scope_in_trigger` (cycle 8). The test reads the cycle author's Trigger section and asserts all four field labels appear. The test is forward-looking: it requires the **most recent cycle's** Trigger section to have the new format. Past cycles' Trigger sections are not retroactively restructured; their format is preserved as historical record.
+
 ## Stage -1: Workspace state pre-check (PI-012, cycle 4)
 
 Before starting a dreaming cycle, verify the local workspace is in a known clean shape relative to this workflow:

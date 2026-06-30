@@ -245,3 +245,44 @@ No blocked-class changes proposed in cycle 6 or cycle 7. The cycle-6 PR was a hy
 | PI-014 | auto_safe | proposed (cycle 7, NEW) |
 
 No blocked-class changes proposed in cycle 7. The cycle-7 PR files PI-014 (cyber-signal feed pipeline is broken), adds RS-017 (a regression scenario pinning the freshness expectation), and back-fills EV-016 (the evidence entry documenting the broken pipeline). No code changes to the parser, spec, or test suite; no behavior changes; no production-runtime changes.
+
+
+---
+
+## PI-015 — Add Stage -2 Surface-Scope Pre-Declaration to workflow-nightly-dreaming.md (NEW, cycle 8; applied-this-cycle)
+
+- **Improvement ID:** PI-015
+- **Evidence reference:** EV-017, RS-018, cycles 5/6/7 self-meta observations
+- **Observed problem:** Cycles 5, 6, and 7 each shipped a self-meta observation justifying scope decisions that were not surfaced until close-out. Cycle 5's "biggest since cycle 1"; cycle 6's "substantive-by-handoff"; cycle 7's "first cycle with out-of-scope work." None of these was required by the workflow doc; all were post-hoc. The honest constraint "I cannot do that from this repo" (cycle 6) and "fix is on the same gateway but outside the workflow's surface area" (cycle 7) should be structural artifacts, not self-meta justifications.
+- **Affected package:** `.openclaw/dreaming/workflow-nightly-dreaming.md` (procedure doc); `.openclaw/dreaming/nightly-summary.md` (Trigger section schema); `tests/dreaming/test_pr_readiness.py` (new test).
+- **Recommended change:** Add Stage -2 to the workflow doc, requiring the cycle author's Trigger section to pre-declare four fields: Workflow target, Surface area, Dreaming-ledger scope, Cycle-size budget. Add a corresponding test that asserts the most recent cycle's Trigger section contains all four field labels. Past cycles' Trigger sections are preserved as historical record (the test is forward-looking).
+- **Expected benefit:** Scope decisions are surfaced at human time (when the cycle is being planned) rather than at audit time (when the cycle is being closed). Cycles that turn out to be cross-repo or non-dreaming-ledger are pre-registered, so the cross-repo-handoff-index and the non-dreaming rationale are not afterthoughts.
+- **Risk level:** low (procedural change; no code; no schema migration; past cycles unaffected)
+- **Safety classification:** auto_safe (workflow-doc change; test addition; no production-runtime change; no skill change; no validation-gate change)
+- **Validation required:** `make dreaming-validate` returns 0 failures on the cycle-8 branch (the new test passes because cycle 8's Trigger is written in the new format). RS-018 captures the regression scenario. Cycle 8 dogfoods the new format.
+- **Status:** APPLIED (cycle 8, NEW) — single-cycle PI; the change ships in this cycle's PR.
+
+---
+
+## Summary of cycle-8 PI status
+
+| PI | Class | Status |
+| --- | --- | --- |
+| PI-001 | auto_safe | proposed (reframed) |
+| PI-002 | review_required | proposed |
+| PI-003 | auto_safe | proposed |
+| PI-004 | review_required | proposed |
+| PI-005 | review_required | proposed |
+| PI-006 | review_required | **partial** (cycle 5; downstream applied, runtime split into PI-006a) |
+| PI-006a | review_required | proposed (cycle 6, NEW; out-of-repo) |
+| PI-007 | auto_safe | proposed |
+| PI-008 | auto_safe | APPLIED (cycle 2) |
+| PI-009 | review_required | proposed (cycle 2; held per "A then B") |
+| PI-010 | informational | proposed (cycle 2) |
+| PI-011 | auto_safe | APPLIED (cycle 4) |
+| PI-012 | auto_safe | APPLIED (cycle 4) |
+| PI-013 | review_required | APPLIED (cycle 5) |
+| PI-014 | auto_safe | proposed (cycle 7, NEW) |
+| PI-015 | auto_safe | APPLIED (cycle 8, NEW) |
+
+No blocked-class changes proposed in cycle 8. The cycle-8 PR adds Stage -2 to the workflow doc, a new test enforcing it, RS-018, and EV-017. The single substantive change is the Stage -2 schema; everything else is artifact tracking. No code changes to the parser, spec, or test suite beyond the new test.

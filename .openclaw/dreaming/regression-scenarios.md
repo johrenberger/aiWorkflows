@@ -265,3 +265,22 @@ RS-001 through RS-009 are carried from cycle 1. RS-010 through RS-012 are new in
 - **Validation method:** Inspect the most recent cron-run summary (cron `runs` history). The `summary` field for the `ok` run already calls out staleness in plain English ("Feed data is N days stale"). RS-017 is a structured check on the same property.
 - **Owner:** human (this is a cron/tooling health check, not a code-side invariant)
 - **Status:** failing (cycle 7 baseline; expected to flip to `passing` when PI-014 is applied)
+
+
+## RS-018 — Most recent cycle's Trigger section must declare surface scope (NEW, cycle 8)
+
+- **Evidence reference:** EV-017, PI-015, Stage -2 in `workflow-nightly-dreaming.md`
+- **Affected workflow or skill:** `.openclaw/dreaming/workflow-nightly-dreaming.md` (Stage -2); `.openclaw/dreaming/nightly-summary.md` (Trigger section of the most recent cycle)
+- **Severity:** warning (currently `failing` baseline; expected to flip to `passing` when cycle 8 merges)
+- **Given** a cycle is being authored
+- **And** the cycle author's Trigger section in `nightly-summary.md` is the first place the cycle scope becomes visible
+- **When** the Trigger section is reviewed
+- **Then** it must contain all four Stage -2 field labels: "Workflow target", "Surface area", "Dreaming-ledger scope", "Cycle-size budget"
+- **Expected behavior:** Every new cycle pre-declares its scope before Stage -1's workspace pre-check, so scope decisions are made at human time, not retrofit at audit time.
+- **Pass / fail criteria:**
+  - **Pass** if all four labels appear in the most recent cycle's Trigger section (case-insensitive substring match).
+  - **Fail** if any of the four labels are missing.
+  - **Fail** if there is no Trigger section at the top of `nightly-summary.md`.
+- **Validation method:** `tests/dreaming/test_pr_readiness.py::test_declares_surface_scope_in_trigger`. The test is forward-looking: it requires the **most recent cycle's** Trigger section to have the new format. Past cycles' Trigger sections are preserved as historical record.
+- **Owner:** human (the cycle author)
+- **Status:** failing (cycle 8 baseline; expected to flip to `passing` when cycle 8's Trigger is written in the new format)
