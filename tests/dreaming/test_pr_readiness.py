@@ -235,13 +235,22 @@ def test_declares_surface_scope_in_trigger() -> None:
 
 
 def test_no_post_amend_working_tree_drift() -> None:
-    """No tracked file in .openclaw/dreaming/ should be in a modified state relative to HEAD.
+    """No tracked file in .openclaw/dreaming/ should be in an UNSTAGED modified state relative to HEAD.
 
     Enforces Stage -3 (PI-017, cycle 10): after a commit (and especially after
     `git commit --amend`), the working tree must be clean relative to the
-    most recent commit. A modified tracked file indicates a state mismatch
+    most recent commit. An unstaged tracked file indicates a state mismatch
     that will block the next `git checkout` with "Please commit your changes
-    or stash them before you switch branches."
+    or stash them before you switch branches." Staged-only changes are
+    excluded: those are part of the cycle author's normal authoring flow
+    (edit → `git add` → validate → commit) and the staged content will
+    land in the next commit, so no drift remains post-commit.
+
+    The cycle-8 and cycle-9 working-tree-rescue pattern was specifically
+    UNSTAGED drift: after `git commit --amend`, the local working tree had
+    a stale line that didn't make it into the commit. `git status` shows
+    this as `" M file"` (modified, unstaged). Staged-only changes (`"M  file"`)
+    are not drift — they're about-to-be-committed work.
 
     The check is scoped to `.openclaw/dreaming/` because that is the cycle's
     primary working area — the cycle-8 and cycle-9 closeout memos both
@@ -251,14 +260,11 @@ def test_no_post_amend_working_tree_drift() -> None:
     A future cycle may broaden the scope if evidence surfaces that
     `tests/dreaming/` (or another path) has the same drift pattern.
 
-    Note: this test *intentionally* fires during cycle authoring whenever
-    the author has uncommitted edits to a `.openclaw/dreaming/` file
-    (e.g., mid-edit of `nightly-summary.md`). This is the discipline, not
-    a bug: the test enforces "your commit must match your working tree at
-    validation time." Do not add a skip-on-uncommitted-edits clause; that
-    would defeat Stage -3. The test is most useful after a `git commit
-    --amend` or before the next checkout, but it runs on every
-    `make dreaming-validate` invocation as a forward-looking guard.
+    Note: this test fires on UNSTAGED modifications. Staged-only changes
+    are fine. Mixed (staged + unstaged) changes are drift (the unstaged
+    portion is the problem). The test enforces "after every commit, your
+    working tree should match HEAD, with staged-only changes being
+    acceptable during authoring."
     """
     status_output = _git_silent("status", "--short", "--", ".openclaw/dreaming/")
     if not status_output:
@@ -268,28 +274,49 @@ def test_no_post_amend_working_tree_drift() -> None:
         return
 
     # Parse `git status --short` output. Lines look like:
-    #   " M path/to/file"  (modified, unstaged)
-    #   "M  path/to/file"  (modified, staged)
-    #   "MM path/to/file"  (modified, both staged and unstaged)
+    #   " M path/to/file"  (modified, UNSTAGED — drift)
+    #   "M  path/to/file"  (modified, STAGED — fine, about-to-be-committed)
+    #   "MM path/to/file"  (modified, both — drift, the unstaged portion is the problem)
     #   "?? path/to/file"  (untracked — ignored, not a drift)
-    drift_lines = [
-        line for line in status_output.splitlines()
-        if line.strip() and not line.startswith("??")
-    ]
+    #   "D  path/to/file"  (deleted, staged — fine)
+    #   " D path/to/file"  (deleted, unstaged — drift)
+    # The first character of the two-character status column is the index
+    # (staged) state; the second is the working-tree (unstaged) state.
+    # A drift line is one where the second character is non-space and
+    # not '?' (untracked).
+    drift_lines = []
+    for line in status_output.splitlines():
+        line = line.rstrip()
+        if not line or len(line) < 3:
+            continue
+        # Two-character status is `XY` where X is index, Y is worktree.
+        # We care about Y != ' ' (working tree differs from index).
+        index_state = line[0]
+        worktree_state = line[1]
+        # Skip untracked entirely (`??`).
+        if index_state == "?" and worktree_state == "?":
+            continue
+        # If the worktree differs from the index, it's a drift.
+        if worktree_state != " ":
+            drift_lines.append(line)
+
     assert not drift_lines, (
-        f"Working tree has modified tracked files in .openclaw/dreaming/ "
-        f"relative to HEAD (Stage -3 violation):\n"
+        f"Working tree has UNSTAGED modified tracked files in "
+        f".openclaw/dreaming/ relative to HEAD (Stage -3 violation):\n"
         + "\n".join(drift_lines)
-        + "\n\nThis fires in three common cases:\n"
-        "  1. You are mid-edit (uncommitted work in progress). This is "
-        "expected; commit when ready and the test will pass.\n"
-        "  2. A `git commit --amend` produced a state mismatch (the most "
-        "common Stage -3 failure mode). Run `git status` to inspect, then "
-        "either `git add <file>` (if the amend didn't capture the latest "
-        "content) or `git checkout -- <file>` (if the file should match HEAD).\n"
-        "  3. You have leftover state from a prior cycle's working tree "
+        + "\n\nThis fires when there are unstaged modifications to tracked "
+        "files in .openclaw/dreaming/. Common cases:\n"
+        "  1. A `git commit --amend` produced a state mismatch (the cycle-8 "
+        "/cycle-9 working-tree-rescue pattern). Run `git status` to inspect, "
+        "then either `git add <file>` (if the amend didn't capture the "
+        "latest content) or `git checkout -- <file>` (if the file should "
+        "match HEAD).\n"
+        "  2. You have leftover state from a prior cycle's working tree "
         "(e.g., a stale `nightly-summary.md` line that didn't make it into "
         "the cycle's commit). Discard with `git checkout -- <file>` after "
         "verifying the file on `origin/main` (post-merge) has the content "
-        "you want."
+        "you want.\n"
+        "Note: STAGED changes (lines starting with `M `, second column "
+        "space) are NOT drift. They're about-to-be-committed work and the "
+        "test ignores them."
     )

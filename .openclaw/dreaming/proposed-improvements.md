@@ -362,6 +362,27 @@ No blocked-class changes proposed in cycle 9. Cycle 9 ships PI-016 only — a pr
 
 ---
 
+## PI-018 — Strengthen PI-016 forecast-discipline with post-merge verification (NEW, cycle 11; planned)
+
+- **Improvement ID:** PI-018
+- **Evidence reference:** cycle-10 merge closeout memo (`memory/2026-07-01-cycle-10-closeout.md`); cross-cycle actual-vs-claimed validator count measurements taken on 2026-07-01.
+- **Observed problem:** PI-016 (cycle 9) established the convention of forecasting "main post-merge" validator counts in cycle closeout memos. The convention was supposed to make forecasts "verifiable as a method, not just a discipline." Cycle 10's merge closeout discovered that **PI-016's forecast-discipline has never actually worked** for any of cycles 6-10. The "actual post-merge count" quoted in closeout memos has been wrong every single cycle, and the "matched the forecast" claim has been wrong every single cycle. Specifically (measured on 2026-07-01 by running `make dreaming-validate` against each merge commit):
+  - cycle 6 (`c21b712`) closeout claimed `116 passed + 1 + 1`; actual is **124 + 1 + 1** (off by 8 in passed-count).
+  - cycle 7 (`b42cdca`) closeout claimed `121 passed + 1 + 1`; actual is **124 + 1 + 1** (off by 3).
+  - cycle 8 (`ec087fe`) closeout claimed `122 passed + 1 + 1`; actual is **125 + 1 + 1** (off by 3).
+  - cycle 9 (`d1cbc08`) closeout claimed `122 passed + 1 + 1` and explicitly stated "matched the forecast"; actual is **125 + 1 + 1** (off by 3).
+  - cycle 10 (`a91abff`) closeout forecast `125 + 1 + 1`; actual is **126 + 1 + 1** (off by 1).
+- **Affected package:** `.openclaw/dreaming/workflow-nightly-dreaming.md` (PI-016 amendment, adding a verification step to the forecast procedure); cycles 6-10 closeout memos in `memory/` (retroactive correction of the actual measured counts).
+- **Recommended change:** PI-016 needs a discipline-strengthening amendment. Specifically: the forecast step is currently "compute the new test count and write it down." It should become "compute the new test count, write it down, and **after the merge lands, run `make dreaming-validate` on the actual post-merge `main` and verify the forecast matched.**" If the forecast did not match, the closeout memo must be corrected with the actual measured count and a forecast-accuracy section explaining the delta. Optionally, add a test that asserts closeout memos quote the post-merge count correctly (a meta-test on `memory/` files). Cycle 11 should also retroactively correct cycles 6-10's closeout memos with the actual measured counts (see cross-cycle table in this PI).
+- **Expected benefit:** PI-016 becomes a real verification method, not just a documentation discipline. The forecast-accuracy delta is recorded honestly. Future cycles can quote PI-016 numbers with confidence.
+- **Risk level:** low (doc amendment + retroactive memo correction; no code change; no schema migration; no production-runtime change)
+- **Safety classification:** auto_safe (workflow-doc amendment; retroactive memo edits; no production-runtime change)
+- **Validation required:** cycle 11's PI-018 application must (a) amend PI-016's section in the workflow doc with the verification step, (b) retroactively correct cycles 6-10's closeout memos with the actual measured counts, (c) optionally add a meta-test that asserts closeout memos quote the post-merge count correctly, (d) PI-018 itself is verifiable by running `make dreaming-validate` on cycle 11's post-merge `main` and confirming the forecast matched.
+- **Status:** proposed (cycle 11, NEW)
+- **Cycle:** 11 (planned)
+
+---
+
 ## Summary of cycle-10 PI status
 
 | PI | Class | Status |
@@ -384,5 +405,6 @@ No blocked-class changes proposed in cycle 9. Cycle 9 ships PI-016 only — a pr
 | PI-015 | auto_safe | APPLIED (cycle 8, NEW) |
 | PI-016 | auto_safe | proposed (cycle 9, NEW) |
 | PI-017 | auto_safe | APPLIED (cycle 10, NEW) |
+| PI-018 | auto_safe | proposed (cycle 11, NEW; planned; see PI-018 body above) |
 
-No blocked-class changes proposed in cycle 10. The cycle-10 PR adds Stage -3 to the workflow doc, a new test enforcing it (RS-019, EV-019). The single substantive change is the Stage -3 schema; everything else is artifact tracking. No code changes to the parser, spec, or test suite beyond the new test.
+No blocked-class changes proposed in cycle 10 or planned for cycle 11. The cycle-10 PR adds Stage -3 to the workflow doc, a new test enforcing it (RS-019, EV-019). The single substantive change is the Stage -3 schema; everything else is artifact tracking. No code changes to the parser, spec, or test suite beyond the new test.
