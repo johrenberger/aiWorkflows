@@ -112,3 +112,63 @@ can re-evaluate when it next amends a `tests/dreaming/` file.
 test count grew from 124 (cycle-9 branch baseline) to 128 because the
 docstring edit increased parser token counts in the surrounding test
 fixture. This is incidental; not a substantive change.
+
+---
+
+## Round 3: PI-017 body quality
+
+**Status:** No issues found.
+
+**Findings:**
+
+1. **Schema compliance:** PI-017 follows the same shape as PI-015
+   (cycle 8) and PI-016 (cycle 9): Improvement ID, Evidence reference,
+   Observed problem, Affected package, Recommended change, Expected
+   benefit, Risk level, Safety classification, Validation required,
+   Status. ✅
+
+2. **Observed problem falsifiability:** The section is concrete and
+   falsifiable. It names the exact pattern (working-tree state-rescue
+   after amend), the exact failure (`git checkout main` blocked by
+   uncommitted change), the exact recovery (`git checkout -- <file>`),
+   and two specific evidence references (cycle-8 and cycle-9 closeout
+   memos). A future cycle could falsify PI-017 by demonstrating the
+   pattern was misdiagnosed (e.g., a different root cause). ✅
+
+3. **Recommended change concreteness:** Names the workflow doc, the
+   new stage position (before Stage -2), the test path, the
+   `git status --short -- .openclaw/dreaming/` command, and the
+   exclusion of untracked files. A future implementer could ship
+   PI-017 without reading the workflow doc. ✅
+
+4. **Validation single-command checkability:** "`make dreaming-validate`
+   returns 0 failures on the cycle-10 branch" — one command, one
+   expected result. Same as PI-015. ✅
+
+5. **EV-019 cross-reference:** PI-017's Evidence reference cites EV-019
+   explicitly. Verified that EV-019 exists in `evidence-index.md` and
+   the EV-traceability test (`test_proposed_improvements_have_pi_ids_and_ev_refs`)
+   passes. ✅
+
+6. **RS-019 cross-reference:** PI-017 says "RS-019 captures the
+   regression scenario." Verified RS-019 exists in
+   `regression-scenarios.md` and is correctly linked from PI-017's
+   Validation line. ✅
+
+7. **Cycle-10 summary table:** PI-017 is in the cycle-10 status table
+   with class `auto_safe` and status `APPLIED (cycle 10, NEW)`,
+   consistent with PI-015's entry. ✅
+
+8. **Considered but rejected: "fails silently" wording.** PI-017's
+   Observed problem says `git checkout main` "fails silently" with an
+   error message — these read as contradictory on first read. The
+   wording originates in cycle-8's closeout memo (which is in
+   historical scope, not cycle-10 PR scope). EV-019 quotes cycle-8 in
+   scare quotes, preserving the original wording. The PI body
+   paraphrases the same observation. Changing the PI's wording now
+   would create divergence from the evidence base without solving a
+   real problem. The cycle-8/9 closeout memos are the authoritative
+   source; a careful reader who notices the contradiction can consult
+   EV-019 for the original phrasing.
+
+**Outcome:** No fix-up commit for Round 3.
