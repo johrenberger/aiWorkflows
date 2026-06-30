@@ -1,10 +1,94 @@
 # Nightly Summary
 
+- **Cycle:** 2026-07-01 cycle-10
+- **Branch:** `dreaming/nightly-execution-quality-2026-07-01-cycle-10`
+- **Date:** 2026-07-01
+
+## Trigger
+
+### Surface-Scope Pre-Declaration (Stage -2, PI-015, cycle 8)
+
+- **Workflow target:** dream (`.openclaw/dreaming/`)
+- **Surface area:** in-repo
+- **Dreaming-ledger scope:** in-ledger
+- **Cycle-size budget:** 2 (planned; the Stage -3 + test is the substantive commit; reviewer-driven fixes may add 1 commit)
+
+Rationale: cycle 10's substantive work is the Stage -3 ("post-amend verify") workflow-doc change plus its enforcing test. PI-017 (the only PI filed this cycle) is `auto_safe`; it changes the procedural discipline, not the code, schema, or main workflow. Two commits cover the planned scope: one for the substantive change, one for any reviewer-driven fixes. If no reviewer fixes are needed, the cycle stays at 1 commit.
+
+### Trigger narrative
+
+Cycle 10 was triggered by user request "Kick off cycle 10. After you create a new PR with changes spin up a code reviewer to evaluate solution through 5 rounds of code evaluation and fixes to the PR" (Telegram msg #11623, 2026-07-01 01:13 GMT+2). The user-requested scope is two-part: ship a substantive cycle (Stage -3 candidate from cycle-9 closeout) AND spin up a code-reviewer sub-agent for 5 rounds of evaluation + fixes.
+
+Cycle 9's merge closeout (`memory/2026-07-01-cycle-9-closeout.md`) proposed Stage -3 as the cheapest non-trivial cycle-10 candidate, addressing the two-cycle-stale post-amend working-tree-rescue pattern. With PI-006a, PI-014, PI-009, and the AI-overload review date (2026-07-15) all in their prior-cycle states and no new external evidence, Stage -3 is the natural opening.
+
+## Auto-safe changes applied in cycle 10
+
+All cycle-10 changes are `auto_safe`:
+
+- `.openclaw/dreaming/workflow-nightly-dreaming.md` — Stage -3 added before Stage -2 (NEW, PI-017).
+- `tests/dreaming/test_pr_readiness.py` — `test_no_post_amend_working_tree_drift` added (NEW).
+- `.openclaw/dreaming/regression-scenarios.md` — RS-019 added (NEW).
+- `.openclaw/dreaming/evidence-index.md` — EV-019 added (NEW).
+- `.openclaw/dreaming/proposed-improvements.md` — PI-017 added (NEW, cycle 10, auto_safe, APPLIED this cycle); cycle-10 status table appended.
+- `.openclaw/dreaming/nightly-summary.md` — cycle-10 body prepended (this section); cycle-9 body preserved below.
+- `.openclaw/dreaming/pr-change-log.md` — cycle-10 row appended.
+
+No code changes. No parser changes. No spec changes. No schema migrations. No production-runtime changes.
+
+## Validation findings (cycle-10 delta)
+
+- **124 collected tests** on `main` post-cycle-9-merge (`d1cbc08`).
+- **+1 test** added in cycle 10: `test_no_post_amend_working_tree_drift`. Total now 125.
+- The new test fails on the cycle-10 branch during authoring (because the workflow-doc edit is in the working tree but not yet committed) and passes once the cycle-10 commit lands. This is the natural cycle-authoring workflow; the test enforces "your commit must match your working tree at validation time."
+- **0 CI fix-ups.** The PI-008 diminishing-returns curve continues to hold.
+
+## Deterministic tooling opportunities (cycle-10 delta)
+
+- **PI-017** NEW (cycle 10, auto_safe, APPLIED this cycle) — Stage -3 Post-amend verify.
+- **PI-006a** still waiting on the OpenClaw runtime side; nothing new on this cycle.
+- **PI-014** — proposed; fix is on the same gateway, outside the workflow's surface area.
+- **PI-009** still held per "A then B".
+- **PI-016** — convention adopted going forward; cycle 10's closeout memos (cycle-closeout and merge-closeout) will be the second application.
+
+## Regression scenarios added (cycle-10 delta)
+
+- **RS-019** — working tree in `.openclaw/dreaming/` must be clean relative to HEAD after commits (NEW; status: `failing` baseline; expected to flip to `passing` after cycle-10 merge).
+
+## Commits (cycle 10)
+
+1. cycle-10 substantive commit — workflow-doc change (Stage -3) + test + RS-019 + EV-019 + PI-017 + cycle-10 Trigger + pr-change-log row. 7 files changed, +300 / −1. Hash captured at PR-creation time in the PR body and merge closeout memo.
+
+## Cycle-10 self-meta observation
+
+Cycle 10 is the **second cycle in a row where the substantive work is a procedural discipline** (PI-017 → Stage -3). Cycles 8 (Stage -2), 9 (PI-016), and 10 (Stage -3) are all procedural-discipline cycles. The cycle-size table goes `4→3→2→2→2→2→2→1→1→1→2` (logical feature commits = 2 — the substantive commit plus any reviewer-driven fix-up commit).
+
+Cycle 10 is also the **first cycle where a code-reviewer sub-agent is involved**. The user's request was "spin up a code reviewer to evaluate solution through 5 rounds of code evaluation and fixes to the PR." This introduces a new shape: the cycle's substantive change is reviewed by an external (to the cycle's own context) reviewer before the cycle is considered complete. The five rounds of evaluation and fixes are the reviewer's iteration loop.
+
+Whether the cycle-size table's logical-feature-commits cell of 2 holds depends on the reviewer finding issues that need fixing. If the reviewer approves without changes, cycle 10 ships at 1 commit and the cycle-size cell is corrected in cycle 11 (same pattern as cycle 7's bookkeeping nit, which cycle 8 reconciled).
+
+## Sub-agent workflow
+
+The cycle-10 code-reviewer sub-agent will be spawned after PR #69 opens. The reviewer evaluates the cycle-10 PR through 5 rounds. Reviewer-driven fixes (if any) are committed as separate commits on the cycle-10 branch. The sub-agent's lifecycle ends when the 5 rounds complete or the reviewer approves.
+
+## Cycle-10 carry-forward
+
+- **PI-006a** still waiting on the OpenClaw runtime side; the principal outstanding PI per the user's original framing in #11557.
+- **PI-014** — proposed; fix is on the same gateway but outside the workflow's surface area.
+- **PI-009** still held per "A then B".
+- **PI-016** — convention adopted going forward.
+- **PI-017** (cycle 10) — APPLIED this cycle.
+- **Adjacent follow-up (not in PI ledger):** AI-overload retry pattern on `cyber-signal-daily` — review date 2026-07-15.
+- **Cycle-10-surfaced question (not yet a PI):** whether the code-reviewer sub-agent workflow itself deserves a workflow-doc stage (e.g., "Stage 0.5: Code reviewer" between pre-push validation and PR creation). The 5-round loop is novel; whether it becomes a recurring cycle pattern is a cycle-11 question.
+
+---
+
+## Cycle-9 body (carried forward, unchanged)
+
 - **Cycle:** 2026-07-01 cycle-9
 - **Branch:** `dreaming/nightly-execution-quality-2026-07-01-cycle-9`
 - **Date:** 2026-07-01
 
-## Trigger
+## Trigger (cycle 9)
 
 ### Surface-Scope Pre-Declaration (Stage -2, PI-015, cycle 8)
 

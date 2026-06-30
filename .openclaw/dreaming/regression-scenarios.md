@@ -284,3 +284,21 @@ RS-001 through RS-009 are carried from cycle 1. RS-010 through RS-012 are new in
 - **Validation method:** `tests/dreaming/test_pr_readiness.py::test_declares_surface_scope_in_trigger`. The test is forward-looking: it requires the **most recent cycle's** Trigger section to have the new format. Past cycles' Trigger sections are preserved as historical record.
 - **Owner:** human (the cycle author)
 - **Status:** failing (cycle 8 baseline; expected to flip to `passing` when cycle 8's Trigger is written in the new format)
+
+
+## RS-019 — Working tree in `.openclaw/dreaming/` must be clean relative to HEAD after commits (NEW, cycle 10)
+
+- **Evidence reference:** EV-019, PI-017, Stage -3 in `workflow-nightly-dreaming.md`
+- **Affected workflow or skill:** `.openclaw/dreaming/workflow-nightly-dreaming.md` (Stage -3); `.openclaw/dreaming/` (cycle working area); `git commit --amend` workflow
+- **Severity:** warning (currently `failing` baseline; expected to flip to `passing` when cycle 10 merges and the cycle-10 commit is in sync with the working tree)
+- **Given** a cycle author has just run `git commit` or `git commit --amend`
+- **And** the cycle working area is `.openclaw/dreaming/`
+- **When** `git status --short -- .openclaw/dreaming/` is run
+- **Then** the output must contain no modified tracked files (lines starting with `M`, ` M`, `MM`, `A`, etc.; untracked `??` lines are excluded)
+- **Expected behavior:** The working tree matches HEAD after every commit/amend. Future cycles don't reproduce the cycle-8/cycle-9 working-tree-rescue pattern.
+- **Pass / fail criteria:**
+  - **Pass** if `git status --short -- .openclaw/dreaming/` produces only `??` (untracked) lines or empty output.
+  - **Fail** if any line indicates a modified, added, deleted, or renamed tracked file.
+- **Validation method:** `tests/dreaming/test_pr_readiness.py::test_no_post_amend_working_tree_drift`. The test scopes to `.openclaw/dreaming/`; other directories (e.g., `workflows/`) may have intentionally-uncommitted local edits that are out of cycle scope.
+- **Owner:** human (the cycle author)
+- **Status:** failing (cycle 10 baseline; expected to flip to `passing` after cycle 10's commit lands and the working tree is in sync)

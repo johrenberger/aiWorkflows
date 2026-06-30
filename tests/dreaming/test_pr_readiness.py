@@ -232,3 +232,64 @@ def test_declares_surface_scope_in_trigger() -> None:
         f"All four required labels must appear (case-insensitive): {required_labels}. "
         f"See workflow-nightly-dreaming.md Stage -2 for the schema."
     )
+
+
+def test_no_post_amend_working_tree_drift() -> None:
+    """No tracked file in .openclaw/dreaming/ should be in a modified state relative to HEAD.
+
+    Enforces Stage -3 (PI-017, cycle 10): after a commit (and especially after
+    `git commit --amend`), the working tree must be clean relative to the
+    most recent commit. A modified tracked file indicates a state mismatch
+    that will block the next `git checkout` with "Please commit your changes
+    or stash them before you switch branches."
+
+    The check is scoped to `.openclaw/dreaming/` because that is the cycle's
+    primary working area — the cycle-8 and cycle-9 closeout memos both
+    disclosed drift in `nightly-summary.md` (a `.openclaw/dreaming/` file).
+    Other directories (e.g., `workflows/`, `tests/dreaming/`) may have
+    intentionally-uncommitted local edits that are out of cycle scope.
+    A future cycle may broaden the scope if evidence surfaces that
+    `tests/dreaming/` (or another path) has the same drift pattern.
+
+    Note: this test *intentionally* fires during cycle authoring whenever
+    the author has uncommitted edits to a `.openclaw/dreaming/` file
+    (e.g., mid-edit of `nightly-summary.md`). This is the discipline, not
+    a bug: the test enforces "your commit must match your working tree at
+    validation time." Do not add a skip-on-uncommitted-edits clause; that
+    would defeat Stage -3. The test is most useful after a `git commit
+    --amend` or before the next checkout, but it runs on every
+    `make dreaming-validate` invocation as a forward-looking guard.
+    """
+    status_output = _git_silent("status", "--short", "--", ".openclaw/dreaming/")
+    if not status_output:
+        # Clean working tree in scope (empty `git status` output). Test passes.
+        # This includes the fresh-clone and post-merge-on-main cases where
+        # the working tree matches HEAD by construction.
+        return
+
+    # Parse `git status --short` output. Lines look like:
+    #   " M path/to/file"  (modified, unstaged)
+    #   "M  path/to/file"  (modified, staged)
+    #   "MM path/to/file"  (modified, both staged and unstaged)
+    #   "?? path/to/file"  (untracked — ignored, not a drift)
+    drift_lines = [
+        line for line in status_output.splitlines()
+        if line.strip() and not line.startswith("??")
+    ]
+    assert not drift_lines, (
+        f"Working tree has modified tracked files in .openclaw/dreaming/ "
+        f"relative to HEAD (Stage -3 violation):\n"
+        + "\n".join(drift_lines)
+        + "\n\nThis fires in three common cases:\n"
+        "  1. You are mid-edit (uncommitted work in progress). This is "
+        "expected; commit when ready and the test will pass.\n"
+        "  2. A `git commit --amend` produced a state mismatch (the most "
+        "common Stage -3 failure mode). Run `git status` to inspect, then "
+        "either `git add <file>` (if the amend didn't capture the latest "
+        "content) or `git checkout -- <file>` (if the file should match HEAD).\n"
+        "  3. You have leftover state from a prior cycle's working tree "
+        "(e.g., a stale `nightly-summary.md` line that didn't make it into "
+        "the cycle's commit). Discard with `git checkout -- <file>` after "
+        "verifying the file on `origin/main` (post-merge) has the content "
+        "you want."
+    )

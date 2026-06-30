@@ -341,3 +341,48 @@ No blocked-class changes proposed in cycle 8. The cycle-8 PR adds Stage -2 to th
 | PI-016 | auto_safe | proposed (cycle 9, NEW) |
 
 No blocked-class changes proposed in cycle 9. Cycle 9 ships PI-016 only — a procedural convention for cycle closeout memos. No code changes. No parser changes. No spec changes. No test-suite changes. No workflow-doc stage changes.
+
+
+---
+
+## PI-017 — Add Stage -3 Post-amend verify to workflow-nightly-dreaming.md (NEW, cycle 10; applied-this-cycle)
+
+- **Improvement ID:** PI-017
+- **Evidence reference:** EV-019, cycle-8 merge closeout memo and cycle-9 merge closeout memo, both of which disclosed a post-amend working-tree-rescue pattern
+- **Observed problem:** Cycles 8 and 9 closeouts both hit the same working-tree state-rescue pattern. After a `git commit --amend`, the local working tree has a stale line (the pre-amend hash or content) that doesn't match HEAD. The next `git checkout main` (or any branch switch) fails silently with "Please commit your changes or stash them before you switch branches." The cycle author has to manually `git checkout -- <file>` to discard the stale working-tree state, then retry the checkout.
+  - **Cycle 8's closeout memo** (`memory/2026-07-01-cycle-8-closeout.md`) disclosed this as "a real workflow-disclosure, not a process failure" and proposed a Stage -3 ("post-amend verify") as a candidate.
+  - **Cycle 9's closeout memo** (`memory/2026-07-01-cycle-9-closeout.md`) flagged the pattern as "two-cycle-stale, not a one-off" and recommended cycle 10 consider Stage -3.
+- **Affected package:** `.openclaw/dreaming/workflow-nightly-dreaming.md` (procedure doc, Stage -3 added before Stage -2); `tests/dreaming/test_pr_readiness.py` (new test enforcing the discipline).
+- **Recommended change:** Add Stage -3 to the workflow doc, requiring the cycle author to verify the working tree is clean (no modified tracked files in `.openclaw/dreaming/`) before the next checkout, especially after `git commit --amend`. Add a corresponding test that reads `git status --short -- .openclaw/dreaming/` and asserts no drift lines (excluding untracked files).
+- **Expected benefit:** Future cycles don't reproduce the working-tree-rescue pattern. The Stage -3 check is fast (`git status` is sub-second) and runs as part of the existing `make dreaming-validate` flow.
+- **Risk level:** low (procedural change; no code change; no schema migration; no production-runtime change)
+- **Safety classification:** auto_safe (workflow-doc change; test addition; no production-runtime change; no skill change; no validation-gate change beyond the new test)
+- **Validation required:** `make dreaming-validate` returns 0 failures on the cycle-10 branch (the new test passes because the cycle-10 commit is in sync with the working tree at commit time). RS-019 captures the regression scenario. Cycle 10 dogfoods the new stage.
+- **Status:** APPLIED (cycle 10, NEW) — single-cycle PI; the change ships in this cycle's PR.
+
+---
+
+## Summary of cycle-10 PI status
+
+| PI | Class | Status |
+| --- | --- | --- |
+| PI-001 | auto_safe | proposed (reframed) |
+| PI-002 | review_required | proposed |
+| PI-003 | auto_safe | proposed |
+| PI-004 | review_required | proposed |
+| PI-005 | review_required | proposed |
+| PI-006 | review_required | **partial** (cycle 5; downstream applied, runtime split into PI-006a) |
+| PI-006a | review_required | proposed (cycle 6, NEW; out-of-repo) |
+| PI-007 | auto_safe | proposed |
+| PI-008 | auto_safe | APPLIED (cycle 2) |
+| PI-009 | review_required | proposed (cycle 2; held per "A then B") |
+| PI-010 | informational | proposed (cycle 2)
+| PI-011 | auto_safe | APPLIED (cycle 4) |
+| PI-012 | auto_safe | APPLIED (cycle 4) |
+| PI-013 | review_required | APPLIED (cycle 5) |
+| PI-014 | auto_safe | proposed (cycle 7, NEW) |
+| PI-015 | auto_safe | APPLIED (cycle 8, NEW) |
+| PI-016 | auto_safe | proposed (cycle 9, NEW) |
+| PI-017 | auto_safe | APPLIED (cycle 10, NEW) |
+
+No blocked-class changes proposed in cycle 10. The cycle-10 PR adds Stage -3 to the workflow doc, a new test enforcing it (RS-019, EV-019). The single substantive change is the Stage -3 schema; everything else is artifact tracking. No code changes to the parser, spec, or test suite beyond the new test.

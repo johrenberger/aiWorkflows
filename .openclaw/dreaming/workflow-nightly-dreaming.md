@@ -23,6 +23,27 @@ Before opening or pushing the PR-ready branch, run `make dreaming-validate` from
 
 This step is the durable fix for the cycle-1 fix-up loop (5 of 9 commits were CI-only corrections).
 
+## Stage -3: Post-amend verify (PI-017, cycle 10)
+
+Before switching branches to start a new cycle (Stage -2) or to perform a merge closeout (`git checkout main`), the cycle author must verify the working tree is clean relative to the most recent commit. This applies after any commit, but is especially important after `git commit --amend`, which can leave the working tree's tracked files in a state that disagrees with HEAD.
+
+Required step:
+
+1. Run `git status --short` (scoped to the cycle working area; the enforcing test scopes to `.openclaw/dreaming/`):
+   ```bash
+   git status --short -- .openclaw/dreaming/
+   ```
+2. If any tracked file shows as `M ` (modified, staged) or ` M` (modified, unstaged), the amend (or recent commit) produced a state mismatch between the working tree and the commit. This is a footgun: a subsequent `git checkout` will fail with "Please commit your changes or stash them before you switch branches." Either `git add <file>` (if the working-tree content should be the new HEAD) or `git checkout -- <file>` (if the working tree should match HEAD).
+
+Constraints:
+
+- The check is scoped to `.openclaw/dreaming/` because that is the cycle's working area. Other directories (e.g., `workflows/`) may have intentionally-uncommitted local edits that are out of cycle scope and are not in scope for this stage.
+- For cycles without an amend, Stage -3 is a no-op: `git status --short` returns empty or only `??` (untracked) lines, and the discipline is satisfied by virtue of having committed cleanly.
+
+Why this stage exists (cycle 10 retrofitted justification): cycles 8 and 9 closeouts both hit this pattern. The cycle-8 closeout memo (`memory/2026-07-01-cycle-8-closeout.md`) disclosed it as "a real workflow-disclosure, not a process failure." The cycle-9 closeout memo (`memory/2026-07-01-cycle-9-closeout.md`) flagged it as "two-cycle-stale, not a one-off." Stage -3 codifies the discipline so cycle 11+ doesn't reproduce the pattern. Stage numbering is integers (the dream workflow does not use fractional stages); Stage -3 sits before Stage -2 because "amend hygiene" applies to the cycle author's own workflow between cycles, before any new cycle's pre-declaration begins.
+
+Validation: enforced by `tests/dreaming/test_pr_readiness.py::test_no_post_amend_working_tree_drift` (cycle 10). The test runs `git status --short -- .openclaw/dreaming/` and asserts no lines indicate a modified, added, deleted, or renamed tracked file (untracked `??` lines are excluded). When `git status` reports any such drift, the test fails with an actionable message naming the offending file(s).
+
 ## Stage -2: Surface-Scope Pre-Declaration (PI-015, cycle 8)
 
 Before Stage -1 (workspace pre-check), the cycle author declares the cycle's surface scope. This is a 4-line declaration at the top of the cycle's `nightly-summary.md` Trigger section.
