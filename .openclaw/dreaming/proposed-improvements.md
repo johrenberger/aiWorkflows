@@ -200,6 +200,48 @@ No blocked-class changes proposed in cycle 3, cycle 4, or cycle 5.
 | PI-011 | auto_safe | APPLIED (cycle 4) |
 | PI-012 | auto_safe | APPLIED (cycle 4) |
 | PI-013 | review_required | APPLIED (cycle 5) |
+| PI-014 | auto_safe | proposed (cycle 7, NEW) |
 
-No blocked-class changes proposed in cycle 6. The cycle-6 PR is a hygiene pass (close cycle-5 TBDs) plus a spec-grounded handoff for PI-006a; no code changes to the parser, spec, or test suite.
+No blocked-class changes proposed in cycle 6 or cycle 7. The cycle-6 PR was a hygiene pass plus a spec-grounded handoff for PI-006a; cycle 7 files PI-014 (cyber-signal feed pipeline), adds RS-017, and back-fills EV-016. No code changes to the parser, spec, or test suite.
 
+
+
+---
+
+## PI-014 — Restore the cyber-signal-daily feed pipeline (NEW, cycle 7)
+
+- **Improvement ID:** PI-014
+- **Evidence reference:** EV-016, RS-017, cron `cyber-signal-daily` runs history
+- **Observed problem:** The `cyber-signal-daily` cron has been pointing at `/data/.openclaw/workspace/scripts/cyber-signal-fetch-feeds.sh` for at least 19 days. That path does not exist — `scripts/` is not even a directory on this gateway (`stat` returns ENOENT). The pre-fetched JSON at `/tmp/cyber-signal-feeds.json` was last touched 2026-06-11 13:33 GMT+2 and has been getting more stale every day. The cron still fires and the brief still gets delivered to Telegram, but it's a retrospective snapshot of stale items, not a daily brief. The agent runs are repeatedly noting "feeds are N days stale" in their summaries (see EV-016). A second, distinct issue is interleaved: every cron run fails its first attempt with `FailoverError: The AI service is temporarily overloaded`, then succeeds on retry (auto-retry-on-overload is doing its job; this is the lesser of the two issues).
+- **Affected package:** the gateway's `/data/.openclaw/workspace/scripts/` directory (does not exist) and the `cyber-signal-daily` cron job. NOT a `aiWorkflows`-side concern.
+- **Recommended change:** Create `/data/.openclaw/workspace/scripts/cyber-signal-fetch-feeds.sh` (or a Python equivalent) that pulls from a curated list of OSINT threat feeds (The Hacker News, BleepingComputer, IndustrialCyber, CISA, etc.), deduplicates, and writes fresh JSON to `/tmp/cyber-signal-feeds.json` before each cron fires. Either run it as a separate cron entry scheduled for `25 6 * * *` (5 minutes before the analyst cron at `30 6 * * *`) or have the analyst cron call it as step 1. The shape of the fetch script is implementation-defined; the contract (fresh JSON in `/tmp/cyber-signal-feeds.json` with `.items[]` and `.fetch_errors`) is already encoded in the cron prompt.
+- **Expected benefit:** Daily briefs become actual daily briefs. RS-017 (the cron deliverable freshness gate, NEW) flips from `failing` to `passing` the moment a fetch script lands and one cron cycle completes with fresh data. The AI-overload retries can be addressed separately (see "Adjacent observation" below).
+- **Risk level:** low (script creation; no runtime path touches production data; the cron already handles "no fresh data" gracefully)
+- **Safety classification:** auto_safe (script + cron config; no production-side changes; no schema changes; no skill/workflow changes)
+- **Validation required:** Manual: (a) `scripts/cyber-signal-fetch-feeds.sh` exists and is executable; (b) it can be run standalone and produces `/tmp/cyber-signal-feeds.json` with at least one fresh item from each configured source; (c) the next cron cycle produces a brief that contains at least one item with `pubDate` within 48 hours of the cron fire time. RS-017 encodes (c) as a regression check.
+- **Status:** proposed (NEW)
+- **Adjacent observation (not part of this PI):** the AI-overload retry pattern (first attempt fails, retry succeeds) is the existing behavior. It's not a bug per se — the auto-retry is doing its job. But it means each cron run doubles the model-call cost and adds ~100s of latency. Worth tracking as a follow-up PI if the pattern persists past 2026-07-15.
+
+---
+
+## Summary of cycle-7 PI status
+
+| PI | Class | Status |
+| --- | --- | --- |
+| PI-001 | auto_safe | proposed (reframed) |
+| PI-002 | review_required | proposed |
+| PI-003 | auto_safe | proposed |
+| PI-004 | review_required | proposed |
+| PI-005 | review_required | proposed |
+| PI-006 | review_required | **partial** (cycle 5; downstream applied, runtime split into PI-006a) |
+| PI-006a | review_required | proposed (cycle 6, NEW; out-of-repo) |
+| PI-007 | auto_safe | proposed |
+| PI-008 | auto_safe | APPLIED (cycle 2) |
+| PI-009 | review_required | proposed (cycle 2; held per "A then B") |
+| PI-010 | informational | proposed (cycle 2) |
+| PI-011 | auto_safe | APPLIED (cycle 4) |
+| PI-012 | auto_safe | APPLIED (cycle 4) |
+| PI-013 | review_required | APPLIED (cycle 5) |
+| PI-014 | auto_safe | proposed (cycle 7, NEW) |
+
+No blocked-class changes proposed in cycle 7. The cycle-7 PR files PI-014 (cyber-signal feed pipeline is broken), adds RS-017 (a regression scenario pinning the freshness expectation), and back-fills EV-016 (the evidence entry documenting the broken pipeline). No code changes to the parser, spec, or test suite; no behavior changes; no production-runtime changes.

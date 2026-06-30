@@ -246,3 +246,22 @@ RS-001 through RS-009 are carried from cycle 1. RS-010 through RS-012 are new in
 - **Pass / fail criteria:** Pass if the carried PI either enumerates packages or says "single package". Fail if it lumps multiple work units behind one PI title.
 - **Validation method:** Manual review of `proposed-improvements.md`; cycle-5 audit produced the PI-006 split; cycle-6 elevated the runtime piece to **PI-006a** (own entry, own status, own handoff document).
 - **Owner:** human
+
+
+## RS-017 — `cyber-signal-daily` cron deliverable freshness (NEW, cycle 7)
+
+- **Evidence reference:** EV-016, PI-014, cron `cyber-signal-daily` runs history
+- **Affected workflow or skill:** the `cyber-signal-daily` cron + the brief-delivery contract to Telegram chat 8654084485
+- **Severity:** warning (currently `failing` — the gate is unmet, but the cron still delivers a brief; the failure mode is "stale brief" not "no brief")
+- **Given** the `cyber-signal-daily` cron fires at 06:30 America/Chicago daily
+- **And** the pre-fetched feed file at `/tmp/cyber-signal-feeds.json` should be refreshed by `scripts/cyber-signal-fetch-feeds.sh` (or equivalent) before each cron run
+- **When** a delivered Telegram brief is inspected for the `pubDate_ts` of its HIGH/MEDIUM items
+- **Then** at least one selected item must have `pubDate_ts` within 48 hours of the cron's `runAtMs`
+- **Expected behavior:** daily briefs contain at least one fresh item. The 19-day-stale condition observed in cycle 7 (last fresh fetch 2026-06-11) is the failure this scenario pins.
+- **Pass / fail criteria:**
+  - **Pass** if any selected item in the delivered brief has `pubDate_ts` within 48 hours of the cron's `runAtMs`.
+  - **Fail** if all selected items are older than 48 hours (the cycle-7 condition).
+  - **Fail** if the brief was not delivered at all.
+- **Validation method:** Inspect the most recent cron-run summary (cron `runs` history). The `summary` field for the `ok` run already calls out staleness in plain English ("Feed data is N days stale"). RS-017 is a structured check on the same property.
+- **Owner:** human (this is a cron/tooling health check, not a code-side invariant)
+- **Status:** failing (cycle 7 baseline; expected to flip to `passing` when PI-014 is applied)

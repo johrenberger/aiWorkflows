@@ -235,3 +235,67 @@ None.
 ## Cycle-5 self-meta observation
 
 Cycle 5 rebroke the monotonically-decreasing commit-count trend (`4→3→2→2→2`) by applying the largest deferred PI. The diminishing-returns P-S-005 curve now reads "longer cycle intentional" rather than "no new work".
+
+
+---
+
+## Cycle-7 (2026-06-30) — file PI-014, add RS-017, back-fill EV-016
+
+- **Cycle:** 7
+- **Branch:** `dreaming/nightly-execution-quality-2026-06-30-cycle-7`
+- **Originating user request:** "File new PI and start cycle 7" (Telegram msg #11563, 2026-06-30 23:40 GMT+2)
+- **Trigger context:** Followed cycle-6 closeout memo (`memory/2026-06-30-cycle-6-final.md`), which surfaced the cyber-signal-daily cron staleness as a "worth filing" item. User picked it up.
+- **Safety classification:** all cycle-7 changes are `auto_safe` (PI/RS/EV artifacts; no code; no runtime; no schema; no skill/workflow).
+
+### Cycle-7 review-required changes
+
+None. All changes are `auto_safe`.
+
+### Cycle-7 blocked changes
+
+None.
+
+### Cycle-7 artifacts changed
+
+- `.openclaw/dreaming/proposed-improvements.md` — PI-014 entry (NEW, cycle 7, auto_safe, proposed); cycle-7 status table appended.
+- `.openclaw/dreaming/regression-scenarios.md` — RS-017 entry (NEW, cycle 7; status: `failing` baseline).
+- `.openclaw/dreaming/evidence-index.md` — EV-016 entry (NEW, cycle 7); supersedes a same-numbered cycle-5 cycle-shape observation (preserved in cycle-5 nightly summary).
+- `.openclaw/dreaming/nightly-summary.md` — cycle-7 body prepended; cycle-5 body preserved below as "restored after cycle-7 header prepend" with a cross-reference to the EV-016 supersession.
+- `.openclaw/dreaming/pr-change-log.md` — this section.
+
+### Cycle-7 evidence references
+
+- EV-016 (cycle 7) — `cyber-signal-daily` cron feed pipeline is broken (cron `runs` history; `/tmp/cyber-signal-feeds.json` mtime; `ls scripts/` ENOENT).
+- RS-017 — cron deliverable freshness check (NEW, cycle 7).
+- PI-014 — restore the fetch script (NEW, cycle 7, auto_safe, proposed).
+
+### Cycle-7 reason for change
+
+The cyber-signal-daily cron has been silently producing 19-day-stale briefs for the entire window since 2026-06-11. The brief deliveries themselves are correct (the agent is doing the right thing with stale data), but the failure mode is structural — a missing shell script. Filing it as PI-014 makes the broken state visible; adding RS-017 ensures the next 19-day-stale window is caught earlier (manual inspection on each cron run).
+
+### Cycle-7 expected impact
+
+- PI ledger gains a new `auto_safe` item with concrete validation criteria (script exists; cron delivers fresh data).
+- Regression scenario RS-017 is the first RS to cover a non-dreaming artifact (a cron on the gateway). This sets a precedent: dreaming's nightly review can flag non-dreaming issues as long as they're filed with the auto_safe/review_required/blocked schema.
+- EV-016 supersession is documented (cycle-5 EV-016 was a cycle-shape observation; cycle-7 EV-016 is an infrastructure-failure observation; the number is reused because the cycle-5 entry was preserved and remains accurate as a cycle-shape note).
+
+### Cycle-7 validation performed
+
+- `make dreaming-validate` was run on `main` post-cycle-6-merge (`c21b712`) during cycle-6 closeout — **123 passed, 0 failed, 0 skipped**.
+- No new automated tests added in cycle 7 (RS-017 is a manual-inspection regression check, by design).
+- All cycle-7 edits are text-only artifacts; `tests/dreaming/` is unchanged.
+
+### Cycle-7 rollback notes
+
+`git revert` the cycle-7 commit. No data migrations, no state changes, no schema changes — pure artifact rollback.
+
+### Cycle-7 status
+
+applied on branch, awaiting PR (cycle-7 branch `dreaming/nightly-execution-quality-2026-06-30-cycle-7`; awaiting commit + push + PR creation)
+
+### Cycle-7 self-meta observation
+
+Cycle 7 is the first cycle whose substantive work is **outside the dreaming-workflow's own surface area**. PI-014's fix lives in `/data/.openclaw/workspace/scripts/`, a directory that does not currently exist on this gateway. The cycle-7 framing is "out-of-scope ledger addition" — a different shape from cycle 5's "biggest cycle since 1" (more files) and cycle 6's "substantive-by-handoff" (harness document). The cycle-size table stays at `4→3→2→2→2→2→2` (logical feature commits = 2). The diminishing-returns P-S-005 curve is preserved.
+
+Whether cycle 7 should expand into a 3-commit cycle (artifacts + fetch script + cron adjustment) is a scope decision deferred to a future cycle. Cycle 7 keeps it tight: 2 commits, artifacts-only, PI body explicitly notes "fix is on the gateway, not in this repo's package."
+
