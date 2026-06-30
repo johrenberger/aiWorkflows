@@ -310,3 +310,30 @@ Each entry is an evidence record. Every recommendation, lesson, pattern, scenari
   - cycle-5 self-meta: `.openclaw/dreaming/nightly-summary.md` "Cycle-5 self-meta observation"
   - cycle-6 self-meta: `.openclaw/dreaming/nightly-summary.md` "Cycle-6 self-meta observation"; `memory/2026-06-29-cycle-6.md` "Why cycle 6's framing matters"
   - cycle-7 self-meta: `.openclaw/dreaming/nightly-summary.md` "Cycle-7 self-meta observation"; `memory/2026-06-30-cycle-7-final.md` § "Cycle-7 self-meta observation"
+
+
+---
+
+## EV-018 — Two consecutive closeout memos mislabeled `make dreaming-validate` output (cycle 9)
+
+- **Run identifier:** cycle-9-bookkeeping-error-pattern-evidence
+- **Date:** 2026-07-01 (cycle 9)
+- **Source files reviewed:** `memory/2026-07-01-cycle-7-final.md` (validation-counting claim); `memory/2026-07-01-cycle-8-final.md` (validation-counting claim); `memory/2026-07-01-cycle-8-closeout.md` (correction entry)
+- **Task type:** Self-meta audit (closeout-memo accuracy)
+- **Outcome:** documented; PI-016 filed; convention adopted for cycle 9 onward
+- **Summary:** Two consecutive closeout memos mislabeled `make dreaming-validate` output:
+
+  - **Cycle 7's closeout memo** (`memory/2026-07-01-cycle-7-final.md`) said: "make dreaming-validate on main post-cycle-7-merge: **123 passed, 0 failed, 0 skipped**." Re-running the validator on `b42cdca` (post-cycle-7-merge `main`) shows: 121 passed + 1 skipped + 1 expected-fail-on-main (`test_current_branch_uses_dreaming_prefix`, fails on `main` by design). The "123 passed" claim was off by 2 (the cycle-6 merge's 123 was on a non-`main` branch; cycle-7 added no new tests, so `main` count remained at 122 + 1 skipped + 1 expected-fail-on-main).
+
+  - **Cycle 8's closeout memo** (`memory/2026-07-01-cycle-8-final.md`) said: "make dreaming-validate = **124 passed, 0 failed, 0 skipped**." That count was correct **on the cycle-8 branch**, but the memo did not distinguish branch-local from `main` post-merge counts. The merge closeout (`memory/2026-07-01-cycle-8-closeout.md`) corrected the post-merge count to 122 passed + 1 skipped + 1 expected-fail-on-main.
+
+  The pattern is two-cycle-stale and recurring. PI-016 codifies the convention: every cycle closeout memo quotes `make dreaming-validate` output **twice when applicable** — branch-local count AND `main` post-merge count, both with explicit branch context. Cycle 9's own closeout memos (this cycle's cycle-closeout and merge-closeout, when the latter lands) are the first written under the new convention.
+
+  Note: PI-016 does not retroactively fix cycle 7's or cycle 8's closeout memos. Those corrections stand as historical record in the merge closeout for cycle 8 and in EV-018 (this entry) for cycle 7.
+- **Linked PIs:** PI-016 (NEW, cycle 9, auto_safe, proposed)
+- **Linked regression scenarios:** None (PI-016 is a procedural convention; no automated test is appropriate)
+- **Linked workflow stages:** None (PI-016 is a procedural convention, not a workflow-doc stage change)
+- **Evidence links:**
+  - cycle-7 closeout memo: `memory/2026-07-01-cycle-7-final.md`
+  - cycle-8 closeout memo: `memory/2026-07-01-cycle-8-final.md`
+  - cycle-8 merge closeout memo (correction entry): `memory/2026-07-01-cycle-8-closeout.md` § "Honest disclosure"

@@ -1,10 +1,92 @@
 # Nightly Summary
 
+- **Cycle:** 2026-07-01 cycle-9
+- **Branch:** `dreaming/nightly-execution-quality-2026-07-01-cycle-9`
+- **Date:** 2026-07-01
+
+## Trigger
+
+### Surface-Scope Pre-Declaration (Stage -2, PI-015, cycle 8)
+
+- **Workflow target:** dream (`.openclaw/dreaming/`)
+- **Surface area:** in-repo
+- **Dreaming-ledger scope:** in-ledger
+- **Cycle-size budget:** 1 (planned; reconciled at close)
+
+Rationale: cycle 9's substantive work is a single procedural convention change to how cycle closeout memos quote validator output. All changes are inside `aiWorkflows`. PI-016 (the only PI filed this cycle) is `auto_safe`; it changes the prose discipline, not the code, schema, or workflow doc. One commit covers it; splitting PI-016 from artifact tracking would couple unrelated change classes.
+
+### Trigger narrative
+
+Cycle 9 was triggered by user request "Kick off cycle 9" (Telegram msg #11611, 2026-07-01 01:06 GMT+2). Cycle 8's merge closeout (`memory/2026-07-01-cycle-8-closeout.md`) surfaced PI-016 as a candidate for the next cycle. With PI-006a, PI-014, PI-009, and the AI-overload review date (2026-07-15) all in their prior-cycle states and no new external evidence, cycle 9's natural opening is the procedural-evolution candidate from the closeout memo's "Cycle 9 candidates" list.
+
+Cycle 9 is the **first cycle whose substantive work is a procedural convention about how I write memos, not a code/doc/artifact change**. Cycles 5 (PI-006 partial), 6 (PI-006a cross-repo handoff), 7 (PI-014 non-dreaming surfaced), and 8 (PI-015 workflow-doc stage) all shipped substantive procedural changes; cycle 9 ships a meta-procedural change about how cycles are documented.
+
+## Auto-safe changes applied in cycle 9
+
+All cycle-9 changes are `auto_safe`:
+
+- `.openclaw/dreaming/proposed-improvements.md` — PI-016 added (NEW, cycle 9, auto_safe, proposed); cycle-9 status table appended.
+- `.openclaw/dreaming/nightly-summary.md` — cycle-9 body prepended (uses Stage -2 schema, dogfooding); cycle-8 body preserved below.
+- `.openclaw/dreaming/pr-change-log.md` — cycle-9 row appended.
+
+No code changes. No parser changes. No spec changes. No schema migrations. No production-runtime changes. No workflow-doc stage changes.
+
+## Validation findings (cycle-9 delta)
+
+- **124 collected tests** on `main` post-cycle-8-merge (`ec087fe`).
+- **+0 tests** added in cycle 9 (PI-016 is a procedural convention; no automated test is appropriate).
+- The Stage -2 test `test_declares_surface_scope_in_trigger` continues to pass on the cycle-9 branch (cycle-9's Trigger is written in the new format, dogfooding).
+- **0 CI fix-ups.** The PI-008 diminishing-returns curve continues to hold.
+- **0 pre-push catches** expected. Branch cleanup was done at the start of cycle 9 (no lingering dreaming branches from prior sessions).
+
+## Deterministic tooling opportunities (cycle-9 delta)
+
+- **PI-016** NEW (cycle 9, auto_safe, proposed) — cycle closeout memos must quote validator output with explicit branch context.
+- **PI-006a** still waiting on the OpenClaw runtime side; nothing new on this cycle.
+- **PI-014** — proposed; fix is on the same gateway, outside the workflow's surface area.
+- **PI-009** still held per "A then B".
+
+## Regression scenarios added (cycle-9 delta)
+
+None. PI-016 is a procedural convention; no automated test is appropriate.
+
+## Commits (cycle 9)
+
+*(populated after commit lands)*
+
+## Cycle-9 self-meta observation
+
+Cycle 9 is the first cycle whose substantive work is a **procedural convention about how I write memos, not a code/doc/artifact change**. Cycles 6 (cross-repo handoff document), 7 (non-dreaming PI entry), and 8 (workflow-doc stage) all shipped substantive procedural changes; cycle 9 ships a meta-procedural change about how cycles are documented.
+
+The cycle-size table goes `4→3→2→2→2→2→2→1→1→1` (logical feature commits = 1) — cycle 9 is a single-commit cycle, the same shape as cycles 3, 4, 5, 6, 7, and 8. The diminishing-returns P-S-005 curve is preserved at 0 CI fix-ups.
+
+Three cycles in a row (7, 8, 9) have all been **PI-as-self-discipline cycles** — cycles where the substantive work is filing a PI rather than shipping a code/doc/artifact change. The pattern is worth naming: "PI-as-self-discipline" cycles are the cycle type where the cycle's value is in the ledger entry, not in a deliverable. Cycles 6, 7, 8, 9 are all in this category if you squint. Cycle 5 (PI-006 partial) was the last cycle with a true code deliverable (the parser + spec + fixture + 9 tests).
+
+Whether this trend continues (cycle 10 also being PI-as-self-discipline, or PI-014 implementation, or stand-still) is a cycle-10 question.
+
+## Sub-agent workflow
+
+None — cycle 9 was done in the main session.
+
+## Cycle-9 carry-forward
+
+- **PI-006a** still waiting on the OpenClaw runtime side; the principal outstanding PI per the user's original framing in #11557.
+- **PI-014** — proposed; fix is on the same gateway but outside the workflow's surface area.
+- **PI-009** still held per "A then B".
+- **PI-016** (cycle 9) — adopted-as-convention; cycle 10's closeout memo is the next application.
+- **Adjacent follow-up (not in PI ledger):** AI-overload retry pattern on `cyber-signal-daily` — review date 2026-07-15.
+- **Cycle-9-surfaced observation (not yet a PI):** the Stage -2 schema's "Workflow target" field assumes the workflow has a stable name. If cycle 10 wants to evolve a workflow whose name isn't `dream`, the cycle author must explicitly state it. Whether Stage -2 should also require a workflow-doc update check is a cycle-10 question.
+- **Cycle-9-surfaced observation (not yet a PI):** the post-amend-verify footgun disclosed in cycle 8's closeout. Whether to add a Stage -3 ("post-amend verify") is a cycle-10 question.
+
+---
+
+## Cycle-8 body (carried forward, unchanged)
+
 - **Cycle:** 2026-07-01 cycle-8
 - **Branch:** `dreaming/nightly-execution-quality-2026-07-01-cycle-8`
 - **Date:** 2026-07-01
 
-## Trigger
+## Trigger (cycle 8)
 
 ### Surface-Scope Pre-Declaration (Stage -2, PI-015, cycle 8)
 
