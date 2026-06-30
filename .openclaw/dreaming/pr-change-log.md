@@ -368,3 +368,64 @@ Cycle 7's bookkeeping nit (table said 2 commits, actual was 1) is reconciled in 
 ### Pre-push catch (cycle 8)
 
 Same as cycle 7's pre-push catch: `test_only_one_dreaming_branch_exists` flagged lingering dreaming branches locally (cycle 5 and cycle 6 from prior sessions). Cleaned with `git branch -D`. PI-008 pattern from cycle 2; the test docstring at `tests/dreaming/test_pr_readiness.py::test_only_one_dreaming_branch_exists` explicitly references this precedent.
+
+
+---
+
+## Cycle-9 (2026-07-01) — file PI-016 (cycle closeout memo convention)
+
+- **Cycle:** 9
+- **Branch:** `dreaming/nightly-execution-quality-2026-07-01-cycle-9`
+- **Originating user request:** "Kick off cycle 9" (Telegram msg #11611, 2026-07-01 01:06 GMT+2)
+- **Trigger context:** Cycle 8's merge closeout (`memory/2026-07-01-cycle-8-closeout.md`) surfaced PI-016 as a candidate for the next cycle. With PI-006a, PI-014, PI-009, and the AI-overload review date (2026-07-15) all in their prior-cycle states and no new external evidence, cycle 9's natural opening is the procedural-evolution candidate from the closeout memo's "Cycle 9 candidates" list.
+- **Safety classification:** all cycle-9 changes are `auto_safe` (PI entry + cycle-9 Trigger + pr-change-log row). No code changes; no production-runtime changes; no schema migrations.
+
+### Cycle-9 review-required changes
+
+None. All changes are `auto_safe`.
+
+### Cycle-9 blocked changes
+
+None.
+
+### Cycle-9 artifacts changed
+
+- `.openclaw/dreaming/proposed-improvements.md` — PI-016 entry (NEW, cycle 9, auto_safe, proposed); cycle-9 status table appended.
+- `.openclaw/dreaming/nightly-summary.md` — cycle-9 body prepended (uses Stage -2 schema, dogfooding); cycle-8 body preserved below.
+- `.openclaw/dreaming/pr-change-log.md` — this section.
+
+### Cycle-9 evidence references
+
+- EV-018 (cycle 9, NEW) — two consecutive closeout memos mislabeled `make dreaming-validate` output.
+- cycle-7 closeout memo (`memory/2026-07-01-cycle-7-final.md`) — first occurrence of the validation-counting-error pattern.
+- cycle-8 closeout memo (`memory/2026-07-01-cycle-8-final.md`) — second occurrence (branch-local count mislabeled as `main` count).
+- cycle-8 merge closeout memo (`memory/2026-07-01-cycle-8-closeout.md`) — disclosed the bookkeeping error and proposed the convention.
+
+### Cycle-9 reason for change
+
+Two consecutive closeout memos (cycles 7 and 8) mislabeled `make dreaming-validate` output by quoting the validator's headline number without distinguishing branch-local from `main` post-merge counts. PI-016 codifies the convention: every cycle closeout memo quotes `make dreaming-validate` output **twice when applicable** — branch-local count AND `main` post-merge count, both with explicit branch context. Cycle 9's own closeout memos (this cycle's cycle-closeout and merge-closeout, when the latter lands) are the first written under the new convention.
+
+### Cycle-9 expected impact
+
+- Eliminates the recurring bookkeeping-error pattern in cycle closeout memos.
+- Future closeout memos don't need correction entries.
+- The validation discipline is preserved and accurately reported.
+
+### Cycle-9 validation performed
+
+- **Branch-local:** `make dreaming-validate` on the cycle-9 branch (commit hash TBD until commit lands) — actual count to be recorded at commit time and in the cycle-closeout memo.
+- **Stage -2 enforcement:** `test_declares_surface_scope_in_trigger` reads cycle-9's Trigger section (top of `nightly-summary.md`) and asserts the four field labels appear. Cycle 9's Trigger is written in the new format, so the test passes.
+- **`main` post-merge (forecast):** cycle 9 adds 0 new tests, so the `main` post-merge count should match cycle 8's `main` post-merge count (122 passed + 1 skipped + 1 expected-fail-on-main on `ec087fe`). Forecast: **122 passed + 1 skipped + 1 expected-fail-on-main on `main` post-cycle-9-merge**.
+- **Post-merge validation (PI-016 self-applied):** the cycle-9 closeout memos will quote both counts with explicit branch context, per PI-016.
+
+### Cycle-9 rollback notes
+
+`git revert` the cycle-9 commit. The PI-016 entry is removed from `proposed-improvements.md`, the cycle-9 body is removed from `nightly-summary.md`, and this pr-change-log row is removed. No data migrations, no state changes — pure artifact rollback.
+
+### Cycle-9 status
+
+applied on branch, awaiting PR (cycle-9 branch `dreaming/nightly-execution-quality-2026-07-01-cycle-9`; awaiting commit + push + PR creation)
+
+### Cycle-9 self-meta observation
+
+Cycle 9 is the first cycle whose substantive work is a **procedural convention about how I write memos, not a code/doc/artifact change**. The cycle-size table goes `4→3→2→2→2→2→2→1→1→1` (logical feature commits = 1). Three cycles in a row (7, 8, 9) have all been PI-as-self-discipline cycles — cycles where the cycle's value is in the ledger entry, not in a deliverable.

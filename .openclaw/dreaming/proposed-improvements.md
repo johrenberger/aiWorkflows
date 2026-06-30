@@ -286,3 +286,58 @@ No blocked-class changes proposed in cycle 7. The cycle-7 PR files PI-014 (cyber
 | PI-015 | auto_safe | APPLIED (cycle 8, NEW) |
 
 No blocked-class changes proposed in cycle 8. The cycle-8 PR adds Stage -2 to the workflow doc, a new test enforcing it, RS-018, and EV-017. The single substantive change is the Stage -2 schema; everything else is artifact tracking. No code changes to the parser, spec, or test suite beyond the new test.
+
+
+---
+
+## PI-016 — Cycle closeout memos must quote validator output with explicit branch context (NEW, cycle 9)
+
+- **Improvement ID:** PI-016
+- **Evidence reference:** EV-018, cycle-7 closeout memo (`memory/2026-07-01-cycle-7-final.md`) and cycle-8 closeout memo (`memory/2026-07-01-cycle-8-final.md`), both of which quoted `make dreaming-validate` output without distinguishing branch-local from `main` post-merge counts
+- **Observed problem:** Two consecutive closeout memos (cycles 7 and 8) mislabeled `make dreaming-validate` output:
+
+  - **Cycle 7's closeout memo** said: "make dreaming-validate on main post-cycle-7-merge: **123 passed, 0 failed, 0 skipped**." The actual count on `main` (post-cycle-7-merge, `b42cdca`) was 121 passed + 1 skipped + 1 expected-fail-on-main (`test_current_branch_uses_dreaming_prefix`, fails on `main` by design).
+  - **Cycle 8's closeout memo** said: "make dreaming-validate = **124 passed, 0 failed, 0 skipped**." That count was correct **on the cycle-8 branch**, but the memo did not distinguish branch-local from `main` post-merge counts. The merge closeout (`memory/2026-07-01-cycle-8-closeout.md`) corrected the post-merge count to 122 passed + 1 skipped + 1 expected-fail-on-main.
+
+  Both memos quoted the validator's headline number without explicit branch context. The pattern is two-cycle-stale and recurring — it's a procedural-error pattern, not a one-off typo.
+
+- **Affected package:** the cycle-closeout-memo convention itself (the prose discipline that produces `memory/YYYY-MM-DD-cycle-N-final.md`). No code change; no test change; no workflow-doc stage change.
+- **Recommended change:** Adopt a convention: every cycle closeout memo quotes `make dreaming-validate` output **twice when applicable**, with explicit branch context:
+
+  1. **Branch-local count** — the validator output on the cycle branch (e.g., "124 passed on `dreaming/...cycle-8`"). This is the right number for a cycle closeout memo because it describes the cycle's own validation discipline.
+  2. **`main` post-merge count** — the validator output on `main` after the merge lands (e.g., "122 passed + 1 skipped + 1 expected-fail-on-main on `main` post-cycle-8-merge"). This is the right number for a merge closeout, and must be quoted if the closeout memo also claims the post-merge state.
+
+  When a closeout memo is a cycle closeout (PR open, awaiting merge), only the branch-local count is required. When a closeout memo is a merge closeout (PR merged), both counts are required if the memo discusses the post-merge state.
+
+- **Expected benefit:** Eliminates the recurring bookkeeping-error pattern. Future closeout memos don't need correction entries. The validation discipline is preserved and accurately reported.
+- **Risk level:** low (procedural change to memo-writing discipline; no code change; no schema change)
+- **Safety classification:** auto_safe (procedural convention; no production-runtime change; no skill change; no validation-gate change)
+- **Validation required:** None at the test level. Validation is human-discipline: future cycle closeout memos quote both counts (when applicable) with explicit branch context.
+- **Status:** proposed (NEW) — convention adopted for cycle 9 onward. Cycle 9's closeout memo (this cycle) is the first one written under the new convention.
+- **Adjacent observation (not part of this PI):** The cycle-8 closeout memo I wrote earlier (`memory/2026-07-01-cycle-8-final.md`) is the source of the cycle-8-side error. The merge closeout (`memory/2026-07-01-cycle-8-closeout.md`) corrected it. PI-016 prevents the next cycle from repeating the same error, but it does not retroactively fix cycle 7's or cycle 8's closeout memos. Those corrections stand as historical record.
+
+---
+
+## Summary of cycle-9 PI status
+
+| PI | Class | Status |
+| --- | --- | --- |
+| PI-001 | auto_safe | proposed (reframed) |
+| PI-002 | review_required | proposed |
+| PI-003 | auto_safe | proposed |
+| PI-004 | review_required | proposed |
+| PI-005 | review_required | proposed |
+| PI-006 | review_required | **partial** (cycle 5; downstream applied, runtime split into PI-006a) |
+| PI-006a | review_required | proposed (cycle 6, NEW; out-of-repo) |
+| PI-007 | auto_safe | proposed |
+| PI-008 | auto_safe | APPLIED (cycle 2) |
+| PI-009 | review_required | proposed (cycle 2; held per "A then B") |
+| PI-010 | informational | proposed (cycle 2) |
+| PI-011 | auto_safe | APPLIED (cycle 4) |
+| PI-012 | auto_safe | APPLIED (cycle 4) |
+| PI-013 | review_required | APPLIED (cycle 5) |
+| PI-014 | auto_safe | proposed (cycle 7, NEW) |
+| PI-015 | auto_safe | APPLIED (cycle 8, NEW) |
+| PI-016 | auto_safe | proposed (cycle 9, NEW) |
+
+No blocked-class changes proposed in cycle 9. Cycle 9 ships PI-016 only — a procedural convention for cycle closeout memos. No code changes. No parser changes. No spec changes. No test-suite changes. No workflow-doc stage changes.
