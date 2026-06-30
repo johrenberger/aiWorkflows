@@ -8,6 +8,61 @@ Branch: `dreaming/nightly-execution-quality-2026-07-01-cycle-10`.
 
 ---
 
+## Final summary
+
+- **Total rounds completed:** 5
+- **Total fix-up commits applied:** 4 (Rounds 1, 2, 4, 5)
+- **Total "no issues" rounds:** 1 (Round 3)
+- **Most important issue found:** Round 1 — Stage -3's docstring was a
+  free-form narrative without the `Required step` + `Constraints` +
+  `Validation` structure used by Stage -2 (PI-015, cycle 8) and
+  Stage -1 (PI-012, cycle 4). The docstring's `Validation:` reference
+  was also factually wrong (it said the test "reads the most recent
+  commit"; actually the test runs `git status --short` and parses the
+  working-tree state). A future reader skimming Stage -3 for "what do
+  I do?" would not have found a checklist; cycle-11+ authors
+  recovering from the cycle-8/cycle-9 pattern would have read a
+  *narrative explanation of a footgun* rather than a *procedure to
+  avoid it*. The fix-up realigned Stage -3 with the established stage
+  schema (cycle-8 / cycle-4 conventions) and corrected the
+  Validation-reference factual error.
+- **Least useful round:** Round 3 (PI-017 body quality). The PI body
+  was already high quality, matching PI-015's shape with concrete,
+  falsifiable language; running through the rubric produced no fixable
+  issues. The "fails silently" wording (originating in cycle-8's
+  closeout memo) is the only nit, and changing it would create
+  divergence from the evidence base without solving a real problem.
+  Round 3 served its purpose by confirming the PI body needs no
+  changes — but it produced no commit, which is a legitimate outcome
+  for a code-review round.
+- **Recommendation: MERGE AS-IS** (after the 4 fix-up commits
+  included in this review).
+
+  Substantive rationale: every fix-up commit addresses a real quality
+  issue (docstring alignment, test defensiveness against future
+  regression, PI-016 forecast in the ledger, error-message clarity
+  for cycle-11+ authors) without changing cycle-10's substantive
+  scope (Stage -3 + test + RS + EV + PI). The cycle-10 PR is the
+  smallest possible procedural-evolution cycle (single substantive
+  commit + 4 reviewer-driven commits); every commit passes
+  `make dreaming-validate`. The reviewer log itself is a
+  first-of-kind artifact that future cycles can consult for the
+  5-round review process.
+
+  Cycle-11 follow-ups identified (not blocking cycle-10 merge):
+  - Stage -3 scope does not cover `tests/dreaming/`; if cycle-11
+    amends a test file and observes drift, scope can be broadened
+    using the forward-looking invitation in Stage -3's Constraints.
+  - Cycle-7/8/9 cycle-size-table bookkeeping nit (cycle-7 actual
+    was 1 commit but the table shows 2; this has propagated for 3
+    cycles). A new PI (extension of PI-016) or a one-line fix in
+    cycle 11.
+  - Stage -2 pre-existing typo ("in the Trigger section of the cycle
+    author writes" — extra fragment). Cycle-8 artifact, not in
+    cycle-10 scope.
+
+---
+
 ## Round 1: Schema/format compliance of Stage -3
 
 **Status:** Fix-up commit applied (`1c8423a`).
@@ -261,3 +316,100 @@ this has propagated across cycles 8, 9, and 10). Requires either a
 new PI (extension of PI-016 to cover cycle-size-table
 bookkeeping) or a one-line fix in cycle 11. Out of cycle-10
 substantive scope.
+
+---
+
+## Round 5: Real-world fitness of Stage -3 + test
+
+**Status:** Fix-up commit applied (`0a322cc`).
+
+**Findings:**
+
+1. **Does the Stage -3 docstring tell the cycle author what to do if
+   the test fires?** YES. After the Round 1 fix, Stage -3's
+   `Required step` lists the recovery procedures explicitly
+   (`git add <file>` if the working-tree content should be the new
+   HEAD; `git checkout -- <file>` if the working tree should match
+   HEAD). The cycle author reading Stage -3 has actionable guidance.
+
+2. **Is the test fast enough to run on every commit?** YES. Single
+   test: ~0.15s. Full `make dreaming-validate`: ~0.28s with all
+   tests. Sub-second target met.
+
+3. **Does the test integrate cleanly with `make dreaming-validate`?**
+   YES. Worked through scenario analysis:
+
+   - **Scenario A (mid-edit, no commit yet):** author runs validate
+     mid-edit; test fires. Author is informed "your working tree is
+     dirty." This is actionable information, not noise: the author
+     knows they have uncommitted work to commit when ready.
+   - **Scenario B (post-amend):** author amends a commit; test
+     fires with diagnostic naming the file. Author can resolve with
+     `git add` or `git checkout --` per Stage -3 docstring.
+   - **Scenario C (fresh clone / main checkout):** working tree is
+     clean; test passes.
+
+   The test fires *when there's drift* (the actionable signal). It
+   doesn't fire "aggressively" — it fires when there's something to
+   do.
+
+4. **Should the test be moved to a separate target (e.g.,
+   `make dreaming-pre-amend-check`)?** NO. The test should run as
+   part of the standard validation flow. Moving it to a separate
+   target would defeat the discipline: the author has to remember
+   to run it. Keeping it in `make dreaming-validate` ensures the
+   test runs on every validation, including CI.
+
+5. **CI integration (verified).** The test works in detached-HEAD
+   (CI checkout) because `git status --short -- .openclaw/dreaming/`
+   compares the working tree to HEAD (a commit), not to a branch ref.
+   On a PR's merge commit, the post-merge working tree matches HEAD,
+   so the test passes. On a fresh clone, working tree is clean, test
+   passes.
+
+6. **Error-message clarity (FIXED).** The original error message said
+   "This usually means a `git commit --amend` produced a state
+   mismatch." That framed amend as the dominant failure mode, but the
+   test fires in three distinct scenarios that a cycle author needs
+   to disambiguate:
+     1. Mid-edit (uncommitted work in progress) — expected, commit
+        when ready.
+     2. Post-amend mismatch — resolve with `git add` or
+        `git checkout --`.
+     3. Leftover state from a prior cycle's working tree (the
+        cycle-8/cycle-9 pattern) — discard after verifying
+        `origin/main` has the right content.
+
+   Replaced the single-cause message with a three-case breakdown
+   so cycle-11+ authors can self-diagnose without reading the
+   Stage -3 docstring.
+
+7. **PI-016 compatibility (verified).** Stage -3 fires consistently
+   across branch-local and `main` post-merge contexts (the test
+   passes on both when the working tree matches HEAD). PI-016's
+   cycle-closeout-memo convention (quote validator output twice with
+   explicit branch context) works cleanly with the new test.
+
+8. **PI-017 future evolution (forward-looking).** Stage -3 docstring
+   now explicitly invites future cycles to broaden the scope if
+   evidence surfaces that `tests/dreaming/` (or another path) has
+   the same drift pattern. Cycle-11 can act on this if it amends a
+   `tests/dreaming/` file and observes drift.
+
+9. **Out-of-scope drift (NOT FIXED — cycle-11 follow-up).** The test
+   scopes to `.openclaw/dreaming/` only. If a future cycle amends
+   `tests/dreaming/` (or another path) and leaves the working tree
+   stale, Stage -3 will not catch it. The cycle-8/cycle-9 evidence
+   base is `.openclaw/dreaming/` files only, so broadening scope in
+   this PR would be scope creep. Cycle 11 can re-evaluate when it
+   next amends a `tests/dreaming/` file.
+
+**Fix-up commit:** `0a322cc chore(dreaming): clarify Stage -3 test
+error message for cycle-11+ authors (review round 5)`. Replaced
+single-cause error message with a three-case breakdown (mid-edit /
+post-amend / leftover state). `make dreaming-validate` returns 128
+passed.
+
+**Not fixed (cycle-11 follow-up):** Test scope does not cover
+`tests/dreaming/`. Future cycles that amend test files may need to
+extend Stage -3 scope if drift surfaces.
