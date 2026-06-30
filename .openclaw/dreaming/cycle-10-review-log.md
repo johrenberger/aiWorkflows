@@ -172,3 +172,92 @@ fixture. This is incidental; not a substantive change.
    EV-019 for the original phrasing.
 
 **Outcome:** No fix-up commit for Round 3.
+
+---
+
+## Round 4: Cross-cycle consistency
+
+**Status:** Fix-up commit applied (`7163bf7`).
+
+**Findings:**
+
+1. **PI-016 forecast in pr-change-log cycle-10 row (FIXED).** Cycle 10's
+   row had only "Post-merge on main: the new test continues to pass" with
+   no number. Cycle 9's analogous row had an explicit
+   `main post-merge (forecast): 122 + 1 + 1`. PI-016 was partially
+   applied. Added an explicit `main post-merge (forecast, per PI-016)`
+   line with the cycle-10 forecast: **126 passed + 1 skipped + 1
+   expected-fail-on-main on `main` post-cycle-10-merge**. Computed
+   from cycle-9 main baseline (124 collected) + cycle-10 delta
+   (+1 new test function from substantive commit, +3 new test cases
+   from `cycle-10-review-log.md` landing in scope of
+   `test_no_hidden_reasoning_capture.py`'s file-discovery helpers).
+
+2. **Cycle-7 bookkeeping nit in cycle-size table (NOT FIXED — flagged
+   as cycle-11 follow-up).** Cycle 8's closeout memo disclosed that
+   cycle 7's row in the size table said "2 commits" but actual was 1.
+   Cycle 8's row says the nit is "reconciled in cycle 8's row of the
+   cycle-size table," but the cycle-8 row's table
+   (`4→3→2→2→2→2→2→1`) still shows cycle-7=2 (it should be 1 per the
+   disclosure). Cycle 9's row also keeps cycle-7=2. Cycle 10's row
+   also keeps cycle-7=2. This is a 3-cycle-stale bookkeeping error
+   propagating across the cycle-size table. PI-016 covers validator
+   counts but does not cover cycle-size-table bookkeeping. Fixing it
+   here would modify cycle-7/8/9 ledger entries from cycle 10's PR,
+   which is out of cycle-10 substantive scope. Flagged as cycle-11
+   follow-up: a new PI (or extension of PI-016) covering
+   cycle-size-table bookkeeping could reconcile cycle-7's row.
+
+3. **Cycle-10 Trigger heading style (NO ISSUE — verified).** Cycle 10
+   uses bare `## Trigger` (no suffix); cycles 7/8/9 use
+   `## Trigger (cycle N)` for older cycles. Initially read this as an
+   inconsistency, but on inspection the convention is: the *most
+   recent* cycle's heading is bare (so the
+   `test_declares_surface_scope_in_trigger` regex matches); older
+   cycles' headings get `(cycle N)` suffixes added when they're
+   displaced from the top by a new cycle. Cycle 10's commit correctly
+   applied this convention: cycle 9's heading got the `(cycle 9)`
+   suffix added (line 91), and cycle 10's heading stays bare (line 7).
+   Cycle 5's heading (line 341) is bare because it predates the
+   convention (cycles 5/6 didn't add suffixes; cycle 7 added them
+   retroactively in cycle 8's commit).
+
+4. **Cycle-10 self-meta observation's "logical-feature-commits cell of
+   2" forecast (NOT FIXED — pre-review forecast, will be reconciled
+   at close).** Cycle 10's row says the forecast is "2 logical feature
+   commits" (1 substantive + 1 reviewer-driven). The actual substantive
+   count is 1 (the cycle-10 substantive commit `4bf5bea`); the
+   reviewer-driven commits (currently 5: round-1 docstring, round-1
+   log init, round-2 docstring, round-2 log update, round-3 log update,
+   round-4 pr-change-log forecast) are appended separately. Per the
+   cycle-7 disclosure pattern, the cycle-size table tracks substantive
+   commits only, not reviewer-driven. The cycle-10 cell should
+   reconcile to 1 at close (matching cycle-7's reconciliation
+   precedent). Deferred to the cycle-10 merge closeout memo, where
+   the final commit count will be reconciled. This is the cycle-10
+   author's pre-review forecast; correcting it now would be mid-stream
+   review and may be premature.
+
+5. **PI-016 self-application across cycle 10's artifacts (verified).**
+   - `nightly-summary.md` cycle-10 Validation findings section: uses
+     "124 collected tests on `main` post-cycle-9-merge" — same shape
+     as cycle 9's section. ✅
+   - `nightly-summary.md` cycle-10 Trigger section: pre-declares all
+     four Stage -2 fields (Workflow target, Surface area,
+     Dreaming-ledger scope, Cycle-size budget). ✅
+   - `pr-change-log.md` cycle-10 row: had explicit branch-local
+     "Pre-push" count (now fixed to also include `main` post-merge
+     forecast). ✅
+   - `evidence-index.md` EV-019 cross-references PI-017, RS-019,
+     cycle-8/9 closeout memos. ✅
+
+**Fix-up commit:** `7163bf7 chore(dreaming): add PI-016 main
+post-merge forecast to cycle-10 row (review round 4)`. `make
+dreaming-validate` returns 128 passed.
+
+**Not fixed (cycle-11 follow-up):** Cycle-7/8/9 cycle-size-table
+bookkeeping nit (cycle-7 actual was 1 commit but the table shows 2;
+this has propagated across cycles 8, 9, and 10). Requires either a
+new PI (extension of PI-016 to cover cycle-size-table
+bookkeeping) or a one-line fix in cycle 11. Out of cycle-10
+substantive scope.
