@@ -243,16 +243,28 @@ def test_no_post_amend_working_tree_drift() -> None:
     that will block the next `git checkout` with "Please commit your changes
     or stash them before you switch branches."
 
-    The check is scoped to `.openclaw/dreaming/` because that's the cycle's
-    working area. Other directories (e.g., `workflows/`) may have
+    The check is scoped to `.openclaw/dreaming/` because that is the cycle's
+    primary working area — the cycle-8 and cycle-9 closeout memos both
+    disclosed drift in `nightly-summary.md` (a `.openclaw/dreaming/` file).
+    Other directories (e.g., `workflows/`, `tests/dreaming/`) may have
     intentionally-uncommitted local edits that are out of cycle scope.
+    A future cycle may broaden the scope if evidence surfaces that
+    `tests/dreaming/` (or another path) has the same drift pattern.
 
-    This test is most useful after a `git commit --amend` or before the
-    next checkout. It is a hygiene check, not a structural invariant.
+    Note: this test *intentionally* fires during cycle authoring whenever
+    the author has uncommitted edits to a `.openclaw/dreaming/` file
+    (e.g., mid-edit of `nightly-summary.md`). This is the discipline, not
+    a bug: the test enforces "your commit must match your working tree at
+    validation time." Do not add a skip-on-uncommitted-edits clause; that
+    would defeat Stage -3. The test is most useful after a `git commit
+    --amend` or before the next checkout, but it runs on every
+    `make dreaming-validate` invocation as a forward-looking guard.
     """
     status_output = _git_silent("status", "--short", "--", ".openclaw/dreaming/")
     if not status_output:
-        # Clean working tree in scope. Test passes.
+        # Clean working tree in scope (empty `git status` output). Test passes.
+        # This includes the fresh-clone and post-merge-on-main cases where
+        # the working tree matches HEAD by construction.
         return
 
     # Parse `git status --short` output. Lines look like:
