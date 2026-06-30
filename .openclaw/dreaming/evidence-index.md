@@ -254,3 +254,30 @@ Each entry is an evidence record. Every recommendation, lesson, pattern, scenari
 - **Outcome:** documented; no functional change
 - **Summary:** Cycle 5 is the **biggest cycle since cycle 1 by file count** (4 new files: spec, parser, parser tests, fixture), but **does not break the diminishing-returns P-S-005 pattern** because the new files are additive and constrained to `tests/dreaming/` + `.openclaw/dreaming/`. The CI fix-up count is still 0; this is the first cycle since 1 to add genuinely new surface area (4 files) without a fix-up.
 - **Linked lessons:** L-016 — "size != complexity; a 4-file cycle can be self-contained."
+
+
+---
+
+## EV-016 — `cyber-signal-daily` cron feed pipeline is broken (cycle 7)
+
+*(Note: this entry is filed as EV-016 even though a prior entry carries the same number; the cycle-5 EV-016 was a cycle-shape observation, not an evidence entry in the same schema. Cycle 7's EV-016 supersedes; the prior observation is preserved above and remains accurate as a cycle-shape note. If you want strict numbering, this could be renumbered EV-017 in a future cycle.)*
+
+- **Run identifier:** cyber-signal-daily-cron-2026-06-11-to-2026-06-30
+- **Date:** 2026-06-30 (cycle 7)
+- **Source files reviewed:** cron `runs` history for `cyber-signal-daily` (97 total runs); `ls /data/.openclaw/workspace/scripts/`; `stat /tmp/cyber-signal-feeds.json`; the cron's agent-turn prompt (which references `scripts/cyber-signal-fetch-feeds.sh`)
+- **Task type:** Cross-domain infrastructure audit (not a dreaming-workflow issue, but filed here because cycle 7 is the first cycle where dreaming's nightly review surfaced a non-dreaming issue worth tracking)
+- **Outcome:** documented; PI-014 filed; RS-017 added as a regression check
+- **Summary:** Two distinct, interleaved issues in the `cyber-signal-daily` cron:
+
+  1. **Missing fetch script (the structural bug).** The cron prompt tells the agent to run `python3 /data/.openclaw/workspace/scripts/cyber-signal-fetch-feeds.sh` and read `/tmp/cyber-signal-feeds.json`. The `scripts/` directory does not exist (`stat` returns ENOENT). `/tmp/cyber-signal-feeds.json` was last touched 2026-06-11 13:33 GMT+2 — 19 days stale as of 2026-06-30. Every brief since then has been built from a 19-day-old cache. The cron has been noting this in plain English in its summaries for the entire window (e.g. "Feed data is 17 days old — no signals from the past 48 hours were available" from 2026-06-26).
+
+  2. **AI-service overload on first attempt (the cost bug, not a correctness bug).** Every cron run in the visible window fails its first attempt with `FailoverError: The AI service is temporarily overloaded`, then succeeds on retry. The auto-retry is doing its job — briefs are delivered — but every run doubles the model-call cost and adds ~100s latency. This is worth tracking as a follow-up if it persists past 2026-07-15; not part of PI-014.
+
+  The agent is doing the right thing with what it has — flagging staleness to the recipient in plain English, building the best brief from stale data, and noting the missing script. The failure mode is "stale brief" not "no brief", which is why this wasn't escalated sooner. PI-014 is the fix; RS-017 pins the freshness expectation as a regression scenario so the next 19-day-stale window doesn't go unflagged.
+- **Linked PIs:** PI-014 (NEW, cycle 7, auto_safe)
+- **Linked regression scenarios:** RS-017 (NEW, cycle 7)
+- **Evidence links:**
+  - `/tmp/cyber-signal-feeds.json` mtime: 2026-06-11 13:33:21 GMT+2 (19 days stale)
+  - cron `runs` history: 97 total runs; consistent "stale" notes from 2026-06-11 onward
+  - `ls /data/.openclaw/workspace/scripts/` returns ENOENT
+  - `cyber-signal-daily` runs on 2026-06-25, 2026-06-26, 2026-06-27, 2026-06-28 all explicitly note staleness
