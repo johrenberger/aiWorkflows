@@ -365,7 +365,7 @@ No blocked-class changes proposed in cycle 9. Cycle 9 ships PI-016 only — a pr
 ## PI-018 — Strengthen PI-016 forecast-discipline with post-merge verification (NEW, cycle 11)
 
 - **Improvement ID:** PI-018
-- **Evidence reference:** cycle-10 merge closeout memo (`memory/2026-07-01-cycle-10-closeout.md`); cross-cycle actual-vs-claimed validator count measurements taken on 2026-07-01 by `git checkout <sha> && make dreaming-validate`.
+- **Evidence reference:** EV-020, RS-020, cycle-10 merge closeout memo (`memory/2026-07-01-cycle-10-closeout.md`).
 - **Observed problem:** PI-016 (cycle 9) established the convention of forecasting "main post-merge" validator counts in cycle closeout memos. Cycle 10's merge closeout initially reported that PI-016's forecast-discipline had never actually worked for any of cycles 6-10. **Cycle 11's PI-018 retroactive correction re-measured each prior cycle's actual count properly (by `git checkout <sha>` to clean working tree before running `make dreaming-validate`) and found the situation is more nuanced:** PI-016's forecast-discipline had partial failures. Specifically:
   - cycle 6 (`c21b712`) closeout claimed `123 passed + 0 failed + 0 skipped`; actual is **121 passed + 1 skipped + 1 expected-fail-on-main** (off by 2 in passed-count direction; also missed the 1 skipped + 1 expected-fail).
   - cycle 7 (`b42cdca`) closeout claimed `121 passed + 1 failed + 1 skipped`; actual is **121 passed + 1 skipped + 1 expected-fail-on-main** (matched).
@@ -377,7 +377,7 @@ No blocked-class changes proposed in cycle 9. Cycle 9 ships PI-016 only — a pr
 - **Expected benefit:** PI-016 becomes a real verification method, not just a documentation discipline. The forecast-accuracy delta is recorded honestly. Future cycles can quote PI-016 numbers with confidence.
 - **Risk level:** low (doc amendment + retroactive memo correction; no code change; no schema migration; no production-runtime change)
 - **Safety classification:** auto_safe (workflow-doc amendment; retroactive memo edits; no production-runtime change)
-- **Validation required:** cycle 11's PI-018 application must (a) amend PI-016's section in the workflow doc with the verification step, (b) retroactively correct cycles 6-10's closeout memos with the actual measured counts, (c) optionally add a meta-test that asserts closeout memos quote the post-merge count correctly, (d) PI-018 itself is verifiable by running `make dreaming-validate` on cycle 11's post-merge `main` and confirming the forecast matched.
+- **Validation required:** cycle 11's PI-018 application must (a) amend PI-016's section in the workflow doc with the verification step, (b) retroactively correct cycles 6-10's closeout memos with the actual measured counts, (c) add a test enforcing the forecast-presence discipline in `pr-change-log.md` (the test `test_pr_change_log_forecasts_main_post_merge_count` is the cycle-11 NEW test that fires during cycle authoring if the cycle's row in `pr-change-log.md` doesn't yet contain the forecast; it does NOT verify the forecast was correct, which remains a manual discipline per Stage 11), (d) PI-018 itself is verifiable by running `make dreaming-validate` on cycle 11's post-merge `main` and confirming the forecast matched.
 - **Status:** APPLIED (cycle 11, NEW)
 - **Cycle:** 11
 
