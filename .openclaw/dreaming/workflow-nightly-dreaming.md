@@ -239,8 +239,8 @@ After the PR merges, the cycle author writes a closeout memo to `memory/YYYY-MM-
 
 ### Validation required
 
-- `make dreaming-validate` includes `test_pr_change_log_forecasts_main_post_merge_count` (cycle 11 NEW), which asserts that the most recent committed cycle row in `pr-change-log.md` contains both a branch-local count AND a `main` post-merge count, with explicit branch context. This test catches cycles that ship without proper PI-016 application.
-- The cycle author must manually verify the forecast matched the actual `main` post-merge count. This verification step is NOT automated; it is a discipline enforced by the cycle author's own diligence.
+- `make dreaming-validate` includes `test_pr_change_log_forecasts_main_post_merge_count` (cycle 11 NEW), which asserts that the most recent committed cycle row in `pr-change-log.md` contains a `main post-merge (forecast)` line that includes a numeric count of tests in `<digit> passed` shape (e.g., `127 passed + 1 skipped + 1 expected-fail-on-main`). The test catches three failure modes: (a) missing forecast line entirely, (b) forecast present as a placeholder (`TBD`, `XXX`, `to be determined`), (c) narrative mention only (`PI-016 established the convention of forecasting main post-merge counts`) without an explicit forecast line. Placeholder forecasts and narrative mentions are NOT sufficient; the test requires an actual count.
+- The cycle author must manually verify the forecast matched the actual `main` post-merge count. This verification step is NOT automated; it is a discipline enforced by the cycle author's own diligence. The test enforces forecast PRESENCE AND SHAPE; the forecast's CORRECTNESS is verified separately per Stage 11 step 6.
 
 ### Why this stage exists (PI-018 amendment, cycle 11)
 
