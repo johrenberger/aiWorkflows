@@ -350,3 +350,23 @@ RS-001 through RS-009 are carried from cycle 1. RS-010 through RS-012 are new in
 - **Owner:** human
 - **Status:** passing (cycles 10 and 11 baseline; PI-019 codifies the convention as a workflow stage going forward)
 - **Cycle:** 11
+
+---
+
+## RS-022 — Cycle row must include a captured collect-only baseline as the forecast (NEW, cycle 12)
+
+- **Improvement ID:** PI-020
+- **Evidence reference:** EV-022, cycle-11 closeout memo (`memory/2026-07-01-cycle-11-closeout.md`).
+- **Severity:** informational
+- **Statement:** Every cycle row in `pr-change-log.md` must include a `Collected-test baseline (forecast): <N> tests collected` line, where `<N>` is the captured baseline from running `python3 -m pytest tests/dreaming/ --collect-only -q | grep "tests collected"` at forecast-time. The captured baseline is the precise forecast, not a reasoned estimate. The post-merge verification step (PI-018) compares the actual `main` collected count to this captured baseline; if they diverge, the closeout memo must be corrected with the actual measured count and a Forecast-accuracy section explaining the delta.
+- **Given** a cycle is being authored
+- **When** the cycle author writes the cycle row in `pr-change-log.md`
+- **Then** the cycle row must include a `Collected-test baseline (forecast): <N> tests collected` line where `<N>` is the captured baseline from `python3 -m pytest tests/dreaming/ --collect-only -q | grep "tests collected"` at the time the row is written. The line must include a numeric count (not a placeholder like `TBD` or `to be determined`).
+- **Expected behavior:** Future cycles' forecasts are captured numbers, not reasoned estimates. Parametrized-test expansions (e.g., from `_all_dreaming_files()`) are reflected in the captured baseline. The post-merge verification step (PI-018) has a deterministic baseline to compare against.
+- **Pass / fail criteria:**
+  - **Pass** if the cycle row contains a `Collected-test baseline (forecast): <N> tests collected` line with `<N>` being a positive integer that matches the captured baseline from `python3 -m pytest tests/dreaming/ --collect-only -q | grep "tests collected"`.
+  - **Fail** if the line is missing, has no numeric count, has a placeholder (`TBD`, `XXX`, `to be determined`), or the captured baseline diverges from the actual `main` collected count without a Forecast-accuracy section in the closeout memo.
+- **Validation method:** `tests/dreaming/test_pr_readiness.py::test_pr_change_log_includes_collect_only_forecast_baseline` enforces the forecast-baseline presence. The post-merge verification step (PI-018 / Stage 11) is a manual discipline enforced by the cycle author.
+- **Owner:** human
+- **Status:** proposed (cycle 12, NEW; PI-020 applies-this-cycle)
+- **Cycle:** 12

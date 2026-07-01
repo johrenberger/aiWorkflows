@@ -471,3 +471,83 @@ def test_pr_change_log_forecasts_main_post_merge_count() -> None:
         f"the three forms above with a numeric count in `<digit> passed` shape.\n"
         f"See workflow-nightly-dreaming.md Stage 11 for the convention."
     )
+
+
+def test_pr_change_log_includes_collect_only_forecast_baseline() -> None:
+    """Most recent cycle section in pr-change-log.md must include a captured
+    collect-only baseline (PI-020, cycle 12).
+
+    Cycle authors capture the precise baseline by running:
+        python3 -m pytest tests/dreaming/ --collect-only -q | grep "tests collected"
+    and quote the captured count as `Collected-test baseline (forecast): <N> tests collected`.
+
+    The captured baseline is the precise forecast, not a reasoned estimate.
+    PI-018 / Stage 11 then verifies the actual `main` count against this captured baseline.
+    """
+    from pathlib import Path
+
+    pr_change_log = (Path(__file__).resolve().parents[2] / ".openclaw" / "dreaming" / "pr-change-log.md").read_text()
+    sections = re.split(r"^## Cycle-\d+", pr_change_log, flags=re.MULTILINE)
+    assert len(sections) > 1, "pr-change-log.md must have at least one Cycle- section"
+    last_section = sections[-1]
+    cycle_match = re.search(r"^## (Cycle-\d+)", pr_change_log[pr_change_log.rindex("## Cycle-"):], flags=re.MULTILINE)
+    last_cycle_label = cycle_match.group(1) if cycle_match else "Cycle-?"
+
+    # The numeric-count requirement (the cycle-12 round-2 fix) is on the
+    # SAME line as the baseline marker; the cycle-11 round-2 / round-5
+    # fix for `main post-merge (forecast)` uses the same shape. The
+    # cycle-12 round-2 fix adds three forms to mirror cycle-11's three
+    # regexes: heading + body, bullet (with optional markdown-bold
+    # prefix), and plain line. The bullet regex below uses `\S*?` to
+    # allow markdown-bold `**` markers between the bullet and the
+    # baseline label (matching the form the error message suggests).
+    NUMERIC_BASELINE = r"\d+[ \t]+tests?[ \t]+collected"
+    baseline_patterns = [
+        # Heading form: `### Collected-test baseline (forecast)`
+        # followed (optionally with a blank line) by a body line
+        # containing `<digit> tests collected`. The header itself
+        # does NOT need the numbers; the next body line does.
+        r"(?:^|\n)[ \t]*#{2,4}[ \t]+Collected-test baseline[ \t]+\(forecast\)[^\n]*\n[ \t]*\n?[^\n]*"
+        + NUMERIC_BASELINE,
+        # Bullet form (with optional `**` bold between bullet and
+        # label, and optional `**` bold closing after the colon).
+        # Numeric count on the SAME line.
+        r"(?:^|\n)[ \t]*[-*][ \t]+\S*?Collected-test baseline[ \t]+\(forecast\):[ \t]*"
+        + NUMERIC_BASELINE,
+        # Plain line form (no list marker, no heading). Numeric count
+        # on the SAME line.
+        r"(?:^|\n)[ \t]*Collected-test baseline[ \t]+\(forecast\):[ \t]*"
+        + NUMERIC_BASELINE,
+    ]
+    found_baseline = False
+    for pattern in baseline_patterns:
+        if re.search(pattern, last_section, flags=re.IGNORECASE | re.DOTALL):
+            found_baseline = True
+            break
+    assert found_baseline, (
+        f"Most recent cycle section (`{last_cycle_label}`) in pr-change-log.md "
+        f"does not contain a `Collected-test baseline (forecast): <N> tests collected` "
+        f"line with a numeric count.\n\n"
+        f"Per PI-020 (cycle 12), every cycle row must capture the precise baseline by running:\n"
+        f"    python3 -m pytest tests/dreaming/ --collect-only -q | grep 'tests collected'\n\n"
+        f"and quoting the captured count. The captured baseline is the precise forecast,\n"
+        f"not a reasoned estimate. This is the symmetry partner of PI-018 / Stage 11\n"
+        f"(post-merge verification): pre-merge baseline-capture + post-merge verification.\n\n"
+        f"Add ONE of the following forms to the `{last_cycle_label}` section:\n"
+        f"  - A heading (with numbers in the body):\n"
+        f"      ### Collected-test baseline (forecast)\n"
+        f"      - **Collected-test baseline (forecast):** 132 tests collected\n"
+        f"  - A bullet (with numbers on the same line):\n"
+        f"      - **Collected-test baseline (forecast, per PI-020):** 132 tests collected\n"
+        f"  - A plain line (with numbers on the same line):\n"
+        f"      Collected-test baseline (forecast): 132 tests collected\n\n"
+        f"Three failure modes this test catches:\n"
+        f"  (a) Missing baseline line entirely.\n"
+        f"  (b) Baseline present as a placeholder (TBD, XXX, to be determined)\n"
+        f"      without a numeric count.\n"
+        f"  (c) Narrative mention only (no explicit baseline line).\n\n"
+        f"Note: narrative mentions of 'Collected-test baseline' or 'forecast' do NOT\n"
+        f"satisfy this test. The baseline must be on its own line in one of the three\n"
+        f"forms above with a numeric count in `<digit> tests collected` shape.\n"
+        f"See workflow-nightly-dreaming.md Stage 0a for the convention."
+    )

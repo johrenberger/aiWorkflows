@@ -23,6 +23,35 @@ Before opening or pushing the PR-ready branch, run `make dreaming-validate` from
 
 This step is the durable fix for the cycle-1 fix-up loop (5 of 9 commits were CI-only corrections).
 
+### Stage 0a: Capture collect-only baseline at forecast-time (PI-020, cycle 12)
+
+When writing the cycle row in `pr-change-log.md` (Stage -2 forward-looking schema), the cycle author must also capture the precise baseline. This is the symmetry partner of Stage 11's verification step (PI-018 / PI-020).
+
+#### Required step
+
+1. Run the collect-only baseline capture:
+
+   ```
+   python3 -m pytest tests/dreaming/ --collect-only -q 2>&1 | grep "tests collected"
+   ```
+
+2. Quote the captured count in the cycle row as a `Collected-test baseline (forecast): <N> tests collected` line (or a heading + bullet equivalent matching the `test_pr_change_log_includes_collect_only_forecast_baseline` regex). The captured count is the **precise forecast**, not a reasoned estimate.
+3. Optionally include the parametrized-test-expansion delta explicitly (e.g., "cycle 12 adds 1 new file to `.openclaw/dreaming/` which adds 3 parametrized tests, so the collect-only baseline of 132 should match the post-merge count of 135").
+
+#### Constraints
+
+- The baseline must be captured via `python3 -m pytest tests/dreaming/ --collect-only -q` (or equivalent). Reasoned estimates from `def test_` count are NOT acceptable; they are exactly what PI-020 was filed to prevent.
+- The line must include a numeric count in `<digit> tests collected` shape. Placeholders (`TBD`, `XXX`, `to be determined`) and narrative mentions without a number are NOT acceptable.
+- Stage 0a is forward-looking: it requires the **most recent cycle's** row in `pr-change-log.md` to have the captured baseline. Past cycles' rows are preserved as historical record and are not retroactively restructured.
+
+#### Validation required
+
+Enforced by `tests/dreaming/test_pr_readiness.py::test_pr_change_log_includes_collect_only_forecast_baseline` (cycle 12 NEW). The test scans the most recent cycle section in `pr-change-log.md` and asserts a `Collected-test baseline (forecast): <digit> tests collected` line is present in one of three forms (heading + body, bullet, or plain line). Placeholder baselines (`TBD`, `to be determined`) and narrative mentions do NOT satisfy the test. See the test docstring for the regex shape and three failure modes.
+
+#### Why this stage exists (PI-020 amendment, cycle 12)
+
+Cycle 11's forecast missed by +3 because the forecast reasoned from `def test_` count but did not account for `@pytest.mark.parametrize` driven by `_all_dreaming_files()` in `tests/dreaming/test_no_hidden_reasoning_capture.py`. The post-merge verification step (PI-018 / Stage 11) caught the +3 correctly, but the forecast itself was a reasoned estimate. Stage 0a makes the forecast a captured number. PI-020 is the symmetry partner of PI-018: pre-merge baseline-capture (Stage 0a) + post-merge verification (Stage 11).
+
 ## Stage -3: Post-amend verify (PI-017, cycle 10)
 
 Before switching branches to start a new cycle (Stage -2) or to perform a merge closeout (`git checkout main`), the cycle author must verify the working tree is clean relative to the most recent commit. This applies after any commit, but is especially important after `git commit --amend`, which can leave the working tree's tracked files in a state that disagrees with HEAD.

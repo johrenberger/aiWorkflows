@@ -588,3 +588,66 @@ Cycle 11 is the **second cycle with a code-reviewer sub-agent**. Per msg #11644,
 
 - `test_proposed_improvements_have_pi_ids_and_ev_refs` would have caught a missing EV reference on PI-018 if I had not pre-emptively added EV-020 alongside it (lesson from cycle 9's pre-push catch, repeated in cycle 10). Three cycles in a row where this test catches a real schema violation; the test is doing its job.
 - The Stage -3 test (`test_no_post_amend_working_tree_drift`) continues to fire during cycle authoring when the cycle author has uncommitted edits to `.openclaw/dreaming/`. The tightened version (cycle 11's PI-018 wrap-up commit `34606a4`) fires only on UNSTAGED modifications, which is the cycle-8/cycle-9 working-tree-rescue pattern.
+
+## Cycle-12 (2026-07-02) — apply PI-020: forecast methodology refinement (collect-only baseline at forecast-time)
+
+- **Cycle:** 12
+- **Branch:** `dreaming/nightly-execution-quality-2026-07-02-cycle-12`
+- **Originating user request:** "PI-020" (Telegram msg #11818, 2026-07-01 03:57 GMT+2). The user adopted the cycle-11 closeout memo's carry-forward candidate: PI-020 (forecast methodology refinement).
+- **Trigger context:** Cycle 11's forecast missed by +3 because the forecast reasoned from `def test_` count but did not account for `@pytest.mark.parametrize` driven by `_all_dreaming_files()` in `tests/dreaming/test_no_hidden_reasoning_capture.py`. PI-020 (cycle 12 NEW, applies-this-cycle) addresses this by adding a pre-merge collect-only baseline-capture step (Stage 0a) that makes the forecast a captured number rather than a reasoned estimate.
+- **Safety classification:** all cycle-12 changes are `auto_safe` (workflow-doc amendment + test addition + RS + EV + PI ledger entries).
+
+### Cycle-12 review-required changes
+
+None. All changes are `auto_safe`.
+
+### Cycle-12 blocked changes
+
+None.
+
+### Cycle-12 artifacts changed
+
+- `.openclaw/dreaming/workflow-nightly-dreaming.md` — Stage 0a added (NEW, PI-020); ~20 lines.
+- `tests/dreaming/test_pr_readiness.py` — `test_pr_change_log_includes_collect_only_forecast_baseline` added (NEW); ~50 lines.
+- `.openclaw/dreaming/regression-scenarios.md` — RS-022 added (NEW).
+- `.openclaw/dreaming/evidence-index.md` — EV-022 added (NEW).
+- `.openclaw/dreaming/proposed-improvements.md` — PI-020 added (NEW, auto_safe).
+- `.openclaw/dreaming/nightly-summary.md` — cycle-12 body prepended (uses Stage -2 schema, dogfooding); cycle-11 body preserved below.
+- `.openclaw/dreaming/pr-change-log.md` — cycle-12 row appended (this section).
+
+### Cycle-12 evidence references
+
+- **EV-022** (cycle 12, NEW) — Cycle-11 forecast missed by +3 because parametrized-test expansions were not accounted for; PI-020 captures the precise baseline forward-looking.
+- **RS-022** (cycle 12, NEW) — Cycle row must include a captured collect-only baseline as the forecast.
+- **PI-020** (cycle 12, NEW, applies-this-cycle) — Forecast methodology refinement: capture collect-only baseline at forecast-time.
+
+### Cycle-12 reason for change
+
+PI-016 (cycle 9) established the convention of forecasting "main post-merge" validator counts in cycle closeout memos. PI-018 (cycle 11) added a post-merge verification step. Cycle 11's forecast missed by +3 because the forecast was a reasoned estimate, not a captured number. PI-020 (cycle 12 NEW) adds a pre-merge collect-only baseline-capture step (Stage 0a) that captures the precise baseline at forecast-time, making the forecast deterministic rather than reasoned. PI-020 is the symmetry partner of PI-018: pre-merge baseline-capture + post-merge verification.
+
+### Cycle-12 expected impact
+
+- The forecast-baseline becomes a captured number, not a reasoned estimate. Future cycles' forecasts will reflect parametrized-test expansions.
+- The post-merge verification step (PI-018) compares the actual collected count to the captured baseline, surfacing drift caused by out-of-band test additions (e.g., reviewer-driven parametrization changes).
+- The cycle-12 forecast-discipline test (`test_pr_change_log_includes_collect_only_forecast_baseline`) asserts the cycle row contains the captured baseline line.
+
+### Cycle-12 validation performed (planned)
+
+- **Pre-commit verification of the new test:** ran `test_pr_change_log_includes_collect_only_forecast_baseline` against the cycle-12 branch (workflow-doc edit + test addition staged but not committed) and confirmed it PASSES because the cycle-12 row in `pr-change-log.md` is populated with a `Collected-test baseline (forecast)` line.
+- **Pre-push:** `make dreaming-validate` on the cycle-12 branch — expected: **133 passed, 0 failed, 0 skipped** (1 new test added in cycle 12; no skips on cycle-12 branch because the branch has commits ahead of base).
+
+### Collected-test baseline (forecast)
+
+- Collected-test baseline (forecast): 133 tests collected (per PI-020 + Stage 0a, with explicit captured baseline). Captured at forecast-time via `python3 -m pytest tests/dreaming/ --collect-only -q | grep "tests collected"`.
+
+### Main post-merge (forecast)
+
+- **`main` post-merge (forecast, per PI-016 + PI-018):** 136 passed + 1 skipped + 1 expected-fail-on-main. Branch-local collect-only baseline is 133 tests; +3 parametrized-test expansion delta accounts for the cycle-12 reviewer log file (which the code-reviewer sub-agent will create at `.openclaw/dreaming/cycle-12-review-log.md`), contributing +1 parametrized test invocation per the three `_all_dreaming_files()` parametrized tests in `test_no_hidden_reasoning_capture.py`. If the reviewer adds additional files to `.openclaw/dreaming/`, the delta grows accordingly; per PI-018, the cycle-12 closeout memo must be corrected with the actual measured count.
+
+### Cycle-12 rollback notes
+
+`git revert` the cycle-12 commits (1 substantive + 0 reviewer-driven = 1 commit on the branch, if reviewer finds no issues). Stage 0a is removed from the workflow doc, the test is removed, RS-022/EV-022/PI-020 are removed from their respective ledgers, nightly-summary.md is reverted to its pre-cycle-12 state, and pr-change-log.md is reverted to its pre-cycle-12 state.
+
+### Cycle-12 status
+
+applied on branch, awaiting PR (cycle-12 branch `dreaming/nightly-execution-quality-2026-07-02-cycle-12`; awaiting commit + push + PR creation; code-reviewer sub-agent to be spawned per Stage 12 / PI-019)
