@@ -326,10 +326,9 @@ def test_pr_change_log_forecasts_main_post_merge_count() -> None:
     """The most recent committed cycle row in pr-change-log.md must forecast a `main` post-merge count.
 
     Enforces PI-016 (cycle 9) and PI-018 (cycle 11 amendment): every cycle's
-    row in pr-change-log.md must contain a `main` post-merge forecast (a
-    line like `Main post-merge (forecast): ...` or similar). The forecast
-    is verified against the actual `main` post-merge count after the merge
-    lands, per Stage 11 of workflow-nightly-dreaming.md.
+    row in pr-change-log.md must contain a `main` post-merge forecast. The
+    forecast is verified against the actual `main` post-merge count after
+    the merge lands, per Stage 11 of workflow-nightly-dreaming.md.
 
     The test is forward-looking: it checks the most recent committed cycle
     row. It does NOT retroactively check past cycles (those are cycle-11's
@@ -346,6 +345,15 @@ def test_pr_change_log_forecasts_main_post_merge_count() -> None:
     skipped + 1 expected-fail-on-main") before committing. The forecast
     is later verified by running `make dreaming-validate` on the actual
     post-merge `main` per Stage 11.
+
+    Detection rationale: the regexes are anchored to line-start and match
+    a "forecast line" (heading, bullet, or plain line) rather than a
+    narrative mention. A cycle row that mentions "PI-016 forecast" or
+    "main post-merge count" in passing prose does NOT pass the test —
+    only an explicit forecast line does. The cycle-10 cycle row uses the
+    bullet form (`**`main` post-merge (forecast, per PI-016):** ...`); the
+    cycle-11 cycle row uses a heading (`### Main post-merge (forecast)`)
+    plus a bullet. Both are detected.
     """
     if not PR_CHANGE_LOG.exists():
         pytest.fail(
@@ -369,26 +377,46 @@ def test_pr_change_log_forecasts_main_post_merge_count() -> None:
     last_cycle_label = cycle_sections[-2]
     last_cycle_content = cycle_sections[-1]
 
-    # Look for a main-post-merge forecast line. Acceptable forms:
-    #   "Main post-merge (forecast): ..."
-    #   "main post-merge (forecast): ..."  (case-insensitive)
-    #   "**`main` post-merge (forecast)** — ..."
+    # Look for a main-post-merge forecast LINE (not narrative mention).
+    # Acceptable forms, anchored to line-start to avoid matching narrative
+    # mentions like "PI-016 established the convention of forecasting main
+    # post-merge counts":
+    #   - Heading:   `### Main post-merge (forecast)`
+    #   - Bullet:    `- **`main` post-merge (forecast):** 130 passed + ...`
+    #   - Plain:     `main post-merge (forecast): 130 passed + ...`
+    # The `main` token may be backtick-wrapped (`` `main` ``) and may have
+    # markdown bold (`**`) prefix in the bullet form. Whitespace and backticks
+    # between `main` and `post-merge` are accepted.
     forecast_patterns = [
-        r"main\s+post[- ]merge\s*\(forecast\)",
-        r"main\s+post[- ]merge.*forecast",
+        # Heading form (level 2-4 markdown headings): `### Main post-merge (forecast)`
+        r"(?:^|\n)\s*#{2,4}\s+main[\s`]*post[- ]merge[\s`]*\(forecast[^)]*\)",
+        # Bullet form (with optional ** bold, backtick-wrapped `main`, optional
+        # post-forecast qualifier like ", per PI-016"):
+        # `- **`main` post-merge (forecast, per PI-016):** ...`
+        r"(?:^|\n)\s*[-*]\s+\S*?main[\s`]*post[- ]merge[\s`]*\(forecast[^)]*\)",
+        # Plain line form (no list marker, no heading):
+        # `main post-merge (forecast): 130 passed + 1 skipped + ...`
+        r"(?:^|\n)\s*`{0,1}main`{0,1}[\s`]+\s*post[- ]merge[\s`]*\(forecast[^)]*\)",
     ]
     found_forecast = False
+    matched_pattern = None
     for pattern in forecast_patterns:
         if re.search(pattern, last_cycle_content, flags=re.IGNORECASE):
             found_forecast = True
+            matched_pattern = pattern
             break
 
     assert found_forecast, (
         f"Most recent cycle section (`{last_cycle_label}`) in pr-change-log.md "
         f"does not contain a `main post-merge (forecast)` line. "
         f"Per PI-016 (cycle 9) and PI-018 (cycle 11 amendment), every cycle "
-        f"row must forecast a `main` post-merge count. Add a line like:\n"
-        f"  **`main` post-merge (forecast):** 125 passed + 1 skipped + 1 expected-fail-on-main\n"
-        f"to the `{last_cycle_label}` section of pr-change-log.md.\n\n"
-        f"See workflow-nightly-dreaming.md Stage 11 for the convention."
+        f"row must forecast a `main` post-merge count.\n\n"
+        f"Add ONE of the following forms to the `{last_cycle_label}` section:\n"
+        f"  - A heading: `### Main post-merge (forecast)`\n"
+        f"  - A bullet: `- **`main` post-merge (forecast):** 125 passed + 1 skipped + 1 expected-fail-on-main`\n"
+        f"  - A plain line: `main post-merge (forecast): 125 passed + 1 skipped + 1 expected-fail-on-main`\n\n"
+        f"Note: narrative mentions of 'main post-merge' or 'forecast' do NOT\n"
+        f"satisfy this test. The forecast must be on its own line in one of\n"
+        f"the three forms above. See workflow-nightly-dreaming.md Stage 11\n"
+        f"for the convention."
     )
