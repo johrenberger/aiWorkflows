@@ -362,24 +362,40 @@ No blocked-class changes proposed in cycle 9. Cycle 9 ships PI-016 only — a pr
 
 ---
 
-## PI-018 — Strengthen PI-016 forecast-discipline with post-merge verification (NEW, cycle 11; planned)
+## PI-018 — Strengthen PI-016 forecast-discipline with post-merge verification (NEW, cycle 11)
 
 - **Improvement ID:** PI-018
-- **Evidence reference:** cycle-10 merge closeout memo (`memory/2026-07-01-cycle-10-closeout.md`); cross-cycle actual-vs-claimed validator count measurements taken on 2026-07-01.
-- **Observed problem:** PI-016 (cycle 9) established the convention of forecasting "main post-merge" validator counts in cycle closeout memos. The convention was supposed to make forecasts "verifiable as a method, not just a discipline." Cycle 10's merge closeout discovered that **PI-016's forecast-discipline has never actually worked** for any of cycles 6-10. The "actual post-merge count" quoted in closeout memos has been wrong every single cycle, and the "matched the forecast" claim has been wrong every single cycle. Specifically (measured on 2026-07-01 by running `make dreaming-validate` against each merge commit):
-  - cycle 6 (`c21b712`) closeout claimed `116 passed + 1 + 1`; actual is **124 + 1 + 1** (off by 8 in passed-count).
-  - cycle 7 (`b42cdca`) closeout claimed `121 passed + 1 + 1`; actual is **124 + 1 + 1** (off by 3).
-  - cycle 8 (`ec087fe`) closeout claimed `122 passed + 1 + 1`; actual is **125 + 1 + 1** (off by 3).
-  - cycle 9 (`d1cbc08`) closeout claimed `122 passed + 1 + 1` and explicitly stated "matched the forecast"; actual is **125 + 1 + 1** (off by 3).
-  - cycle 10 (`a91abff`) closeout forecast `125 + 1 + 1`; actual is **126 + 1 + 1** (off by 1).
+- **Evidence reference:** EV-020, RS-020, cycle-10 merge closeout memo (`memory/2026-07-01-cycle-10-closeout.md`).
+- **Observed problem:** PI-016 (cycle 9) established the convention of forecasting "main post-merge" validator counts in cycle closeout memos. Cycle 10's merge closeout initially reported that PI-016's forecast-discipline had never actually worked for any of cycles 6-10. **Cycle 11's PI-018 retroactive correction re-measured each prior cycle's actual count properly (by `git checkout <sha>` to clean working tree before running `make dreaming-validate`) and found the situation is more nuanced:** PI-016's forecast-discipline had partial failures. Specifically:
+  - cycle 6 (`c21b712`) closeout claimed `123 passed + 0 failed + 0 skipped`; actual is **121 passed + 1 skipped + 1 expected-fail-on-main** (off by 2 in passed-count direction; also missed the 1 skipped + 1 expected-fail).
+  - cycle 7 (`b42cdca`) closeout claimed `121 passed + 1 failed + 1 skipped`; actual is **121 passed + 1 skipped + 1 expected-fail-on-main** (matched).
+  - cycle 8 (`ec087fe`) closeout claimed `122 passed + 1 skipped + 1 expected-fail-on-main`; actual is **122 passed + 1 skipped + 1 expected-fail-on-main** (matched).
+  - cycle 9 (`d1cbc08`) closeout claimed `122 passed + 1 skipped + 1 expected-fail-on-main` and stated "matched"; actual is **122 passed + 1 skipped + 1 expected-fail-on-main** (matched; cycle 10's closeout wrongly claimed cycle 9 was off by 3; cycle 11 corrected the misreport).
+  - cycle 10 (`a91abff`) closeout forecast `125 + 1 + 1`; actual is **126 passed + 1 skipped + 1 expected-fail-on-main** (off by 1 in passed-count direction).
 - **Affected package:** `.openclaw/dreaming/workflow-nightly-dreaming.md` (PI-016 amendment, adding a verification step to the forecast procedure); cycles 6-10 closeout memos in `memory/` (retroactive correction of the actual measured counts).
 - **Recommended change:** PI-016 needs a discipline-strengthening amendment. Specifically: the forecast step is currently "compute the new test count and write it down." It should become "compute the new test count, write it down, and **after the merge lands, run `make dreaming-validate` on the actual post-merge `main` and verify the forecast matched.**" If the forecast did not match, the closeout memo must be corrected with the actual measured count and a forecast-accuracy section explaining the delta. Optionally, add a test that asserts closeout memos quote the post-merge count correctly (a meta-test on `memory/` files). Cycle 11 should also retroactively correct cycles 6-10's closeout memos with the actual measured counts (see cross-cycle table in this PI).
 - **Expected benefit:** PI-016 becomes a real verification method, not just a documentation discipline. The forecast-accuracy delta is recorded honestly. Future cycles can quote PI-016 numbers with confidence.
 - **Risk level:** low (doc amendment + retroactive memo correction; no code change; no schema migration; no production-runtime change)
 - **Safety classification:** auto_safe (workflow-doc amendment; retroactive memo edits; no production-runtime change)
-- **Validation required:** cycle 11's PI-018 application must (a) amend PI-016's section in the workflow doc with the verification step, (b) retroactively correct cycles 6-10's closeout memos with the actual measured counts, (c) optionally add a meta-test that asserts closeout memos quote the post-merge count correctly, (d) PI-018 itself is verifiable by running `make dreaming-validate` on cycle 11's post-merge `main` and confirming the forecast matched.
-- **Status:** proposed (cycle 11, NEW)
-- **Cycle:** 11 (planned)
+- **Validation required:** cycle 11's PI-018 application must (a) amend PI-016's section in the workflow doc with the verification step, (b) retroactively correct cycles 6-10's closeout memos with the actual measured counts, (c) add a test enforcing the forecast-presence discipline in `pr-change-log.md` (the test `test_pr_change_log_forecasts_main_post_merge_count` is the cycle-11 NEW test that fires during cycle authoring if the cycle's row in `pr-change-log.md` doesn't yet contain the forecast; it does NOT verify the forecast was correct, which remains a manual discipline per Stage 11), (d) PI-018 itself is verifiable by running `make dreaming-validate` on cycle 11's post-merge `main` and confirming the forecast matched.
+- **Status:** APPLIED (cycle 11, NEW)
+- **Cycle:** 11
+
+---
+
+## PI-019 — Adopt code-reviewer sub-agent as a workflow stage (NEW, cycle 11)
+
+- **Improvement ID:** PI-019
+- **Evidence reference:** EV-021, RS-021, Telegram msgs #11647 (workflow adopted), #11644 (per-round-summary directive), #11770 (5-round budget chosen arbitrarily), #11772 (rounds 4 and 5 locked as fixed purposes). Cycle-10 reviewer log: `.openclaw/dreaming/cycle-10-review-log.md`. Cycle-11 reviewer log: `.openclaw/dreaming/cycle-11-review-log.md`.
+- **Observed problem:** Cycles 1-9 did not use a code-reviewer sub-agent; the cycle author reviewed their own work. Cycles 10 and 11 each spawned a code-reviewer sub-agent for 5 rounds (per msg #11647, adopted after cycle 10's reviewer run). Cycle 10's reviewer caught 4 latent issues across 5 rounds (the most important: Stage -3 schema alignment — a Stage schema was introduced that fired on the wrong git status line shape). Cycle 11's reviewer caught 6 latent issues across 5 rounds + a second-pass catch (the most important: forecast-line test regex matched text but not numeric count — would pass on `TBD` / `to be determined` placeholder inputs, exactly the discipline failure PI-018 was supposed to prevent). The catch rate demonstrates that a clean-context second pair of eyes catches real issues; the cycle author reviewing their own work cannot reproduce this distance.
+- **Affected package:** `.openclaw/dreaming/workflow-nightly-dreaming.md` (Stage 12 added).
+- **Recommended change:** Add Stage 12 to the workflow doc, documenting the code-reviewer sub-agent convention with explicit round purposes: rounds 1-3 are flex (target the specific risk surface of the cycle's scope); rounds 4-5 are fixed (round 4 = retroactive-correction accuracy / cross-cycle bookkeeping verification; round 5 = real-world fitness / false-positive simulation). Lock in the per-round-summary directive (msg #11644) as a hard constraint. Lock in the second-pass discipline (verify claimed code changes by reading actual code, not just commit messages) as a default reviewer behavior.
+- **Expected benefit:** Every substantive cycle gets a deterministic spine of review rounds (numerical-correctness check + empirical-failure-mode check) regardless of scope. The reviewer becomes a documented workflow stage, discoverable for future cycles.
+- **Risk level:** low (workflow-doc addition + reviewer-log convention; no production-runtime change; no test suite change beyond the reviewer logs)
+- **Safety classification:** auto_safe (workflow-doc amendment + reviewer-log convention; no code change to validator, parser, or production runtime)
+- **Validation required:** cycle 11's PI-019 application must (a) add Stage 12 to the workflow doc with the round purposes documented, (b) the cycle-11 reviewer log must enumerate 5 rounds with a per-round-summary directive, (c) cycle 12 (and beyond) must spawn a code-reviewer sub-agent per Stage 12, (d) PI-019 itself is verifiable by reading the cycle-11 reviewer log + the Stage 12 section in the workflow doc.
+- **Status:** APPLIED (cycle 11, NEW)
+- **Cycle:** 11
 
 ---
 
@@ -405,6 +421,7 @@ No blocked-class changes proposed in cycle 9. Cycle 9 ships PI-016 only — a pr
 | PI-015 | auto_safe | APPLIED (cycle 8, NEW) |
 | PI-016 | auto_safe | proposed (cycle 9, NEW) |
 | PI-017 | auto_safe | APPLIED (cycle 10, NEW) |
-| PI-018 | auto_safe | proposed (cycle 11, NEW; planned; see PI-018 body above) |
+| PI-018 | auto_safe | APPLIED (cycle 11, NEW) |
+| PI-019 | auto_safe | APPLIED (cycle 11, NEW) |
 
 No blocked-class changes proposed in cycle 10 or planned for cycle 11. The cycle-10 PR adds Stage -3 to the workflow doc, a new test enforcing it (RS-019, EV-019). The single substantive change is the Stage -3 schema; everything else is artifact tracking. No code changes to the parser, spec, or test suite beyond the new test.

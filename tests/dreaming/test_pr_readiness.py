@@ -320,3 +320,154 @@ def test_no_post_amend_working_tree_drift() -> None:
         "space) are NOT drift. They're about-to-be-committed work and the "
         "test ignores them."
     )
+
+
+def test_pr_change_log_forecasts_main_post_merge_count() -> None:
+    """The most recent committed cycle row in pr-change-log.md must forecast a `main` post-merge count.
+
+    Enforces PI-016 (cycle 9) and PI-018 (cycle 11 amendment): every cycle's
+    row in pr-change-log.md must contain a `main` post-merge forecast. The
+    forecast is verified against the actual `main` post-merge count after
+    the merge lands, per Stage 11 of workflow-nightly-dreaming.md.
+
+    The test is forward-looking: it checks the most recent committed cycle
+    row. It does NOT retroactively check past cycles (those are cycle-11's
+    PI-018 retroactive-correction deliverable).
+
+    The test asserts the FORECAST exists in pr-change-log.md AND that it
+    contains a numeric count of tests in `<digit> passed` shape. It does
+    NOT assert the forecast was correct (that requires running
+    `make dreaming-validate` on the actual post-merge `main`, which is a
+    manual discipline enforced by Stage 11, not by an automated test).
+    Placeholders (`TBD`, `XXX`, `to be determined`) are NOT acceptable;
+    the test requires an explicit numeric count.
+
+    Cycle-authoring note: this test fires during cycle authoring if the
+    cycle's row in pr-change-log.md doesn't yet contain the forecast OR
+    if the forecast is a placeholder. Add a forecast WITH actual
+    predicted counts (e.g., "main post-merge (forecast): 130 passed + 1
+    skipped + 1 expected-fail-on-main") before committing. The forecast
+    is later verified by running `make dreaming-validate` on the actual
+    post-merge `main` per Stage 11.
+
+    Detection rationale: the regexes are anchored to line-start and match
+    a "forecast line" (heading, bullet, or plain line) followed by a
+    numeric count shape (`<digit> passed`), not a narrative mention or
+    a placeholder. A cycle row that mentions "PI-016 forecast" or
+    "main post-merge count" in passing prose does NOT pass the test —
+    only an explicit forecast line with a numeric count does. The
+    cycle-10 cycle row uses the bullet form
+    (`**`main` post-merge (forecast, per PI-016):** 125 passed + 1
+    skipped + 1 expected-fail-on-main`); the cycle-11 cycle row uses a
+    heading (`### Main post-merge (forecast)`) plus a bullet
+    (`**`main` post-merge (forecast):** 127 passed + ...`). Both are
+    detected. Placeholder forecasts like `- main post-merge (forecast):
+    TBD` or `- **`main` post-merge (forecast):** to be determined` do
+    NOT satisfy the test.
+
+    Three failure modes the test catches:
+      (a) Missing forecast line entirely.
+      (b) Forecast present as a placeholder (TBD, XXX, to be determined)
+          without a numeric count.
+      (c) Narrative mention only (no explicit forecast line).
+    """
+    if not PR_CHANGE_LOG.exists():
+        pytest.fail(
+            f"pr-change-log.md not found at {PR_CHANGE_LOG}. "
+            "Create it before running this test."
+        )
+
+    log_text = PR_CHANGE_LOG.read_text(encoding="utf-8")
+
+    # Split into cycle rows. Each cycle row starts with a `## Cycle-N`
+    # heading. We want the most recent one (the LAST one in the file).
+    cycle_sections = re.split(r"^## (Cycle-\d+)", log_text, flags=re.MULTILINE)
+    # cycle_sections alternates: [preamble, "Cycle-N", content, "Cycle-N+1", content, ...]
+    if len(cycle_sections) < 3:
+        pytest.fail(
+            "pr-change-log.md has no cycle sections. Expected at least one "
+            "`## Cycle-N` heading."
+        )
+
+    # The most recent cycle is the last "Cycle-N" heading + its content.
+    last_cycle_label = cycle_sections[-2]
+    last_cycle_content = cycle_sections[-1]
+
+    # Look for a main-post-merge forecast LINE (not narrative mention).
+    # Acceptable forms, anchored to line-start to avoid matching narrative
+    # mentions like "PI-016 established the convention of forecasting main
+    # post-merge counts":
+    #   - Heading:   `### Main post-merge (forecast)` followed (on the
+    #                same or a subsequent body line) by a numeric count
+    #                in `<digit> passed` shape (e.g., `127 passed + 1
+    #                skipped + 1 expected-fail-on-main`). The heading
+    #                alone (with a placeholder body) is NOT acceptable.
+    #   - Bullet:    `- **`main` post-merge (forecast):** 130 passed + 1
+    #                skipped + 1 expected-fail-on-main`. Numeric count
+    #                must be on the SAME line as the forecast.
+    #   - Plain:     `main post-merge (forecast): 130 passed + 1 skipped
+    #                + 1 expected-fail-on-main`. Numeric count on the
+    #                SAME line.
+    # The `main` token may be backtick-wrapped (`` `main` ``) and may have
+    # markdown bold (`**`) prefix in the bullet form. Whitespace and backticks
+    # between `main` and `post-merge` are accepted. A `, per PI-016` (or
+    # similar) qualifier is allowed between `forecast` and `)`.
+    #
+    # The numeric-count requirement is the cycle-11 round-5 fix:
+    # placeholder forecasts (TBD, XXX, to be determined) and
+    # heading-only-without-numbers forecasts were passing the original
+    # three regexes. The fallback search (numeric count in the same
+    # cycle section) catches stray forecast lines that happen to include
+    # numbers later.
+    NUMERIC_FORECAST = r"\d+\s+passed"
+    forecast_patterns = [
+        # Heading form (level 2-4 markdown headings): `### Main post-merge
+        # (forecast)` followed by a body line (within the same cycle
+        # section) containing `<digit> passed`. The header itself does
+        # NOT need the numbers; the next body line does.
+        r"(?:^|\n)\s*#{2,4}\s+main[\s`]*post[- ]merge[\s`]*\(forecast[^)]*\)[^\n]*\n[^\n]*"
+        + NUMERIC_FORECAST,
+        # Bullet form (with optional ** bold, backtick-wrapped `main`,
+        # optional post-forecast qualifier like ", per PI-016").
+        # Numeric count on the SAME line as the forecast.
+        # `- **`main` post-merge (forecast, per PI-016):** 125 passed + 1
+        # skipped + 1 expected-fail-on-main`
+        r"(?:^|\n)\s*[-*]\s+\S*?main[\s`]*post[- ]merge[\s`]*\(forecast[^)]*\)[^\n]*"
+        + NUMERIC_FORECAST,
+        # Plain line form (no list marker, no heading). Numeric count on
+        # the SAME line. `main post-merge (forecast): 130 passed + ...`
+        r"(?:^|\n)\s*`{0,1}main`{0,1}[\s`]+\s*post[- ]merge[\s`]*\(forecast[^)]*\)[^\n]*"
+        + NUMERIC_FORECAST,
+    ]
+    found_forecast = False
+    matched_pattern = None
+    for pattern in forecast_patterns:
+        if re.search(pattern, last_cycle_content, flags=re.IGNORECASE | re.DOTALL):
+            found_forecast = True
+            matched_pattern = pattern
+            break
+
+    assert found_forecast, (
+        f"Most recent cycle section (`{last_cycle_label}`) in pr-change-log.md "
+        f"does not contain a `main post-merge (forecast)` line with a numeric count. "
+        f"Per PI-016 (cycle 9) and PI-018 (cycle 11 amendment), every cycle "
+        f"row must forecast a `main` post-merge count with actual numbers "
+        f"(e.g., '125 passed + 1 skipped + 1 expected-fail-on-main').\n\n"
+        f"Add ONE of the following forms to the `{last_cycle_label}` section:\n"
+        f"  - A heading (with numbers in the body):\n"
+        f"      ### Main post-merge (forecast)\n"
+        f"      - **`main` post-merge (forecast):** 125 passed + 1 skipped + 1 expected-fail-on-main\n"
+        f"  - A bullet (with numbers on the same line):\n"
+        f"      - **`main` post-merge (forecast, per PI-016):** 125 passed + 1 skipped + 1 expected-fail-on-main\n"
+        f"  - A plain line (with numbers on the same line):\n"
+        f"      main post-merge (forecast): 125 passed + 1 skipped + 1 expected-fail-on-main\n\n"
+        f"Three failure modes this test catches:\n"
+        f"  (a) Missing forecast line entirely.\n"
+        f"  (b) Forecast present as a placeholder (TBD, XXX, to be determined)\n"
+        f"      without a numeric count.\n"
+        f"  (c) Narrative mention only (no explicit forecast line).\n\n"
+        f"Note: narrative mentions of 'main post-merge' or 'forecast' do NOT\n"
+        f"satisfy this test. The forecast must be on its own line in one of\n"
+        f"the three forms above with a numeric count in `<digit> passed` shape.\n"
+        f"See workflow-nightly-dreaming.md Stage 11 for the convention."
+    )

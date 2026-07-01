@@ -302,3 +302,51 @@ RS-001 through RS-009 are carried from cycle 1. RS-010 through RS-012 are new in
 - **Validation method:** `tests/dreaming/test_pr_readiness.py::test_no_post_amend_working_tree_drift`. The test scopes to `.openclaw/dreaming/`; other directories (e.g., `workflows/`) may have intentionally-uncommitted local edits that are out of cycle scope.
 - **Owner:** human (the cycle author)
 - **Status:** failing (cycle 10 baseline; expected to flip to `passing` after cycle 10's commit lands and the working tree is in sync)
+
+
+---
+
+## RS-020 — Cycle closeout memos must quote validator output twice with explicit branch context and a forecast-accuracy section (NEW, cycle 11)
+
+- **Evidence reference:** EV-020 (cross-cycle actual-vs-claimed validator count measurements, 2026-07-01)
+- **PI reference:** PI-018 (NEW, cycle 11), PI-016 (cycle 9, amended by PI-018)
+- **Affected workflow or skill:** `.openclaw/dreaming/workflow-nightly-dreaming.md` (Stage 11); closeout memos in `memory/`; `pr-change-log.md` cycle rows
+- **Severity:** warning (forecast-discipline failure is a documentation quality issue, not a runtime failure)
+- **Given** a cycle author has just merged PR #N to `main` (the cycle's branch tip becomes `main`'s HEAD)
+- **And** the cycle's `pr-change-log.md` row contains a `main post-merge (forecast)` line (per PI-016)
+- **When** the cycle author writes the cycle's closeout memo (in `memory/`)
+- **Then** the memo must (a) quote `make dreaming-validate` output twice with explicit branch context — once for branch-local (on the cycle's branch tip) and once for `main` post-merge; (b) include a forecast-accuracy section comparing the actual `main` post-merge count to the cycle author's forecast; (c) if the forecast did not match, correct the closeout memo with the actual measured count and document the delta
+- **Expected behavior:** Every closeout memo quotes both counts honestly, and any forecast-accuracy delta is recorded (not silently corrected). Future cycles can quote PI-016 numbers with confidence.
+- **Pass / fail criteria:**
+  - **Pass** if the closeout memo contains both counts (branch-local + main post-merge) with explicit branch context AND a forecast-accuracy section that documents whether the forecast matched.
+  - **Fail** if either count is missing, has no branch context, or the forecast-accuracy section is absent.
+- **Validation method:** `tests/dreaming/test_pr_readiness.py::test_pr_change_log_forecasts_main_post_merge_count` enforces the forecast-presence discipline in `pr-change-log.md` (forward-looking). The actual forecast-accuracy verification (running `make dreaming-validate` on the actual post-merge `main`) is a manual discipline enforced by Stage 11 of `workflow-nightly-dreaming.md`.
+- **Owner:** human (the cycle author)
+- **Status:** failing (cycles 6-10 baseline; cycle 11's PI-018 retroactive correction addresses cycles 6-10; expected to flip to `passing` on all cycles 11+)
+- **Cycle:** 11
+
+---
+
+## RS-021 — Code-reviewer sub-agent runs 5 rounds with fixed round-4 and round-5 purposes (NEW, cycle 11)
+
+- **Improvement ID:** PI-019
+- **Evidence reference:** EV-021, Telegram msgs #11647 (workflow adopted), #11644 (per-round-summary directive), #11770 (5-round budget chosen arbitrarily), #11772 (rounds 4 and 5 locked as fixed purposes). Cycle-10 reviewer log: `.openclaw/dreaming/cycle-10-review-log.md`. Cycle-11 reviewer log: `.openclaw/dreaming/cycle-11-review-log.md`.
+- **Severity:** informational
+- **Statement:** Every substantive cycle must spawn a code-reviewer sub-agent that runs 5 rounds of review, with per-round summaries dropped back to the parent session after each round. Rounds 1-3 are flex (target the specific risk surface of the cycle's scope). Round 4 is fixed: retroactive-correction accuracy / cross-cycle bookkeeping verification. Round 5 is fixed: real-world fitness / false-positive simulation. The second-pass discipline (verify claimed code changes by reading actual code, not just commit messages) is a default reviewer behavior.
+- **Given** a cycle that adds a new test, stage, PI, RS, or EV
+- **When** the cycle author has committed the substantive change and is preparing to open the PR
+- **Then** the cycle author must spawn a code-reviewer sub-agent that:
+  - Reads the cycle's diff between the branch and `main`
+  - Runs 5 rounds of review with per-round summaries
+  - Applies fix-up commits to the branch as findings warrant (or records "no issues" rounds)
+  - Pushes after each fix-up commit
+  - Writes a reviewer log to `.openclaw/dreaming/cycle-N-review-log.md` (committed to the cycle's PR)
+  - Final summary at the top of the reviewer log with: rounds completed, fix-up commits, no-issue rounds, recommendation
+- **Expected behavior:** Every substantive cycle gets a deterministic spine of review rounds (numerical-correctness check + empirical-failure-mode check) regardless of scope. Reviewer logs become artifacts that future cycles can read to understand prior review patterns.
+- **Pass / fail criteria:**
+  - **Pass** if the reviewer log enumerates 5 rounds, each with a documented finding or no-issue acknowledgment, with at least rounds 4 and 5 explicitly labeled as fixed-purposes (cross-cycle bookkeeping + empirical failure-mode simulation respectively).
+  - **Fail** if the reviewer ran fewer than 5 rounds, or rounds 4 and 5 are not labeled as fixed purposes, or no per-round summaries were dropped.
+- **Validation method:** Manual review of `.openclaw/dreaming/cycle-N-review-log.md`. The cycle-N reviewer log structure is documented in `.openclaw/dreaming/workflow-nightly-dreaming.md` Stage 12.
+- **Owner:** human
+- **Status:** passing (cycles 10 and 11 baseline; PI-019 codifies the convention as a workflow stage going forward)
+- **Cycle:** 11
