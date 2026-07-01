@@ -533,20 +533,21 @@ None.
 - `.openclaw/dreaming/proposed-improvements.md` — PI-018 status updated to APPLIED (cycle 11, NEW); cycle-11 status table appended.
 - `.openclaw/dreaming/nightly-summary.md` — cycle-11 body prepended (uses Stage -2 schema, dogfooding); cycle-10 body preserved below.
 - `.openclaw/dreaming/pr-change-log.md` — cycle-11 row appended (this section).
-- `memory/2026-06-30-cycle-6-final.md` — retroactive correction of the wrong `123 passed` claim to actual `124 + 1 + 1`.
-- `memory/2026-07-01-cycle-7-final.md` — retroactive correction of the wrong `121 passed` claim to actual `124 + 1 + 1`.
-- `memory/2026-07-01-cycle-8-closeout.md` — retroactive correction of the wrong `122 passed` claim to actual `125 + 1 + 1`.
-- `memory/2026-07-01-cycle-9-closeout.md` — retroactive correction of the wrong `122 passed` claim to actual `125 + 1 + 1`; replacement of the "matched the forecast" claim with a forecast-accuracy section.
+- `memory/2026-06-30-cycle-6-final.md` — retroactive correction of the wrong `123 passed, 0 failed, 0 skipped` claim to actual `121 passed + 1 skipped + 1 expected-fail-on-main` (cycle 6 over-claimed by 2 in passed-count and missed the 1 skipped + 1 expected-fail; cycle 11 corrected both).
+- `memory/2026-07-01-cycle-7-final.md` — verified, no change needed (the original `121 + 1 + 1` claim matched the actual; cycle 11's re-measurement by `git checkout b42cdca` confirmed this).
+- `memory/2026-07-01-cycle-8-closeout.md` — verified, no change needed (the original `122 + 1 + 1` claim matched the actual; cycle 11's re-measurement by `git checkout ec087fe` confirmed this).
+- `memory/2026-07-01-cycle-9-closeout.md` — verified, no change needed (the original `122 + 1 + 1 (matched)` claim was correct; cycle 11's re-measurement by `git checkout d1cbc08` confirmed the actual was `122 + 1 + 1`). Cycle 10's closeout had wrongly claimed cycle 9 was off by 3; cycle 11's verification corrected that misreport.
+- `memory/2026-07-01-cycle-10-closeout.md` — retroactive correction of the cycle-10 forecast from `125 + 1 + 1` to actual `126 + 1 + 1` (off by 1 in passed-count direction); correction of the original "PI-016 failing for every cycle" finding to "PI-016 had partial failures (cycles 6 and 10); cycles 7-9 matched."
 
 ### Cycle-11 evidence references
 
-- **EV-020** (cycle 11, NEW) — PI-016 forecast-discipline has been failing for every cycle since adoption (cross-cycle actual-vs-claimed measurements).
+- **EV-020** (cycle 11, NEW) — PI-016 forecast-discipline had partial failures (cycles 6 and 10 miscounted; cycles 7-9 matched); cross-cycle actual-vs-claimed measurements taken by `git checkout <sha> && make dreaming-validate`.
 - **RS-020** (cycle 11, NEW) — Cycle closeout memos must quote validator output twice with explicit branch context and a forecast-accuracy section.
 - **PI-018** (cycle 11, NEW, APPLIED this cycle) — strengthen PI-016 with post-merge verification step.
 
 ### Cycle-11 reason for change
 
-PI-016 (cycle 9) established the convention of forecasting "main post-merge" validator counts in cycle closeout memos. Cycle 10's merge closeout discovered that PI-016's forecast-discipline has been failing for every cycle since adoption — every closeout memo's "actual post-merge count" was wrong, and every "matched the forecast" claim was wrong. PI-018 amends PI-016 with a post-merge verification step (run `make dreaming-validate` on the actual post-merge `main`, compare to the forecast, correct the closeout memo if they don't match) and retroactively corrects cycles 6-10's closeout memos with the actual measured counts.
+PI-016 (cycle 9) established the convention of forecasting "main post-merge" validator counts in cycle closeout memos. Cycle 10's merge closeout initially reported that PI-016's forecast-discipline had failed for every cycle since adoption (cycles 6-10). **Cycle 11's PI-018 retroactive correction re-measured each prior cycle's actual count properly (by `git checkout <sha>` to clean working tree before running `make dreaming-validate`) and found the situation is more nuanced:** PI-016's forecast-discipline had partial failures. Cycles 6 and 10 miscounted (cycle 6 over-claimed by 2 in passed-count and missed the 1 skipped + 1 expected-fail-on-main; cycle 10 under-counted by 1); cycles 7-9 matched the actual post-merge counts. PI-018 amends PI-016 with a post-merge verification step (run `make dreaming-validate` on the actual post-merge `main`, compare to the forecast, correct the closeout memo if they don't match) and retroactively corrects cycles 6 and 10's closeout memos; cycles 7-9's closeout memos were verified as correctly-quoted and required no edits.
 
 ### Cycle-11 expected impact
 

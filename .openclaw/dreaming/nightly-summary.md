@@ -17,11 +17,11 @@
 
 Cycle 11 was triggered by user request "Candidate 1" (Telegram msg #11687, 2026-07-01 01:54 GMT+2). The "1" refers to the cycle-11 candidate list presented in the cycle-10 merge closeout (`memory/2026-07-01-cycle-10-closeout.md`); candidate 1 was PI-018 application (strengthen PI-016 forecast-discipline with post-merge verification; retroactively correct cycles 6-10 closeout memos).
 
-Cycle 11 is the **first cycle where the substantive work is fixing a procedural-discipline failure**. PI-016 was adopted in cycle 9 as a forecast convention; cycle 10's merge closeout discovered that PI-016 had been failing as a verification method for every cycle since adoption (5 cycles). PI-018 addresses this by amending PI-016 with a post-merge verification step and retroactively correcting the wrong counts in cycles 6-10's closeout memos.
+Cycle 11 is the **first cycle where the substantive work is fixing a procedural-discipline failure**. PI-016 was adopted in cycle 9 as a forecast convention; cycle 10's merge closeout initially reported that PI-016's forecast-discipline had failed for every cycle since adoption. **Cycle 11's PI-018 retroactive correction re-measured each prior cycle's actual count properly (by `git checkout <sha>` to clean working tree before running `make dreaming-validate`) and found the situation is more nuanced:** PI-016's forecast-discipline had partial failures (cycles 6 and 10 miscounted; cycles 7-9 matched). PI-018 addresses this by amending PI-016 with a post-merge verification step and retroactively correcting the wrong counts in cycles 6 and 10's closeout memos (cycles 7-9's closeouts were verified as correctly-quoted and required no edits).
 
 Cycle 11 is also the **second cycle with a code-reviewer sub-agent** (per msg #11647 "use this code review cycle on changes going forward" + msg #11644 "drop a summary after each round. Don't wait for me to respond"). The reviewer evaluates the cycle-11 PR through 5 rounds, with per-round summaries.
 
-Rationale: cycle 10's substantive work is the Stage -3 ("post-amend verify") workflow-doc change plus its enforcing test. PI-017 (the only PI filed this cycle) is `auto_safe`; it changes the procedural discipline, not the code, schema, or main workflow. Two commits cover the planned scope: one for the substantive change, one for any reviewer-driven fixes. If no reviewer fixes are needed, the cycle stays at 1 commit.
+Rationale: cycle 11's substantive work is small (~50 lines of Stage-11 workflow-doc + ~70 lines of forecast-presence test) and addresses the partial PI-016 failures for cycles 6 and 10 specifically. PI-018's specific deliverable is the verification step + retroactive correction of cycles 6 and 10 closeout memos; cycles 7-9 were verified correct and required no retroactive edits.
 
 ### Trigger narrative
 
@@ -127,7 +127,7 @@ No code changes. No parser changes. No spec changes. No schema migrations. No pr
 
 ## Cycle-11 self-meta observation
 
-Cycle 11 is the **first cycle where the substantive work is fixing a procedural-discipline failure**. PI-016 (cycle 9) was a forecast convention that turned out to have been failing for every cycle since adoption. PI-018 amends PI-016 to make it a real verification method. The cycle's substantive work is small (~50 lines of workflow doc + ~70 lines of test) but addresses a 5-cycle discipline failure.
+Cycle 11 is the **first cycle where the substantive work is fixing a procedural-discipline failure**. PI-016 (cycle 9) was a forecast convention. Cycle 10's merge closeout initially reported that PI-016 had failed for every cycle since adoption; **cycle 11's PI-018 retroactive correction re-measured each prior cycle's actual count properly and found the situation is more nuanced:** PI-016's forecast-discipline had partial failures (cycles 6 and 10 miscounted; cycles 7-9 matched). PI-018 amends PI-016 to make it a real verification method. The cycle's substantive work is small (~50 lines of workflow doc + ~70 lines of test) but addresses a 2-cycle discipline failure (cycles 6 and 10 specifically).
 
 Cycle 11 is also the **second cycle with a code-reviewer sub-agent**. Per msg #11647, the reviewer pattern is the user's adopted workflow going forward. Per msg #11644, the reviewer drops a summary after each round rather than waiting for the full 5-round report-back. Cycle 11's reviewer will follow this directive.
 
