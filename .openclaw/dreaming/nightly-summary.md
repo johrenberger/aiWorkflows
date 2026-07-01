@@ -9,7 +9,7 @@
 ### Surface-Scope Pre-Declaration (Stage -2, PI-015, cycle 8)
 
 - **Workflow target:** dream (in-repo dreaming-workflow, .openclaw/dreaming/ + tests/dreaming/).
-- **Surface area:** `.openclaw/dreaming/workflow-nightly-dreaming.md` (Stage 0 amendment for collect-only forecast step), `tests/dreaming/test_pr_readiness.py` (new test enforcing the collect-only baseline in pr-change-log.md), `.openclaw/dreaming/proposed-improvements.md` (PI-020 added), `.openclaw/dreaming/regression-scenarios.md` (RS-022 added), `.openclaw/dreaming/evidence-index.md` (EV-022 added), `.openclaw/dreaming/pr-change-log.md` (cycle-12 row with collect-only baseline).
+- **Surface area:** `.openclaw/dreaming/workflow-nightly-dreaming.md` (Stage 0a added as a new section under Stage 0 for the collect-only forecast step), `tests/dreaming/test_pr_readiness.py` (new test enforcing the collect-only baseline in pr-change-log.md), `.openclaw/dreaming/proposed-improvements.md` (PI-020 added), `.openclaw/dreaming/regression-scenarios.md` (RS-022 added), `.openclaw/dreaming/evidence-index.md` (EV-022 added), `.openclaw/dreaming/pr-change-log.md` (cycle-12 row with collect-only baseline).
 - **Dreaming-ledger scope:** PI-020 NEW (forecast methodology refinement — collect-only baseline + symmetry with PI-018 verification step). RS-022 NEW (forecast must include a collect-only baseline that the post-merge verification can compare against). EV-022 NEW (cross-cycle forecast-vs-actual delta history, including cycle-11's +3 finding).
 - **Cycle-size budget:** 2 commits (1 substantive + 1 reviewer-driven if needed). The collect-only step is a small workflow-doc amendment + one new test; no retroactive corrections are required because the parametrized-test-expansion finding is forward-looking only.
 
@@ -18,6 +18,8 @@
 PI-018 (cycle 11 NEW, APPLIED) established the post-merge verification step: after the cycle's PR merges, run `make dreaming-validate` on actual `main` and compare to the cycle author's forecast. Cycle 11's forecast missed by +3 because the forecast reasoned from `def test_` count but did not account for `@pytest.mark.parametrize` driven by `_all_dreaming_files()` in `tests/dreaming/test_no_hidden_reasoning_capture.py`. Cycle 11 added 3 new files to `.openclaw/dreaming/` (cycle-11-review-log.md, workflow-nightly-dreaming.md Stage 12, proposed-improvements.md PI-019), each contributing +1 parametrized test invocation.
 
 PI-020 strengthens the forecast-discipline by adding a **pre-merge verification step** that captures the precise baseline at forecast-time. Specifically: when the cycle author writes the cycle row in `pr-change-log.md`, they must also run `python3 -m pytest tests/dreaming/ --collect-only -q | grep "tests collected"` and quote the collected-test count as the forecast baseline. This gives a precise forecast (rather than a reasoned estimate), making the post-merge verification step (PI-018) more deterministic. PI-020 is the symmetry partner of PI-018: pre-merge baseline + post-merge verification.
+
+_(Note: the cycle-11 closeout memo and EV-022 record that cycle 11 added **1 new file** to `.openclaw/dreaming/` — `cycle-11-review-log.md` — and 2 modifications of existing files. The 1 new file contributes +3 parametrized test invocations because `_all_dreaming_files()` is enumerated by 3 test functions in `test_no_hidden_reasoning_capture.py`. PI-020 captures this baseline-capture discipline so future cycles do not repeat the same off-by-3 pattern.)_
 
 ### Cycle-12 expected impact
 
