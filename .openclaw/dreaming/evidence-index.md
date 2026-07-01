@@ -396,3 +396,19 @@ Each entry is an evidence record. Every recommendation, lesson, pattern, scenari
   - Cycle-size impact: cycle 10 had budget 2, actual 5 (1 substantive + 4 reviewer-driven); cycle 11 had budget 2, actual 8 (1 substantive + 7 reviewer-driven). Reviewer-driven commits consistently 2-4x the budgeted count. This is a trade-off the user accepted (msg #11647) for the catch rate.
 - **Linked PIs:** PI-019 (NEW, cycle 11, auto_safe, applied-this-cycle)
 - **Linked regression scenarios:** RS-021 (NEW, cycle 11)
+
+---
+
+## EV-022 — Cycle-11 forecast missed by +3 because parametrized-test expansions were not accounted for (NEW, cycle 12)
+
+- **Evidence ID:** EV-022
+- **Evidence statement:** Cycle 11's forecast predicted `main` post-merge = 127 + 1 + 1. Actual on `main` at merge SHA `fd822b0` (re-measured cleanly via `git checkout fd822b0 && make dreaming-validate`) was **130 + 1 + 1** (off by +3 passed). Root cause: cycle 11 added 3 new files to `.openclaw/dreaming/` (cycle-11-review-log.md, workflow-nightly-dreaming.md Stage 12, proposed-improvements.md PI-019). `tests/dreaming/test_no_hidden_reasoning_capture.py` has three `@pytest.mark.parametrize("path", _all_dreaming_files(), ...)` tests that enumerate every file in `.openclaw/dreaming/` and run three parametrized test invocations per file. Each new file adds +3 test invocations to the parametrized expansion, contributing to the +3 delta on `main`. The forecast (reasoning from `def test_` count of 1 new test function for cycle 11) missed the parametrized-test expansion because the forecast methodology did not account for it. Per PI-018 / Stage 11 step 6, the cycle-11 closeout memo (`memory/2026-07-01-cycle-11-closeout.md`) was corrected with the actual measured count and a Forecast-accuracy section explaining the off-by-N. The post-merge correction commit `e9b3807` records the actual count in `pr-change-log.md`. PI-020 (cycle 12 NEW) addresses this forward-looking by adding a pre-merge collect-only baseline-capture step that makes the forecast a captured number rather than a reasoned estimate.
+- **Quantitative summary:**
+  - Cycle 10 `main` count: 126 + 1 + 1 (forecast 125; off by 1 in cycle-10 closeout).
+  - Cycle 11 `main` count: 130 + 1 + 1 (forecast 127; off by 3 in cycle-11 closeout).
+  - Cycle 11 branch-local count: 132 + 0 + 0.
+  - Cycle 11 added 3 new files to `.openclaw/dreaming/` (cycle-11-review-log.md, workflow-nightly-dreaming.md Stage 12, proposed-improvements.md PI-019), each contributing +1 parametrized test invocation in `test_no_hidden_reasoning_capture.py`.
+  - Net-new `def test_` functions in cycle 11: +1 (`test_pr_change_log_forecasts_main_post_merge_count`).
+  - Total new test invocations on `main`: +4 (1 from new function + 3 from parametrized expansion).
+- **Linked PIs:** PI-020 (NEW, cycle 12, auto_safe, applies-this-cycle)
+- **Linked regression scenarios:** RS-022 (NEW, cycle 12)

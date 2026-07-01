@@ -23,6 +23,20 @@ Before opening or pushing the PR-ready branch, run `make dreaming-validate` from
 
 This step is the durable fix for the cycle-1 fix-up loop (5 of 9 commits were CI-only corrections).
 
+### Stage 0a: Capture collect-only baseline at forecast-time (PI-020, cycle 12)
+
+When writing the cycle row in `pr-change-log.md` (Stage -2 forward-looking schema), the cycle author must also capture the precise baseline by running:
+
+```
+python3 -m pytest tests/dreaming/ --collect-only -q 2>&1 | grep "tests collected"
+```
+
+The cycle row must include a `Collected-test baseline (forecast): <N> tests collected` line where `<N>` is the captured count. This is the **precise forecast**, not a reasoned estimate.
+
+**Why this step exists (PI-020 amendment, cycle 12):** cycle 11's forecast missed by +3 because the forecast reasoned from `def test_` count but did not account for `@pytest.mark.parametrize` driven by `_all_dreaming_files()` in `tests/dreaming/test_no_hidden_reasoning_capture.py`. The post-merge verification step (PI-018 / Stage 11) caught the +3 correctly, but the forecast itself was a reasoned estimate. Stage 0a makes the forecast a captured number. PI-020 is the symmetry partner of PI-018: pre-merge baseline-capture (Stage 0a) + post-merge verification (Stage 11).
+
+The cycle author can also include the parametrized-test-expansion delta explicitly (e.g., "cycle 12 adds 1 new file to `.openclaw/dreaming/` which adds 3 parametrized tests, so the collect-only baseline of 132 should match the post-merge count of 135").
+
 ## Stage -3: Post-amend verify (PI-017, cycle 10)
 
 Before switching branches to start a new cycle (Stage -2) or to perform a merge closeout (`git checkout main`), the cycle author must verify the working tree is clean relative to the most recent commit. This applies after any commit, but is especially important after `git commit --amend`, which can leave the working tree's tracked files in a state that disagrees with HEAD.

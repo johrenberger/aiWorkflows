@@ -1,8 +1,56 @@
 # Nightly Summary
 
-- **Cycle:** 2026-07-01 cycle-11
-- **Branch:** `dreaming/nightly-execution-quality-2026-07-01-cycle-11`
-- **Date:** 2026-07-01
+- **Cycle:** 2026-07-02 cycle-12
+- **Branch:** `dreaming/nightly-execution-quality-2026-07-02-cycle-12`
+- **Date:** 2026-07-02
+
+## Trigger
+
+### Surface-Scope Pre-Declaration (Stage -2, PI-015, cycle 8)
+
+- **Workflow target:** dream (in-repo dreaming-workflow, .openclaw/dreaming/ + tests/dreaming/).
+- **Surface area:** `.openclaw/dreaming/workflow-nightly-dreaming.md` (Stage 0 amendment for collect-only forecast step), `tests/dreaming/test_pr_readiness.py` (new test enforcing the collect-only baseline in pr-change-log.md), `.openclaw/dreaming/proposed-improvements.md` (PI-020 added), `.openclaw/dreaming/regression-scenarios.md` (RS-022 added), `.openclaw/dreaming/evidence-index.md` (EV-022 added), `.openclaw/dreaming/pr-change-log.md` (cycle-12 row with collect-only baseline).
+- **Dreaming-ledger scope:** PI-020 NEW (forecast methodology refinement — collect-only baseline + symmetry with PI-018 verification step). RS-022 NEW (forecast must include a collect-only baseline that the post-merge verification can compare against). EV-022 NEW (cross-cycle forecast-vs-actual delta history, including cycle-11's +3 finding).
+- **Cycle-size budget:** 2 commits (1 substantive + 1 reviewer-driven if needed). The collect-only step is a small workflow-doc amendment + one new test; no retroactive corrections are required because the parametrized-test-expansion finding is forward-looking only.
+
+### Cycle-12 reason for change (PI-020 / cycle-12 trigger)
+
+PI-018 (cycle 11 NEW, APPLIED) established the post-merge verification step: after the cycle's PR merges, run `make dreaming-validate` on actual `main` and compare to the cycle author's forecast. Cycle 11's forecast missed by +3 because the forecast reasoned from `def test_` count but did not account for `@pytest.mark.parametrize` driven by `_all_dreaming_files()` in `tests/dreaming/test_no_hidden_reasoning_capture.py`. Cycle 11 added 3 new files to `.openclaw/dreaming/` (cycle-11-review-log.md, workflow-nightly-dreaming.md Stage 12, proposed-improvements.md PI-019), each contributing +1 parametrized test invocation.
+
+PI-020 strengthens the forecast-discipline by adding a **pre-merge verification step** that captures the precise baseline at forecast-time. Specifically: when the cycle author writes the cycle row in `pr-change-log.md`, they must also run `python3 -m pytest tests/dreaming/ --collect-only -q | grep "tests collected"` and quote the collected-test count as the forecast baseline. This gives a precise forecast (rather than a reasoned estimate), making the post-merge verification step (PI-018) more deterministic. PI-020 is the symmetry partner of PI-018: pre-merge baseline + post-merge verification.
+
+### Cycle-12 expected impact
+
+- The forecast-baseline becomes a captured number, not a reasoned estimate. Future cycles' forecasts will reflect parametrized-test expansions.
+- The post-merge verification step (PI-018) compares the actual collected count to the captured baseline, surfacing drift caused by out-of-band test additions (e.g., reviewer-driven parametrization changes).
+- The cycle-12 forecast-discipline test asserts the cycle row's `Collected-test baseline (forecast)` line is present with a numeric count.
+
+### Cycle-12 validation performed (planned)
+
+- `python3 -m pytest tests/dreaming/ --collect-only -q | grep "tests collected"` to capture the precise baseline before opening PR.
+- `make dreaming-validate` on the cycle-12 branch — expected to match the collect-only baseline.
+- The new test `test_pr_change_log_includes_collect_only_forecast_baseline` enforces the discipline going forward.
+
+### Cycle-12 artifacts changed (planned)
+
+- `.openclaw/dreaming/workflow-nightly-dreaming.md` — Stage 0 amended with collect-only forecast step (~10 lines).
+- `tests/dreaming/test_pr_readiness.py` — `test_pr_change_log_includes_collect_only_forecast_baseline` added (NEW, ~30 lines).
+- `.openclaw/dreaming/regression-scenarios.md` — RS-022 added (NEW).
+- `.openclaw/dreaming/evidence-index.md` — EV-022 added (NEW).
+- `.openclaw/dreaming/proposed-improvements.md` — PI-020 added (NEW, auto_safe).
+- `.openclaw/dreaming/pr-change-log.md` — cycle-12 row appended with `Collected-test baseline (forecast)` line.
+- `.openclaw/dreaming/nightly-summary.md` — cycle-12 body prepended (this section); cycle-11 body preserved below.
+
+### What's still open on `main` after cycle 11 (cycle-12 carry-forward)
+
+- **PI-006a** — runtime JSONL emitter; out-of-repo; principal outstanding PI per the user's original framing in #11557. Still blocked on runtime side.
+- **PI-014** — `cyber-signal-fetch-feeds.sh` missing; fix is on the same gateway, outside the workflow's surface area.
+- **PI-009** — held since cycle 2 per "A then B"; PI-008 APPLIED for many cycles now; hold may be obsolete. Cycle 13 candidate if not addressed in cycle 12.
+- **PI-018** — applied; verification step working correctly (caught cycle-11 forecast miss).
+- **PI-019** — applied; code-reviewer sub-agent convention codified as Stage 12.
+- **PI-020** — NEW this cycle, applied-this-cycle.
+
+## Cycle-11 body (carried forward, unchanged)
 
 ## Trigger
 
