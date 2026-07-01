@@ -320,3 +320,75 @@ def test_no_post_amend_working_tree_drift() -> None:
         "space) are NOT drift. They're about-to-be-committed work and the "
         "test ignores them."
     )
+
+
+def test_pr_change_log_forecasts_main_post_merge_count() -> None:
+    """The most recent committed cycle row in pr-change-log.md must forecast a `main` post-merge count.
+
+    Enforces PI-016 (cycle 9) and PI-018 (cycle 11 amendment): every cycle's
+    row in pr-change-log.md must contain a `main` post-merge forecast (a
+    line like `Main post-merge (forecast): ...` or similar). The forecast
+    is verified against the actual `main` post-merge count after the merge
+    lands, per Stage 11 of workflow-nightly-dreaming.md.
+
+    The test is forward-looking: it checks the most recent committed cycle
+    row. It does NOT retroactively check past cycles (those are cycle-11's
+    PI-018 retroactive-correction deliverable).
+
+    The test asserts the FORECAST exists in pr-change-log.md. It does NOT
+    assert the forecast was correct (that requires running
+    `make dreaming-validate` on the actual post-merge `main`, which is a
+    manual discipline enforced by Stage 11, not by an automated test).
+
+    Cycle-authoring note: this test fires during cycle authoring if the
+    cycle's row in pr-change-log.md doesn't yet contain the forecast.
+    Add the forecast (e.g., "main post-merge (forecast): 130 passed + 1
+    skipped + 1 expected-fail-on-main") before committing. The forecast
+    is later verified by running `make dreaming-validate` on the actual
+    post-merge `main` per Stage 11.
+    """
+    if not PR_CHANGE_LOG.exists():
+        pytest.fail(
+            f"pr-change-log.md not found at {PR_CHANGE_LOG}. "
+            "Create it before running this test."
+        )
+
+    log_text = PR_CHANGE_LOG.read_text(encoding="utf-8")
+
+    # Split into cycle rows. Each cycle row starts with a `## Cycle-N`
+    # heading. We want the most recent one (the LAST one in the file).
+    cycle_sections = re.split(r"^## (Cycle-\d+)", log_text, flags=re.MULTILINE)
+    # cycle_sections alternates: [preamble, "Cycle-N", content, "Cycle-N+1", content, ...]
+    if len(cycle_sections) < 3:
+        pytest.fail(
+            "pr-change-log.md has no cycle sections. Expected at least one "
+            "`## Cycle-N` heading."
+        )
+
+    # The most recent cycle is the last "Cycle-N" heading + its content.
+    last_cycle_label = cycle_sections[-2]
+    last_cycle_content = cycle_sections[-1]
+
+    # Look for a main-post-merge forecast line. Acceptable forms:
+    #   "Main post-merge (forecast): ..."
+    #   "main post-merge (forecast): ..."  (case-insensitive)
+    #   "**`main` post-merge (forecast)** — ..."
+    forecast_patterns = [
+        r"main\s+post[- ]merge\s*\(forecast\)",
+        r"main\s+post[- ]merge.*forecast",
+    ]
+    found_forecast = False
+    for pattern in forecast_patterns:
+        if re.search(pattern, last_cycle_content, flags=re.IGNORECASE):
+            found_forecast = True
+            break
+
+    assert found_forecast, (
+        f"Most recent cycle section (`{last_cycle_label}`) in pr-change-log.md "
+        f"does not contain a `main post-merge (forecast)` line. "
+        f"Per PI-016 (cycle 9) and PI-018 (cycle 11 amendment), every cycle "
+        f"row must forecast a `main` post-merge count. Add a line like:\n"
+        f"  **`main` post-merge (forecast):** 125 passed + 1 skipped + 1 expected-fail-on-main\n"
+        f"to the `{last_cycle_label}` section of pr-change-log.md.\n\n"
+        f"See workflow-nightly-dreaming.md Stage 11 for the convention."
+    )

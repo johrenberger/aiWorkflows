@@ -361,3 +361,25 @@ Each entry is an evidence record. Every recommendation, lesson, pattern, scenari
 - **Evidence links:**
   - cycle-8 closeout memo: `memory/2026-07-01-cycle-8-closeout.md` § "State rescue during closeout (worth documenting)"
   - cycle-9 closeout memo: `memory/2026-07-01-cycle-9-closeout.md` § "State rescue during closeout (worth documenting)"
+
+
+---
+
+## EV-020 — PI-016 forecast-discipline had partial failures (cycles 6 and 10) and worked correctly for cycles 7-9 (cycle 11)
+
+- **Run identifier:** cycle-11-pi-016-forecast-discipline-evidence
+- **Date:** 2026-07-01 (cycle 11)
+- **Source files reviewed:** cross-cycle actual-vs-claimed validator count measurements taken on 2026-07-01 by `git checkout <sha> && make dreaming-validate` for each merge commit on `main` (`c21b712`, `b42cdca`, `ec087fe`, `d1cbc08`, `a91abff`).
+- **Task type:** Self-meta audit (PI-016 forecast-discipline partial failure)
+- **Outcome:** documented; PI-018 filed and applied in cycle 11; Stage 11 added to `.openclaw/dreaming/workflow-nightly-dreaming.md`; RS-020 added; `test_pr_change_log_forecasts_main_post_merge_count` added; cycles 6 and 10 closeout memos retroactively corrected; cycle-10 closeout's "PI-016 failing for every cycle" finding corrected to "partial failures"
+- **Summary:** PI-016 (cycle 9) established the convention of forecasting "main post-merge" validator counts in cycle closeout memos. Cycle 10's merge closeout initially reported that PI-016's forecast-discipline had never actually worked for any of cycles 6-10. **Cycle 11's PI-018 retroactive correction re-measured each prior cycle's actual count properly (by `git checkout <sha>` to clean working tree before running `make dreaming-validate`) and found the situation is more nuanced:** PI-016's forecast-discipline had partial failures. Specifically:
+
+  - cycle 6 (`c21b712`) closeout claimed "123 passed + 0 failed + 0 skipped"; actual is **121 passed + 1 skipped + 1 expected-fail-on-main** (off by 2 in passed-count direction; also missed the 1 skipped + 1 expected-fail).
+  - cycle 7 (`b42cdca`) closeout claimed "121 passed + 1 failed + 1 skipped"; actual is **121 passed + 1 skipped + 1 expected-fail-on-main** (matched).
+  - cycle 8 (`ec087fe`) closeout claimed "122 passed + 1 skipped + 1 expected-fail-on-main"; actual is **122 passed + 1 skipped + 1 expected-fail-on-main** (matched).
+  - cycle 9 (`d1cbc08`) closeout claimed "122 passed + 1 skipped + 1 expected-fail-on-main" and stated "matched"; actual is **122 passed + 1 skipped + 1 expected-fail-on-main** (matched; cycle 10's closeout wrongly claimed cycle 9 was off by 3; cycle 11 corrected the misreport).
+  - cycle 10 (`a91abff`) closeout forecast "125 + 1 + 1"; actual is **126 passed + 1 skipped + 1 expected-fail-on-main** (off by 1 in passed-count direction).
+
+  The root cause for the failures: forecasters (cycle authors) reasoned from the branch-local count but did not account for on-`main` differences (e.g., the empty-range commits-prefix test skip rule fires on `main` but not on a fresh branch). Cycles 6 and 10 miscounted; cycles 7-9 happened to reason correctly. PI-018 amends PI-016 with an explicit post-merge verification step (run `make dreaming-validate` on the actual post-merge `main`, compare to the forecast, correct the closeout memo if they don't match) and retroactive correction of cycles 6 and 10's closeout memos.
+- **Linked PIs:** PI-018 (NEW, cycle 11, auto_safe, applied-this-cycle)
+- **Linked regression scenarios:** RS-020 (NEW, cycle 11)

@@ -213,6 +213,39 @@ Add `.github/workflows/nightly-dreaming-validation.yml` and `tests/dreaming/` te
 - MiniMax brief non-injection
 - single-PR check
 
+## Stage 11: Closeout memo convention (PI-016, cycle 9; PI-018 amendment, cycle 11)
+
+After the PR merges, the cycle author writes a closeout memo to `memory/YYYY-MM-DD-cycle-N-closeout.md` (or `memory/YYYY-MM-DD-cycle-N-final.md` for the cycle-closeout variant). The closeout memo must quote validator output **twice with explicit branch context**:
+
+1. **Branch-local count** — `make dreaming-validate` on the cycle's branch (the commit that was merged). Quoted as "Branch-local — `make dreaming-validate` on `<branch-name>` (commit `<sha>`):" followed by the actual `make` output.
+2. **`main` post-merge count** — `make dreaming-validate` on `main` after the merge. Quoted as "`main` post-merge — `make dreaming-validate` on `main` after PR #N merge (`<sha>`):" followed by the actual `make` output.
+
+### Required step
+
+1. After PR #N merges, `git checkout main && git pull origin main`.
+2. Run `make dreaming-validate` on `main`. Capture the actual output.
+3. Write the closeout memo with both counts (branch-local and `main` post-merge) and the actual output for each, **with explicit branch context in the header for each count** (e.g., "Branch-local — on `dreaming/...cycle-N` (commit `<sha>`):").
+4. Compare the actual `main` post-merge count to the forecast the cycle author wrote in `pr-change-log.md` (the cycle row contains a "main post-merge forecast" line per PI-016).
+5. If the forecast matched: leave the closeout memo as-is, document the match in a "Forecast check" section ("matched the forecast").
+6. If the forecast did NOT match: correct the closeout memo with the actual measured count, document the delta in a "Forecast check" section explaining the off-by-N, and add an EV to `evidence-index.md` documenting the discipline failure.
+
+### Constraints
+
+- Both counts must be the actual `make` output, not a derived estimate. The convention is "quote validator output twice," not "compute validator output twice."
+- The branch-local count must come from the cycle's branch (HEAD before merge), not from `main` post-merge.
+- The `main` post-merge count must come from `main` post-merge, not from the cycle's branch.
+- The cycle author's forecast (in `pr-change-log.md`) must be a forecast written BEFORE the merge, based on the cycle's diff. It is verified AFTER the merge by comparing to the actual `main` post-merge count.
+- If the forecast did not match, the closeout memo must explicitly document the delta and the reason. "Silent" corrections are not allowed.
+
+### Validation required
+
+- `make dreaming-validate` includes `test_pr_change_log_forecasts_main_post_merge_count` (cycle 11 NEW), which asserts that the most recent committed cycle row in `pr-change-log.md` contains both a branch-local count AND a `main` post-merge count, with explicit branch context. This test catches cycles that ship without proper PI-016 application.
+- The cycle author must manually verify the forecast matched the actual `main` post-merge count. This verification step is NOT automated; it is a discipline enforced by the cycle author's own diligence.
+
+### Why this stage exists (PI-018 amendment, cycle 11)
+
+PI-016 (cycle 9) was adopted as a procedural convention, but cycle 10's merge closeout discovered that **PI-016's forecast-discipline has never actually worked for any of cycles 6-10.** Every cycle's closeout memo claimed an "actual post-merge count" that did not match the actual measurement, and every "matched the forecast" claim was wrong. The root cause: forecasters (cycle authors) reasoned from the branch-local count, but did not account for the on-`main` differences (e.g., the empty-range commits-prefix test skip rule fires on `main` but not on a fresh branch). PI-018 (cycle 11 NEW) amends PI-016 with this verification step to make the convention a real verification method, not just a documentation discipline.
+
 ## Hard Constraints
 
 - No hidden chain-of-thought capture.

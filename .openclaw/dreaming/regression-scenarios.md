@@ -302,3 +302,25 @@ RS-001 through RS-009 are carried from cycle 1. RS-010 through RS-012 are new in
 - **Validation method:** `tests/dreaming/test_pr_readiness.py::test_no_post_amend_working_tree_drift`. The test scopes to `.openclaw/dreaming/`; other directories (e.g., `workflows/`) may have intentionally-uncommitted local edits that are out of cycle scope.
 - **Owner:** human (the cycle author)
 - **Status:** failing (cycle 10 baseline; expected to flip to `passing` after cycle 10's commit lands and the working tree is in sync)
+
+
+---
+
+## RS-020 — Cycle closeout memos must quote validator output twice with explicit branch context and a forecast-accuracy section (NEW, cycle 11)
+
+- **Evidence reference:** EV-020 (cross-cycle actual-vs-claimed validator count measurements, 2026-07-01)
+- **PI reference:** PI-018 (NEW, cycle 11), PI-016 (cycle 9, amended by PI-018)
+- **Affected workflow or skill:** `.openclaw/dreaming/workflow-nightly-dreaming.md` (Stage 11); closeout memos in `memory/`; `pr-change-log.md` cycle rows
+- **Severity:** warning (forecast-discipline failure is a documentation quality issue, not a runtime failure)
+- **Given** a cycle author has just merged PR #N to `main` (the cycle's branch tip becomes `main`'s HEAD)
+- **And** the cycle's `pr-change-log.md` row contains a `main post-merge (forecast)` line (per PI-016)
+- **When** the cycle author writes the cycle's closeout memo (in `memory/`)
+- **Then** the memo must (a) quote `make dreaming-validate` output twice with explicit branch context — once for branch-local (on the cycle's branch tip) and once for `main` post-merge; (b) include a forecast-accuracy section comparing the actual `main` post-merge count to the cycle author's forecast; (c) if the forecast did not match, correct the closeout memo with the actual measured count and document the delta
+- **Expected behavior:** Every closeout memo quotes both counts honestly, and any forecast-accuracy delta is recorded (not silently corrected). Future cycles can quote PI-016 numbers with confidence.
+- **Pass / fail criteria:**
+  - **Pass** if the closeout memo contains both counts (branch-local + main post-merge) with explicit branch context AND a forecast-accuracy section that documents whether the forecast matched.
+  - **Fail** if either count is missing, has no branch context, or the forecast-accuracy section is absent.
+- **Validation method:** `tests/dreaming/test_pr_readiness.py::test_pr_change_log_forecasts_main_post_merge_count` enforces the forecast-presence discipline in `pr-change-log.md` (forward-looking). The actual forecast-accuracy verification (running `make dreaming-validate` on the actual post-merge `main`) is a manual discipline enforced by Stage 11 of `workflow-nightly-dreaming.md`.
+- **Owner:** human (the cycle author)
+- **Status:** failing (cycles 6-10 baseline; cycle 11's PI-018 retroactive correction addresses cycles 6-10; expected to flip to `passing` on all cycles 11+)
+- **Cycle:** 11

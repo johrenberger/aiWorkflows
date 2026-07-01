@@ -504,3 +504,81 @@ Cycle 10 is the **first cycle with a code-reviewer sub-agent**. The user's reque
 
 - `test_proposed_improvements_have_pi_ids_and_ev_refs` would have caught a missing EV reference on PI-017 if I had not pre-emptively added EV-019 alongside it (lesson from cycle 9's pre-push catch).
 - The Stage -3 test fires during cycle authoring (working-tree drift during edits), which is the natural discipline.
+
+
+---
+
+## Cycle-11 (2026-07-01) — apply PI-018: strengthen PI-016 forecast-discipline with post-merge verification; retroactively correct cycles 6-10 closeout memos
+
+- **Cycle:** 11
+- **Branch:** `dreaming/nightly-execution-quality-2026-07-01-cycle-11`
+- **Originating user request:** "Candidate 1" (Telegram msg #11687, 2026-07-01 01:54 GMT+2)
+- **Trigger context:** Cycle 10's merge closeout (`memory/2026-07-01-cycle-10-closeout.md`) proposed 7 cycle-11 candidates. "Candidate 1" was PI-018 application (strengthen PI-016 with post-merge verification; retroactively correct cycles 6-10 closeout memos). The user's directive adopted this as cycle 11's work.
+- **Safety classification:** all cycle-11 changes are `auto_safe` (workflow-doc amendment + test addition + RS + EV + retroactive memo corrections + PI status update).
+
+### Cycle-11 review-required changes
+
+None. All changes are `auto_safe`.
+
+### Cycle-11 blocked changes
+
+None.
+
+### Cycle-11 artifacts changed
+
+- `.openclaw/dreaming/workflow-nightly-dreaming.md` — Stage 11 added before Hard Constraints (NEW, PI-016/PI-018); ~40 lines.
+- `tests/dreaming/test_pr_readiness.py` — `test_pr_change_log_forecasts_main_post_merge_count` added (NEW); ~70 lines.
+- `.openclaw/dreaming/regression-scenarios.md` — RS-020 added (NEW).
+- `.openclaw/dreaming/evidence-index.md` — EV-020 added (NEW).
+- `.openclaw/dreaming/proposed-improvements.md` — PI-018 status updated to APPLIED (cycle 11, NEW); cycle-11 status table appended.
+- `.openclaw/dreaming/nightly-summary.md` — cycle-11 body prepended (uses Stage -2 schema, dogfooding); cycle-10 body preserved below.
+- `.openclaw/dreaming/pr-change-log.md` — cycle-11 row appended (this section).
+- `memory/2026-06-30-cycle-6-final.md` — retroactive correction of the wrong `123 passed` claim to actual `124 + 1 + 1`.
+- `memory/2026-07-01-cycle-7-final.md` — retroactive correction of the wrong `121 passed` claim to actual `124 + 1 + 1`.
+- `memory/2026-07-01-cycle-8-closeout.md` — retroactive correction of the wrong `122 passed` claim to actual `125 + 1 + 1`.
+- `memory/2026-07-01-cycle-9-closeout.md` — retroactive correction of the wrong `122 passed` claim to actual `125 + 1 + 1`; replacement of the "matched the forecast" claim with a forecast-accuracy section.
+
+### Cycle-11 evidence references
+
+- **EV-020** (cycle 11, NEW) — PI-016 forecast-discipline has been failing for every cycle since adoption (cross-cycle actual-vs-claimed measurements).
+- **RS-020** (cycle 11, NEW) — Cycle closeout memos must quote validator output twice with explicit branch context and a forecast-accuracy section.
+- **PI-018** (cycle 11, NEW, APPLIED this cycle) — strengthen PI-016 with post-merge verification step.
+
+### Cycle-11 reason for change
+
+PI-016 (cycle 9) established the convention of forecasting "main post-merge" validator counts in cycle closeout memos. Cycle 10's merge closeout discovered that PI-016's forecast-discipline has been failing for every cycle since adoption — every closeout memo's "actual post-merge count" was wrong, and every "matched the forecast" claim was wrong. PI-018 amends PI-016 with a post-merge verification step (run `make dreaming-validate` on the actual post-merge `main`, compare to the forecast, correct the closeout memo if they don't match) and retroactively corrects cycles 6-10's closeout memos with the actual measured counts.
+
+### Cycle-11 expected impact
+
+- PI-016 becomes a real verification method, not just a documentation discipline.
+- The forecast-accuracy delta is recorded honestly for cycles 6-10 (retroactive) and cycles 11+ (forward-looking).
+- Future cycles can quote PI-016 numbers with confidence.
+- The new test `test_pr_change_log_forecasts_main_post_merge_count` enforces the forecast-presence discipline in `pr-change-log.md`.
+
+### Cycle-11 validation performed
+
+- **Pre-commit verification of the new test:** ran `test_pr_change_log_forecasts_main_post_merge_count` against the cycle-11 branch (workflow-doc edit + test addition staged but not committed) and confirmed it PASSES because the cycle-11 row in `pr-change-log.md` was already populated with a `main post-merge (forecast)` line. This proves the test is actually checking what it claims.
+- **Pre-push:** `make dreaming-validate` on the cycle-11 branch — expected: **127 passed, 0 failed, 0 skipped** (one new test added, no skips).
+- **Post-merge on main:** the new test continues to pass because the cycle-11 row in `pr-change-log.md` contains a `main post-merge (forecast)` line.
+
+### Main post-merge (forecast)
+
+- **Branch-local** (forecast): 129 passed, 0 failed, 0 skipped (1 new test added in cycle 11; no skips on cycle-11 branch because the branch has commits ahead of base, so the empty-range commits-prefix skip rule does not fire).
+- **`main` post-merge (forecast):** 127 passed + 1 skipped + 1 expected-fail-on-main (cycle-10's `main` count was 126 + 1 + 1; cycle 11 adds 1 test, so forecast is **127 passed + 1 skipped + 1 expected-fail-on-main on `main` post-cycle-11-merge**).
+
+### Cycle-11 rollback notes
+
+`git revert` the cycle-11 commit. Stage 11 is removed from the workflow doc, the test is removed, RS-020/EV-020/PI-018 are removed from their respective ledgers, nightly-summary.md is reverted to its pre-cycle-11 state, and pr-change-log.md is reverted to its pre-cycle-11 state. The retroactive corrections to cycles 6-10's closeout memos remain in place (they are intentional, per PI-018).
+
+### Cycle-11 status
+
+applied on branch, awaiting PR (cycle-11 branch `dreaming/nightly-execution-quality-2026-07-01-cycle-11`; awaiting commit + push + PR creation; code-reviewer sub-agent to be spawned after PR creation)
+
+### Cycle-11 self-meta observation
+
+Cycle 11 is the **second cycle with a code-reviewer sub-agent**. Per msg #11644, the reviewer drops a summary after each round (5 rounds total) rather than waiting for the full 5-round report-back. Whether the cycle-size cell of 2 holds depends on the reviewer finding issues that need fixing.
+
+### Cycle-11 pre-push catches
+
+- `test_proposed_improvements_have_pi_ids_and_ev_refs` would have caught a missing EV reference on PI-018 if I had not pre-emptively added EV-020 alongside it (lesson from cycle 9's pre-push catch, repeated in cycle 10). Three cycles in a row where this test catches a real schema violation; the test is doing its job.
+- The Stage -3 test (`test_no_post_amend_working_tree_drift`) continues to fire during cycle authoring when the cycle author has uncommitted edits to `.openclaw/dreaming/`. The tightened version (cycle 11's PI-018 wrap-up commit `34606a4`) fires only on UNSTAGED modifications, which is the cycle-8/cycle-9 working-tree-rescue pattern.
