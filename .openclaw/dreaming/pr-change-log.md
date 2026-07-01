@@ -508,13 +508,13 @@ Cycle 10 is the **first cycle with a code-reviewer sub-agent**. The user's reque
 
 ---
 
-## Cycle-11 (2026-07-01) — apply PI-018: strengthen PI-016 forecast-discipline with post-merge verification; retroactively correct cycles 6-10 closeout memos
+## Cycle-11 (2026-07-01) — apply PI-018: strengthen PI-016 forecast-discipline with post-merge verification; retroactively correct cycles 6-10 closeout memos; codify code-reviewer sub-agent convention as Stage 12 / PI-019
 
 - **Cycle:** 11
 - **Branch:** `dreaming/nightly-execution-quality-2026-07-01-cycle-11`
-- **Originating user request:** "Candidate 1" (Telegram msg #11687, 2026-07-01 01:54 GMT+2)
-- **Trigger context:** Cycle 10's merge closeout (`memory/2026-07-01-cycle-10-closeout.md`) proposed 7 cycle-11 candidates. "Candidate 1" was PI-018 application (strengthen PI-016 with post-merge verification; retroactively correct cycles 6-10 closeout memos). The user's directive adopted this as cycle 11's work.
-- **Safety classification:** all cycle-11 changes are `auto_safe` (workflow-doc amendment + test addition + RS + EV + retroactive memo corrections + PI status update).
+- **Originating user request:** "Candidate 1" (Telegram msg #11687, 2026-07-01 01:54 GMT+2); cycle-11 convention codification (PI-019 / Stage 12) added per msg #11773 (2026-07-01 03:14 GMT+2).
+- **Trigger context:** Cycle 10's merge closeout (`memory/2026-07-01-cycle-10-closeout.md`) proposed 7 cycle-11 candidates. "Candidate 1" was PI-018 application (strengthen PI-016 with post-merge verification; retroactively correct cycles 6-10 closeout memos). The user's directive adopted this as cycle 11's work. After PR #70 was opened and the cycle-11 reviewer sub-agent completed 5 rounds, the user directed folding the code-reviewer sub-agent convention into the workflow doc as Stage 12 (PI-019), locking in round 4 (retroactive-correction accuracy) and round 5 (real-world fitness / false-positive simulation) as fixed purposes, with rounds 1-3 as flex.
+- **Safety classification:** all cycle-11 changes are `auto_safe` (workflow-doc amendment + test addition + RS + EV + retroactive memo corrections + PI status update + reviewer-convention codification).
 
 ### Cycle-11 review-required changes
 
@@ -526,11 +526,11 @@ None.
 
 ### Cycle-11 artifacts changed
 
-- `.openclaw/dreaming/workflow-nightly-dreaming.md` — Stage 11 added before Hard Constraints (NEW, PI-016/PI-018); ~40 lines.
+- `.openclaw/dreaming/workflow-nightly-dreaming.md` — Stage 11 added before Hard Constraints (NEW, PI-016/PI-018); ~40 lines. **Stage 12 added before Hard Constraints (NEW, PI-019); ~50 lines.** Total Stage-11+Stage-12 sections: ~90 lines.
 - `tests/dreaming/test_pr_readiness.py` — `test_pr_change_log_forecasts_main_post_merge_count` added (NEW); ~70 lines.
-- `.openclaw/dreaming/regression-scenarios.md` — RS-020 added (NEW).
-- `.openclaw/dreaming/evidence-index.md` — EV-020 added (NEW).
-- `.openclaw/dreaming/proposed-improvements.md` — PI-018 status updated to APPLIED (cycle 11, NEW); cycle-11 status table appended.
+- `.openclaw/dreaming/regression-scenarios.md` — RS-020 added (NEW). **RS-021 added (NEW, PI-019); ~30 lines.**
+- `.openclaw/dreaming/evidence-index.md` — EV-020 added (NEW). **EV-021 added (NEW, PI-019); ~20 lines.**
+- `.openclaw/dreaming/proposed-improvements.md` — PI-018 status updated to APPLIED (cycle 11, NEW); cycle-11 status table appended. **PI-019 added (NEW, APPLIED this cycle); cycle-11 status table updated.**
 - `.openclaw/dreaming/nightly-summary.md` — cycle-11 body prepended (uses Stage -2 schema, dogfooding); cycle-10 body preserved below.
 - `.openclaw/dreaming/pr-change-log.md` — cycle-11 row appended (this section).
 - `memory/2026-06-30-cycle-6-final.md` — retroactive correction of the wrong `123 passed, 0 failed, 0 skipped` claim to actual `121 passed + 1 skipped + 1 expected-fail-on-main` (cycle 6 over-claimed by 2 in passed-count and missed the 1 skipped + 1 expected-fail; cycle 11 corrected both).
@@ -542,8 +542,11 @@ None.
 ### Cycle-11 evidence references
 
 - **EV-020** (cycle 11, NEW) — PI-016 forecast-discipline had partial failures (cycles 6 and 10 miscounted; cycles 7-9 matched); cross-cycle actual-vs-claimed measurements taken by `git checkout <sha> && make dreaming-validate`.
+- **EV-021** (cycle 11, NEW) — Code-reviewer sub-agent caught latent issues across cycles 10 and 11; per-round summaries dropped after each round (msg #11644); round purposes locked (msg #11772); second-pass discipline verified code changes.
 - **RS-020** (cycle 11, NEW) — Cycle closeout memos must quote validator output twice with explicit branch context and a forecast-accuracy section.
+- **RS-021** (cycle 11, NEW) — Code-reviewer sub-agent runs 5 rounds with fixed round-4 (retroactive-correction accuracy) and round-5 (real-world fitness / false-positive simulation) purposes.
 - **PI-018** (cycle 11, NEW, APPLIED this cycle) — strengthen PI-016 with post-merge verification step.
+- **PI-019** (cycle 11, NEW, APPLIED this cycle) — adopt code-reviewer sub-agent as a workflow stage (Stage 12) with locked round purposes.
 
 ### Cycle-11 reason for change
 
@@ -559,21 +562,22 @@ PI-016 (cycle 9) established the convention of forecasting "main post-merge" val
 ### Cycle-11 validation performed
 
 - **Pre-commit verification of the new test:** ran `test_pr_change_log_forecasts_main_post_merge_count` against the cycle-11 branch (workflow-doc edit + test addition staged but not committed) and confirmed it PASSES because the cycle-11 row in `pr-change-log.md` was already populated with a `main post-merge (forecast)` line. This proves the test is actually checking what it claims.
-- **Pre-push:** `make dreaming-validate` on the cycle-11 branch — expected: **127 passed, 0 failed, 0 skipped** (one new test added, no skips).
+- **Pre-push:** `make dreaming-validate` on the cycle-11 branch — actual: **132 passed, 0 failed, 0 skipped** (1 substantive test added by cycle 11 + 5 reviewer-driven tests for regex-tightening across rounds 2 and 5 + retroactive PI-018 body refinement; no skips on cycle-11 branch because the branch has commits ahead of base, so the empty-range commits-prefix skip rule does not fire).
+- **Code-reviewer sub-agent (cycle 11 = second-of-kind):** 5 rounds completed (with second-pass verification on rounds 4 and 5); 6 fix-up commits applied; reviewer recommendation: merge as-is. Reviewer log: `.openclaw/dreaming/cycle-11-review-log.md`. Most important finding: round 5 caught a regex false-positive (would pass on `TBD` placeholder); second-pass fixed it (commit `6c4f8ef`).
 - **Post-merge on main:** the new test continues to pass because the cycle-11 row in `pr-change-log.md` contains a `main post-merge (forecast)` line.
 
 ### Main post-merge (forecast)
 
-- **Branch-local** (forecast): 129 passed, 0 failed, 0 skipped (1 new test added in cycle 11; no skips on cycle-11 branch because the branch has commits ahead of base, so the empty-range commits-prefix skip rule does not fire).
-- **`main` post-merge (forecast):** 127 passed + 1 skipped + 1 expected-fail-on-main (cycle-10's `main` count was 126 + 1 + 1; cycle 11 adds 1 test, so forecast is **127 passed + 1 skipped + 1 expected-fail-on-main on `main` post-cycle-11-merge**).
+- **Branch-local** (forecast): 132 passed, 0 failed, 0 skipped (per PI-016 + PI-018, with explicit branch context).
+- **`main` post-merge (forecast):** 127 passed + 1 skipped + 1 expected-fail-on-main (cycle-10's `main` count was 126 + 1 + 1; cycle 11 adds 1 new test for `test_pr_change_log_forecasts_main_post_merge_count`, so forecast is **127 passed + 1 skipped + 1 expected-fail-on-main on `main` post-cycle-11-merge**). The 5 reviewer-driven tests added by round-2 and round-5 fix-ups are net-new tests, not renames; per PI-018, the verification step is to actually run `make dreaming-validate` on `main` post-merge and compare to forecast. If the actual `main` count diverges from 127 + 1 + 1, the cycle-11 closeout memo must be corrected with the actual measured count.
 
 ### Cycle-11 rollback notes
 
-`git revert` the cycle-11 commit. Stage 11 is removed from the workflow doc, the test is removed, RS-020/EV-020/PI-018 are removed from their respective ledgers, nightly-summary.md is reverted to its pre-cycle-11 state, and pr-change-log.md is reverted to its pre-cycle-11 state. The retroactive corrections to cycles 6-10's closeout memos remain in place (they are intentional, per PI-018).
+`git revert` the cycle-11 commits (1 substantive + 7 reviewer-driven + 1 PI-019/Stage-12 amendment = 9 commits on the branch). Stage 11 and Stage 12 are removed from the workflow doc, the test is removed, RS-020/RS-021/EV-020/EV-021/PI-018/PI-019 are removed from their respective ledgers, nightly-summary.md is reverted to its pre-cycle-11 state, and pr-change-log.md is reverted to its pre-cycle-11 state. The retroactive corrections to cycles 6-10's closeout memos remain in place (they are intentional, per PI-018).
 
 ### Cycle-11 status
 
-applied on branch, awaiting PR (cycle-11 branch `dreaming/nightly-execution-quality-2026-07-01-cycle-11`; awaiting commit + push + PR creation; code-reviewer sub-agent to be spawned after PR creation)
+applied on branch, awaiting PR merge (cycle-11 branch `dreaming/nightly-execution-quality-2026-07-01-cycle-11` at `48f5f91` + PI-019/Stage-12 amendment commit; PR #70 opened; code-reviewer sub-agent completed 5 rounds + second-pass; awaiting user merge approval)
 
 ### Cycle-11 self-meta observation
 

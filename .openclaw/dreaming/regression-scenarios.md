@@ -324,3 +324,29 @@ RS-001 through RS-009 are carried from cycle 1. RS-010 through RS-012 are new in
 - **Owner:** human (the cycle author)
 - **Status:** failing (cycles 6-10 baseline; cycle 11's PI-018 retroactive correction addresses cycles 6-10; expected to flip to `passing` on all cycles 11+)
 - **Cycle:** 11
+
+---
+
+## RS-021 — Code-reviewer sub-agent runs 5 rounds with fixed round-4 and round-5 purposes (NEW, cycle 11)
+
+- **Improvement ID:** PI-019
+- **Evidence reference:** EV-021, Telegram msgs #11647 (workflow adopted), #11644 (per-round-summary directive), #11770 (5-round budget chosen arbitrarily), #11772 (rounds 4 and 5 locked as fixed purposes). Cycle-10 reviewer log: `.openclaw/dreaming/cycle-10-review-log.md`. Cycle-11 reviewer log: `.openclaw/dreaming/cycle-11-review-log.md`.
+- **Severity:** informational
+- **Statement:** Every substantive cycle must spawn a code-reviewer sub-agent that runs 5 rounds of review, with per-round summaries dropped back to the parent session after each round. Rounds 1-3 are flex (target the specific risk surface of the cycle's scope). Round 4 is fixed: retroactive-correction accuracy / cross-cycle bookkeeping verification. Round 5 is fixed: real-world fitness / false-positive simulation. The second-pass discipline (verify claimed code changes by reading actual code, not just commit messages) is a default reviewer behavior.
+- **Given** a cycle that adds a new test, stage, PI, RS, or EV
+- **When** the cycle author has committed the substantive change and is preparing to open the PR
+- **Then** the cycle author must spawn a code-reviewer sub-agent that:
+  - Reads the cycle's diff between the branch and `main`
+  - Runs 5 rounds of review with per-round summaries
+  - Applies fix-up commits to the branch as findings warrant (or records "no issues" rounds)
+  - Pushes after each fix-up commit
+  - Writes a reviewer log to `.openclaw/dreaming/cycle-N-review-log.md` (committed to the cycle's PR)
+  - Final summary at the top of the reviewer log with: rounds completed, fix-up commits, no-issue rounds, recommendation
+- **Expected behavior:** Every substantive cycle gets a deterministic spine of review rounds (numerical-correctness check + empirical-failure-mode check) regardless of scope. Reviewer logs become artifacts that future cycles can read to understand prior review patterns.
+- **Pass / fail criteria:**
+  - **Pass** if the reviewer log enumerates 5 rounds, each with a documented finding or no-issue acknowledgment, with at least rounds 4 and 5 explicitly labeled as fixed-purposes (cross-cycle bookkeeping + empirical failure-mode simulation respectively).
+  - **Fail** if the reviewer ran fewer than 5 rounds, or rounds 4 and 5 are not labeled as fixed purposes, or no per-round summaries were dropped.
+- **Validation method:** Manual review of `.openclaw/dreaming/cycle-N-review-log.md`. The cycle-N reviewer log structure is documented in `.openclaw/dreaming/workflow-nightly-dreaming.md` Stage 12.
+- **Owner:** human
+- **Status:** passing (cycles 10 and 11 baseline; PI-019 codifies the convention as a workflow stage going forward)
+- **Cycle:** 11

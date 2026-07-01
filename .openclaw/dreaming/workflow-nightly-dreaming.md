@@ -246,6 +246,41 @@ After the PR merges, the cycle author writes a closeout memo to `memory/YYYY-MM-
 
 PI-016 (cycle 9) was adopted as a procedural convention. Cycle 10's merge closeout initially reported that PI-016's forecast-discipline had failed for every cycle since adoption (cycles 6-10). **Cycle 11's PI-018 retroactive correction re-measured each prior cycle's actual count properly (by `git checkout <sha>` to clean working tree before running `make dreaming-validate`) and found the situation is more nuanced:** PI-016's forecast-discipline had **partial failures**. Cycles 6 and 10 miscounted (cycle 6 over-claimed by 2 in passed-count and missed the 1 skipped + 1 expected-fail-on-main; cycle 10 under-counted by 1). Cycles 7-9 happened to reason correctly and matched the actual `main` post-merge counts. The root cause for the failures: forecasters (cycle authors) reasoned from the branch-local count but did not account for on-`main` differences (e.g., the empty-range commits-prefix test skip rule fires on `main` but not on a fresh branch; the expected-fail-on-main `test_current_branch_uses_dreaming_prefix` only fires on `main`). PI-018 (cycle 11 NEW) amends PI-016 with this explicit verification step (run `make dreaming-validate` on the actual post-merge `main`, compare to the forecast, correct the closeout memo if they don't match) to make the convention a real verification method, not just a documentation discipline. See EV-020 for the cross-cycle actual-vs-claimed measurements.
 
+## Stage 12: Code-reviewer sub-agent convention (PI-019, cycle 11)
+
+The dreaming-workflow spawns a code-reviewer sub-agent for each substantive cycle. The sub-agent runs **5 rounds of review**, with **per-round summaries** dropped back to the parent session after each round (Telegram msg #11644 directive). The 5-round budget was chosen arbitrarily (msg #11770) and is not load-bearing as a count; what matters is the round PURPOSES.
+
+### Required step
+
+For each substantive cycle (one that adds a new test, stage, PI, RS, or EV — not a bookkeeping-only cycle), spawn a code-reviewer sub-agent after the substantive commit is on the branch and before opening the PR. The sub-agent reviews the diff between the cycle branch and `main`, applies fix-up commits to the branch as findings warrant, and pushes after each fix-up. Per-round summary via `sessions_send` after each round.
+
+### Round purposes (locked in by msg #11772)
+
+- **Round 1 (flex).** Default: schema/format compliance of any new stage or test added by the cycle. Override for cycles that don't add schema-level changes.
+- **Round 2 (flex).** Default: test quality / tightness if a test was added; PI body quality if a PI was added; docstring clarity if doc-heavy change.
+- **Round 3 (flex).** Default: cross-artifact consistency check. Does the change reconcile with adjacent artifacts, or does it introduce contradictions with prior cycle's claims?
+- **Round 4 (fixed).** **Retroactive-correction accuracy / cross-cycle bookkeeping verification.** If the cycle made retroactive corrections to prior cycles' artifacts (e.g., closeout memos, PI bodies, EV entries), verify the corrections are numerically and textually consistent with the underlying data. Cross-check by `git checkout <sha>` (clean working tree) and `make dreaming-validate` where the corrections touch validator counts. If no retroactive corrections, fall back to: verify the cycle's own claims are internally consistent.
+- **Round 5 (fixed).** **Real-world fitness / false-positive simulation.** Empirically simulate failure modes: would the new test catch a placeholder / TBD / narrative-only input? Would the new stage's instructions work for a future cycle author who hasn't read this cycle's memory files? Run the simulations, not just read the code.
+
+### Constraints
+
+- The reviewer sub-agent runs in a clean context (no memory of why the cycle author wrote the code). This distance is the point.
+- The reviewer MUST NOT modify scope. Only quality fixes.
+- The reviewer MUST NOT rebase or rewrite the cycle's substantive commit. Append fix-up commits on top.
+- All reviewer commits must pass `make dreaming-validate` before push.
+- Per-round summaries are mandatory, not optional. They give the user real-time visibility mid-flight.
+- **Second-pass discipline (load-bearing, msg #11772).** If any round claims a code change was applied (regex updated, test tightened, etc.), a subsequent round or a second pass MUST verify by reading the actual code on disk, not just the commit message. The cycle-11 reviewer caught a round-5 false-positive this way (commit `6c4f8ef`).
+
+### Validation required
+
+- The reviewer log lives at `.openclaw/dreaming/cycle-N-review-log.md` and is committed to the cycle's PR.
+- The log must enumerate the rounds completed, fix-up commits applied, no-issue rounds, and the final recommendation (merge as-is or wait).
+- The user merges when satisfied with the reviewer's recommendation. The reviewer does NOT auto-merge.
+
+### Why this stage exists (PI-019 amendment, cycle 11)
+
+Cycles 10 and 11 both used a code-reviewer sub-agent. Cycle 10 caught 4 latent issues across 5 rounds (1 substantive + 4 reviewer-driven = 5 commits; cycle-size budget was 2 but reviewer-driven commits doubled it). Cycle 11 caught 6 latent issues across 5 rounds + a second-pass catch (1 substantive + 7 reviewer-driven = 8 commits; cycle-size budget was 2 but reviewer-driven commits quadrupled it). The most important findings (cycle 10: Stage -3 schema alignment; cycle 11: regex false-positive on placeholder inputs) were issues the cycle author would not have caught without a clean-context second pair of eyes. Locking in the convention as a workflow stage (Stage 12) makes it discoverable for future cycles and codifies which rounds are fixed-purposes vs flex-purposes (msg #11772).
+
 ## Hard Constraints
 
 - No hidden chain-of-thought capture.

@@ -383,6 +383,22 @@ No blocked-class changes proposed in cycle 9. Cycle 9 ships PI-016 only — a pr
 
 ---
 
+## PI-019 — Adopt code-reviewer sub-agent as a workflow stage (NEW, cycle 11)
+
+- **Improvement ID:** PI-019
+- **Evidence reference:** EV-021, RS-021, Telegram msgs #11647 (workflow adopted), #11644 (per-round-summary directive), #11770 (5-round budget chosen arbitrarily), #11772 (rounds 4 and 5 locked as fixed purposes). Cycle-10 reviewer log: `.openclaw/dreaming/cycle-10-review-log.md`. Cycle-11 reviewer log: `.openclaw/dreaming/cycle-11-review-log.md`.
+- **Observed problem:** Cycles 1-9 did not use a code-reviewer sub-agent; the cycle author reviewed their own work. Cycles 10 and 11 each spawned a code-reviewer sub-agent for 5 rounds (per msg #11647, adopted after cycle 10's reviewer run). Cycle 10's reviewer caught 4 latent issues across 5 rounds (the most important: Stage -3 schema alignment — a Stage schema was introduced that fired on the wrong git status line shape). Cycle 11's reviewer caught 6 latent issues across 5 rounds + a second-pass catch (the most important: forecast-line test regex matched text but not numeric count — would pass on `TBD` / `to be determined` placeholder inputs, exactly the discipline failure PI-018 was supposed to prevent). The catch rate demonstrates that a clean-context second pair of eyes catches real issues; the cycle author reviewing their own work cannot reproduce this distance.
+- **Affected package:** `.openclaw/dreaming/workflow-nightly-dreaming.md` (Stage 12 added).
+- **Recommended change:** Add Stage 12 to the workflow doc, documenting the code-reviewer sub-agent convention with explicit round purposes: rounds 1-3 are flex (target the specific risk surface of the cycle's scope); rounds 4-5 are fixed (round 4 = retroactive-correction accuracy / cross-cycle bookkeeping verification; round 5 = real-world fitness / false-positive simulation). Lock in the per-round-summary directive (msg #11644) as a hard constraint. Lock in the second-pass discipline (verify claimed code changes by reading actual code, not just commit messages) as a default reviewer behavior.
+- **Expected benefit:** Every substantive cycle gets a deterministic spine of review rounds (numerical-correctness check + empirical-failure-mode check) regardless of scope. The reviewer becomes a documented workflow stage, discoverable for future cycles.
+- **Risk level:** low (workflow-doc addition + reviewer-log convention; no production-runtime change; no test suite change beyond the reviewer logs)
+- **Safety classification:** auto_safe (workflow-doc amendment + reviewer-log convention; no code change to validator, parser, or production runtime)
+- **Validation required:** cycle 11's PI-019 application must (a) add Stage 12 to the workflow doc with the round purposes documented, (b) the cycle-11 reviewer log must enumerate 5 rounds with a per-round-summary directive, (c) cycle 12 (and beyond) must spawn a code-reviewer sub-agent per Stage 12, (d) PI-019 itself is verifiable by reading the cycle-11 reviewer log + the Stage 12 section in the workflow doc.
+- **Status:** APPLIED (cycle 11, NEW)
+- **Cycle:** 11
+
+---
+
 ## Summary of cycle-10 PI status
 
 | PI | Class | Status |
@@ -406,5 +422,6 @@ No blocked-class changes proposed in cycle 9. Cycle 9 ships PI-016 only — a pr
 | PI-016 | auto_safe | proposed (cycle 9, NEW) |
 | PI-017 | auto_safe | APPLIED (cycle 10, NEW) |
 | PI-018 | auto_safe | APPLIED (cycle 11, NEW) |
+| PI-019 | auto_safe | APPLIED (cycle 11, NEW) |
 
 No blocked-class changes proposed in cycle 10 or planned for cycle 11. The cycle-10 PR adds Stage -3 to the workflow doc, a new test enforcing it (RS-019, EV-019). The single substantive change is the Stage -3 schema; everything else is artifact tracking. No code changes to the parser, spec, or test suite beyond the new test.
