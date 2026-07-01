@@ -483,7 +483,19 @@ def test_pr_change_log_includes_collect_only_forecast_baseline() -> None:
 
     The captured baseline is the precise forecast, not a reasoned estimate.
     PI-018 / Stage 11 then verifies the actual `main` count against this captured baseline.
+
+    Real-world fitness (cycle-12 review round 5): the captured number must also be
+    PLAUSIBLE — within ±25 of the current collect-only count. This catches wildly
+    wrong baselines (e.g., a cycle author who writes "999 tests collected" without
+    actually running the command) while accommodating legitimate drift from
+    reviewer-driven test additions. Per the cycle-12 author’s own forecast
+    (cycle-12 row "Main post-merge (forecast)"), the captured baseline is the
+    count at forecast-time and is expected to drift by small amounts as reviewer
+    rounds add tests; a drift of ±25 is a reasonable upper bound for a 5-round
+    review (each round typically adds 1-5 tests, plus parametrized-expansion
+    additions from any new files in `.openclaw/dreaming/`).
     """
+    import subprocess
     from pathlib import Path
 
     pr_change_log = (Path(__file__).resolve().parents[2] / ".openclaw" / "dreaming" / "pr-change-log.md").read_text()
@@ -498,33 +510,57 @@ def test_pr_change_log_includes_collect_only_forecast_baseline() -> None:
     # fix for `main post-merge (forecast)` uses the same shape. The
     # cycle-12 round-2 fix adds three forms to mirror cycle-11's three
     # regexes: heading + body, bullet (with optional markdown-bold
-    # prefix), and plain line. The bullet regex below uses `\S*?` to
-    # allow markdown-bold `**` markers between the bullet and the
-    # baseline label (matching the form the error message suggests).
-    NUMERIC_BASELINE = r"\d+[ \t]+tests?[ \t]+collected"
-    baseline_patterns = [
-        # Heading form: `### Collected-test baseline (forecast)`
-        # followed (optionally with a blank line) by a body line
-        # containing `<digit> tests collected`. The header itself
-        # does NOT need the numbers; the next body line does.
-        r"(?:^|\n)[ \t]*#{2,4}[ \t]+Collected-test baseline[ \t]+\(forecast\)[^\n]*\n[ \t]*\n?[^\n]*"
-        + NUMERIC_BASELINE,
-        # Bullet form (with optional `**` bold between bullet and
-        # label, and optional `**` bold closing after the colon).
-        # Numeric count on the SAME line.
-        r"(?:^|\n)[ \t]*[-*][ \t]+\S*?Collected-test baseline[ \t]+\(forecast\):[ \t]*"
-        + NUMERIC_BASELINE,
-        # Plain line form (no list marker, no heading). Numeric count
-        # on the SAME line.
-        r"(?:^|\n)[ \t]*Collected-test baseline[ \t]+\(forecast\):[ \t]*"
-        + NUMERIC_BASELINE,
-    ]
-    found_baseline = False
-    for pattern in baseline_patterns:
-        if re.search(pattern, last_section, flags=re.IGNORECASE | re.DOTALL):
-            found_baseline = True
-            break
-    assert found_baseline, (
+    # prefix), and plain line. The cycle-12 round-5 fix extracts the
+    # captured number from the matched line for the real-world-fitness
+    # drift check below, AND widens the bullet regex to actually accept
+    # the bold form `**Collected-test baseline (forecast):** N tests
+    # collected` (the cycle-12 round-2 review log claimed this form
+    # passed, but the regex actually rejected it — second-pass catch).
+    NUMERIC_BASELINE_RE = re.compile(r"(\d+)[ \t]+tests?[ \t]+collected")
+    # Match the baseline MARKER (without requiring a number on the same line).
+    # The bullet form allows optional `**` markdown-bold AROUND the label
+    # (e.g., `**Collected-test baseline (forecast):**` or `**Collected-test
+    # baseline (forecast, per PI-020):**`). The Round-2 review log claimed
+    # these forms passed, but the original regex did not actually accept
+    # them — second-pass catch.
+    marker_re = re.compile(
+        r"(?:^|\n)[ \t]*(?:"
+        r"#{2,4}[ \t]+\*?Collected-test baseline[ \t]+\(forecast\)\*?:?"  # heading form (with optional bold + colon)
+        r"|[-*][ \t]+(?:\*+\s*)?Collected-test baseline[ \t]+\(forecast\)(?:\s*\**)?:"  # bullet form (with optional bold around label, ** after colon)
+        r"|Collected-test baseline[ \t]+\(forecast\):"  # plain line form
+        r")",
+        flags=re.IGNORECASE,
+    )
+    captured_count: int | None = None
+    marker_m = marker_re.search(last_section)
+    if marker_m:
+        # Find the body line for the heading form (the next non-empty line
+        # after the heading), or the same line for bullet/plain forms.
+        marker_end = marker_m.end()
+        # Find the next newline AFTER marker_end (using marker_end + 1 to
+        # avoid matching a newline at marker_end itself, which can happen
+        # when the regex consumed the leading newline via (?:^|\n)).
+        next_newline = last_section.find("\n", marker_end + 1)
+        if next_newline == -1:
+            next_newline = len(last_section)
+        same_line_text = last_section[marker_end:next_newline]
+        num_m = NUMERIC_BASELINE_RE.search(same_line_text)
+        if num_m:
+            captured_count = int(num_m.group(1))
+        else:
+            # Heading form: look at the next non-empty body line.
+            body_start = next_newline + 1
+            # Skip blank lines.
+            while body_start < len(last_section) and last_section[body_start] == "\n":
+                body_start += 1
+            body_end = last_section.find("\n", body_start)
+            if body_end == -1:
+                body_end = len(last_section)
+            body_text = last_section[body_start:body_end]
+            num_m = NUMERIC_BASELINE_RE.search(body_text)
+            if num_m:
+                captured_count = int(num_m.group(1))
+    assert captured_count is not None, (
         f"Most recent cycle section (`{last_cycle_label}`) in pr-change-log.md "
         f"does not contain a `Collected-test baseline (forecast): <N> tests collected` "
         f"line with a numeric count.\n\n"
@@ -549,5 +585,51 @@ def test_pr_change_log_includes_collect_only_forecast_baseline() -> None:
         f"Note: narrative mentions of 'Collected-test baseline' or 'forecast' do NOT\n"
         f"satisfy this test. The baseline must be on its own line in one of the three\n"
         f"forms above with a numeric count in `<digit> tests collected` shape.\n"
+        f"See workflow-nightly-dreaming.md Stage 0a for the convention."
+    )
+
+    # Real-world fitness check (cycle-12 review round 5): re-run collect-only
+    # at validation-time and verify the captured baseline is within a
+    # reasonable tolerance of the current count. The cycle author captures
+    # the baseline at forecast-time, so legitimate drift is expected as
+    # reviewer rounds add tests. A drift of ±25 is the upper bound for a
+    # 5-round review (each round typically adds 1-5 tests for new test
+    # functions, plus parametrized-expansion additions from any new files
+    # in `.openclaw/dreaming/`).
+    repo_root = Path(__file__).resolve().parents[2]
+    proc = subprocess.run(
+        ["python3", "-m", "pytest", "tests/dreaming/", "--collect-only", "-q"],
+        cwd=repo_root,
+        capture_output=True,
+        text=True,
+        timeout=60,
+    )
+    current_match = re.search(r"(\d+) tests collected", proc.stdout)
+    assert current_match, (
+        f"Could not parse current collect-only count from pytest output:\n"
+        f"  stdout: {proc.stdout!r}\n"
+        f"  stderr: {proc.stderr!r}"
+    )
+    current_count = int(current_match.group(1))
+    drift = abs(captured_count - current_count)
+    MAX_DRIFT = 25  # cycle-12 round-5 tolerance
+    assert drift <= MAX_DRIFT, (
+        f"Most recent cycle section (`{last_cycle_label}`) has a captured baseline of "
+        f"{captured_count} tests, but the current collect-only count is {current_count} "
+        f"tests (drift: {drift}). This exceeds the round-5 tolerance of ±{MAX_DRIFT} tests.\n\n"
+        f"This usually means one of:\n"
+        f"  (a) The cycle author wrote a baseline number without actually running\n"
+        f"      `python3 -m pytest tests/dreaming/ --collect-only -q | grep 'tests collected'`.\n"
+        f"      Re-run the command and update the captured baseline in the cycle row.\n"
+        f"  (b) Reviewer-driven changes have legitimately drifted the test count beyond\n"
+        f"      ±{MAX_DRIFT} since the cycle author captured the baseline. Re-run the command\n"
+        f"      and update the captured baseline to reflect the current count. The\n"
+        f"      'Main post-merge (forecast)' section should also be updated to explain\n"
+        f"      the drift (per PI-018 / Stage 11).\n\n"
+        f"Per PI-020, the captured baseline must be a captured number, not a reasoned\n"
+        f"estimate. The tolerance of ±{MAX_DRIFT} accommodates legitimate drift from\n"
+        f"reviewer-driven test additions (each round typically adds 1-5 tests, plus\n"
+        f"parametrized-expansion additions from any new files in `.openclaw/dreaming/`);\n"
+        f"a larger drift indicates either a stale capture or a wildly wrong baseline.\n"
         f"See workflow-nightly-dreaming.md Stage 0a for the convention."
     )
