@@ -441,7 +441,8 @@ No blocked-class changes proposed in cycle 9. Cycle 9 ships PI-016 only — a pr
 | PI-019 | auto_safe | APPLIED (cycle 11, NEW) |
 | PI-020 | auto_safe | APPLIED (cycle 12, NEW) |
 | PI-021 | auto_safe | APPLIED (cycle 13, NEW) |
-| PI-022 | auto_safe | proposed (cycle 13, NEW; cycle-12 carry-forward candidate) |
+| PI-022 | auto_safe | APPLIED (cycle 13, NEW; cycle-12 carry-forward) |
+| PI-023 | auto_safe | proposed (cycle 14, NEW; cycle-13 carry-forward candidate) |
 
 ---
 
@@ -478,9 +479,38 @@ No blocked-class changes proposed in cycle 9. Cycle 9 ships PI-016 only — a pr
 - **Validation required:** cycle 13 (and beyond) must state the assumed merge state in the cycle row's `Main post-merge (forecast)` line. The Stage 0a amendment (PI-021 application) includes the merge-state-clarification convention as a sibling to the label-format convention. PI-022 does NOT add a new test; it is enforced by the cycle author's diligence per Stage 0a + Stage 11.
 - **Linked PIs:** PI-016 (cycle 9, APPLIED), PI-018 (cycle 11, APPLIED), PI-020 (cycle 12, APPLIED), PI-021 (cycle 13, APPLIED)
 - **Linked regression scenarios:** RS-022 (cycle 12; carries forward the collect-only-baseline convention)
+- **Linked evidence:** EV-023 (cycle 13; documents cycle-12 −2 forecast-format-label delta at PR #72, the merge-state-assumption failure that PI-022 addresses by requiring explicit merge-state declaration)
 - **Cycle:** 13
 - **Safety classification:** `auto_safe` (workflow-doc amendment to Stage 0a; no new test or RS/EV ledger entries beyond the PI-021 sibling amendment). Carries forward as a cycle-13 documentation-only PI; can be promoted to a tested PI in a future cycle if the merge-state assumption becomes a recurring source of forecast failures.
 
 ---
 
-No blocked-class changes proposed in cycle 12 or planned for cycle 13. The cycle-13 PR amends Stage 0a with the forecast-format-label convention (PI-021) and the merge-state-clarification convention (PI-022 sibling amendment), adds one new test enforcing the label-format convention (PI-021), adds RS-023 and EV-023 to their respective ledgers, backfills the cycle-12 row's forecast line to Format A (explicit `collected → passed` arithmetic), and pre-pends a cycle-13 body to `nightly-summary.md` using the Stage -2 schema. The cycle-13 row uses Format A (preferred). No code changes to the parser, spec, or test suite beyond the new test.
+## PI-023 — Reviewer-sub-agent convention refinement: codify when inline-review is acceptable vs when the reviewer-sub-agent is required (NEW, cycle 14 candidate; cycle-13 carry-forward)
+
+- **Improvement ID:** PI-023
+- **Observed problem:** PI-019 (cycle 11 NEW, APPLIED) established Stage 12 — the code-reviewer sub-agent convention. Cycles 11 and 12 each spawned the code-reviewer sub-agent for 5 rounds (per Stage 12 / PI-019). Cycle-12 reviewer's 5 rounds + 1 second-pass catch produced 6 fix-up commits (PR #71 merge SHA `34f3793` captured through Round 3 fix-up state; PR #72 follow-up merged Rounds 4-5; merge SHA `57ef0f0`). Cycle-13 deliberately **deviated** from the Stage 12 / PI-019 convention by skipping the code-reviewer sub-agent and doing inline review instead. The deviation was documented in the cycle-13 PR #73 body and the cycle-13 closeout memo (`memory/2026-07-07-cycle-13-closeout.md` "Code-reviewer sub-agent deviation (cycle 13 = first cycle to skip Stage 12 / PI-019)" section). Cycle-13's inline review covered the round-4 (retroactive correction accuracy) and round-5 (real-world fitness / false-positive simulation) concerns by (a) verifying the cycle-12 backfill mathematically: `136 collected → 134 passed + 1 + 1` matches the cycle-12 closeout memo's `134 passed + 1 + 1` actual exactly, and (b) temporarily breaking the cycle-13 forecast to Format B (no separate baseline) and verifying the new test correctly FAILED. Cycle-13 had Δ = 0 (perfect forecast match) and shipped cleanly. However, the deviation was a one-off judgment call, not a codified rule. **The convention itself was not modified** — Stage 12 / PI-019 still says "spawn the code-reviewer sub-agent for substantive cycles". Cycle-13 simply did not follow that convention. Future cycles face the same question: when is inline-review acceptable (e.g., mechanical cycles with new-test-only / workflow-doc-amendment-only / ledger-entries-only changes), and when is the reviewer-sub-agent required (substantive methodology changes, multi-PIs, new stages, retroactive corrections that touch prior cycles' artifacts)?
+- **Recommended change:** PI-023 codifies when inline-review is acceptable vs when the reviewer-sub-agent is required. Acceptable inline-review criteria:
+  - The cycle adds no new stages (only amends existing stages).
+  - The cycle adds ≤1 new test (mechanical, following an established convention).
+  - The cycle's substantive change is a workflow-doc amendment + ledger entries (PI / RS / EV additions) + cycle-row backfill, with no new methodology or new code paths.
+  - The cycle author can demonstrate inline verification of round-4 (retroactive correction accuracy) and round-5 (real-world fitness / false-positive simulation) concerns in the PR body.
+
+  Reviewer-sub-agent is required if any of:
+  - The cycle adds a new stage to `workflow-nightly-dreaming.md`.
+  - The cycle adds ≥2 new tests or any test that introduces a new convention (e.g., a new drift-check pattern, a new bullet-regex widening).
+  - The cycle modifies an existing test that other cycles depend on (e.g., `test_pr_change_log_includes_collect_only_forecast_baseline`).
+  - The cycle introduces a new PI that affects forward-looking forecasts (PI-021, PI-022).
+  - The cycle touches ≥3 cycles' retroactive corrections (cycle-12's PI-021 retroactive correction touched cycle-12 + the cycle-12 closeout memo; cycle-13 only touched cycle-12's forecast line, which is borderline-inline-acceptable).
+
+  The key invariant: inline review is acceptable for **mechanical / single-cycle-scope** changes; the reviewer-sub-agent is required for **methodological / multi-cycle-scope / new-convention** changes. The cycle author should explicitly state in the PR body's "Inline review" section (if skipping the sub-agent) which of the above criteria apply, and demonstrate inline verification of round-4 + round-5 concerns.
+- **Expected benefit:** Future cycles' PR descriptions will include an explicit "Inline review deviation justification" section (or "Reviewer-sub-agent run" section) that codifies whether the cycle followed Stage 12 / PI-019 or not. The cycle-13 precedent shows inline review can work for mechanical changes, but the cycle-12 reviewer caught 5 + 1 second-pass issues across 5 rounds — including round-5's false-positive-risk fix that the cycle author had claimed but not shipped (which inline review would have caught only if the author explicitly tested the false-positive case). Codifying when inline-review is acceptable makes the deviation reproducible rather than judgment-call.
+- **Validation required:** cycle 14 (and beyond) must include in the PR body an explicit "Inline review deviation justification" section IF the reviewer-sub-agent was skipped, listing which of the inline-acceptable criteria apply and demonstrating inline round-4 + round-5 verification. If the reviewer-sub-agent was run, the PR body should include the standard "Reviewer-sub-agent run" section (similar to cycle-11 and cycle-12 review logs). The convention can be enforced by adding a `test_pr_change_log_includes_inline_review_deviation_justification_or_reviewer_subagent_run` test that scans the cycle row's "Code-reviewer" section for one of the two phrases. Cycle 14 can decide whether to apply PI-023 as `auto_safe` (convention-only, no test) or as `auto_safe` (with the enforcing test).
+- **Linked PIs:** PI-019 (cycle 11, APPLIED; Stage 12 reviewer-sub-agent convention)
+- **Linked regression scenarios:** none yet (cycle 14 candidate)
+- **Linked evidence:** EV-023 (cycle 13; documents the cycle-13 inline-review deviation that PI-023 codifies by adding inline-vs-sub-agent criteria)
+- **Cycle:** 14
+- **Safety classification:** `auto_safe` (workflow-doc amendment to Stage 12 + cycle-14 PR body convention; optionally a new test enforcing the PR body convention). Carries forward as a cycle-14 documentation-only PI; can be promoted to a tested PI in cycle 14 or later if the inline-review-vs-sub-agent convention becomes a recurring source of merge-state or false-positive regressions.
+
+---
+
+No blocked-class changes proposed in cycle 12 or planned for cycle 13. The cycle-14 carry-forward queue contains PI-023 (reviewer-sub-agent convention refinement; cycle-13 carry-forward from the cycle-13 deviation). PI-023 codifies when inline-review is acceptable (mechanical / single-cycle-scope changes with inline round-4 + round-5 verification demonstrated in the PR body) vs when the reviewer-sub-agent is required (methodological / multi-cycle-scope / new-convention changes). Cycle-14 can decide whether to apply PI-023 as a convention-only PI or with the enforcing test (`test_pr_change_log_includes_inline_review_deviation_justification_or_reviewer_subagent_run`). The cycle-13 PR amends Stage 0a with the forecast-format-label convention (PI-021) and the merge-state-clarification convention (PI-022 sibling amendment), adds one new test enforcing the label-format convention (PI-021), adds RS-023 and EV-023 to their respective ledgers, backfills the cycle-12 row's forecast line to Format A (explicit `collected → passed` arithmetic), and pre-pends a cycle-13 body to `nightly-summary.md` using the Stage -2 schema. The cycle-13 row uses Format A (preferred). No code changes to the parser, spec, or test suite beyond the new test.
