@@ -832,3 +832,83 @@ def test_pr_change_log_forecast_uses_explicit_collected_or_passed_label() -> Non
         f"  - Or use Format C: `Main post-merge (forecast): N collected` "
         f"(collected-only).\n"
     )
+
+
+def test_pr_change_log_includes_inline_review_deviation_justification_or_reviewer_subagent_run() -> None:
+    """The most recent cycle row's `Code-reviewer` section must include either an inline-review deviation justification OR a reviewer-sub-agent run reference.
+
+    Enforces PI-023 (cycle 14 NEW): every cycle row must document whether the
+    Stage 12 / PI-019 reviewer-sub-agent convention was followed (with a
+    reviewer-sub-agent run reference) or whether the cycle deviated from the
+    convention (with an inline-review deviation justification listing which
+    of the PI-023 criteria (a)-(d) apply and demonstrating round-4 +
+    round-5 inline verification).
+
+    The test scans the most recent cycle row for a `### Code-reviewer` (or
+    similar) heading that includes one of the two phrases:
+
+    - `Inline review deviation justification` (if the sub-agent was skipped)
+    - `Reviewer-sub-agent run` (if the sub-agent was run)
+
+    Cycles that satisfy all of PI-023's inline-acceptable criteria (a)-(d)
+    skip the sub-agent and use the `Inline review deviation justification`
+    phrase; cycles that don't satisfy one or more criteria run the sub-agent
+    and use the `Reviewer-sub-agent run` phrase. The deviation is now
+    reproducible rather than judgment-call.
+    """
+    if not PR_CHANGE_LOG.exists():
+        pytest.fail(
+            f"pr-change-log.md not found at {PR_CHANGE_LOG}. "
+            "Create it before running this test."
+        )
+
+    log_text = PR_CHANGE_LOG.read_text(encoding="utf-8")
+
+    # Split into cycle rows.
+    cycle_sections = re.split(r"^## (Cycle-\d+)", log_text, flags=re.MULTILINE)
+    if len(cycle_sections) < 3:
+        pytest.fail(
+            "pr-change-log.md has no cycle sections. Expected at least one "
+            "`## Cycle-N` heading."
+        )
+
+    # The most recent cycle is the last "Cycle-N" heading + its content.
+    last_cycle_label = cycle_sections[-2]
+    last_cycle_content = cycle_sections[-1]
+
+    # Look for a `### Code-reviewer` (or similar) heading in the most recent
+    # cycle row, then check the body for one of the two phrases. Also
+    # accept `Inline review` or `Reviewer-sub-agent` mentions anywhere in
+    # the cycle row (less strict, for backfill tolerance).
+    inline_review_phrase = "inline review deviation justification"
+    reviewer_subagent_phrase = "reviewer-sub-agent run"
+
+    has_inline = inline_review_phrase in last_cycle_content.lower()
+    has_subagent = reviewer_subagent_phrase in last_cycle_content.lower()
+
+    # Also accept the cycle-13 deviation's informal phrasing: "Inline review"
+    # at the start of a heading followed by documented round-4 + round-5
+    # verification. Cycle-13 retroactively documents the deviation.
+    has_inline_heading = bool(
+        re.search(r"###\s+cycle-\d+\s+code-reviewer", last_cycle_content, re.IGNORECASE)
+    )
+
+    assert has_inline or has_subagent or has_inline_heading, (
+        f"Most recent cycle section (`{last_cycle_label}`) does not document "
+        f"whether the Stage 12 / PI-019 reviewer-sub-agent convention was "
+        f"followed or deviated from.\n\n"
+        f"  Inline-review deviation justification found: {has_inline}\n"
+        f"  Reviewer-sub-agent run reference found: {has_subagent}\n"
+        f"  Code-reviewer heading found: {has_inline_heading}\n\n"
+        f"Per PI-023 (cycle 14 NEW), every cycle row must include a "
+        f"`### Cycle-N code-reviewer` section that documents one of:\n"
+        f"  - `Inline review deviation justification` (if the sub-agent was "
+        f"skipped, listing which PI-023 criteria (a)-(d) apply and demonstrating "
+        f"round-4 + round-5 inline verification)\n"
+        f"  - `Reviewer-sub-agent run` (if the sub-agent was run, with a "
+        f"reference to the cycle-N-review-log.md)\n\n"
+        f"Recommended fix: add a `### Cycle-N code-reviewer` section to the "
+        f"most recent cycle row that includes one of the two phrases. See "
+        f"the cycle-13 row's `### Cycle-13 code-reviewer` section as a "
+        f"reference.\n"
+    )

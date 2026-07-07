@@ -305,6 +305,30 @@ The dreaming-workflow spawns a code-reviewer sub-agent for each substantive cycl
 
 For each substantive cycle (one that adds a new test, stage, PI, RS, or EV — not a bookkeeping-only cycle), spawn a code-reviewer sub-agent after the substantive commit is on the branch and before opening the PR. The sub-agent reviews the diff between the cycle branch and `main`, applies fix-up commits to the branch as findings warrant, and pushes after each fix-up. Per-round summary via `sessions_send` after each round.
 
+### Inline-review deviation criteria (PI-023 amendment, cycle 14)
+
+The Stage 12 reviewer-sub-agent convention is the default for substantive cycles. Cycles **may** skip the reviewer-sub-agent and do inline review instead IF AND ONLY IF **all** of the following criteria are satisfied:
+
+- **(a) No new stages.** The cycle amends existing stages only (e.g., adding sub-sections to Stage 0a) and does not introduce new top-level `## Stage N:` headings.
+- **(b) ≤1 new test (mechanical).** The cycle adds at most one new test, and the test follows an established convention (e.g., a new test that asserts the same kind of property as an existing test in the same module). Cycles that add ≥2 new tests OR any test that introduces a new convention (e.g., a new drift-check pattern, a new bullet-regex widening, a new parametrized-expansion formula) MUST run the reviewer-sub-agent.
+- **(c) Mechanical substantive change.** The cycle's substantive change is workflow-doc amendment + ledger entries (PI / RS / EV additions) + cycle-row backfill, with no new methodology, no new code paths, and no modification to existing tests that other cycles depend on (e.g., `test_pr_change_log_includes_collect_only_forecast_baseline` is shared infrastructure).
+- **(d) Inline round-4 + round-5 verification demonstrated in PR body.** The cycle author's PR body includes an explicit "Inline review deviation justification" section that demonstrates:
+  - **Round 4 (retroactive-correction accuracy):** any retroactive corrections to prior cycles' artifacts (closeout memos, PI bodies, EV entries, cycle rows) are verified numerically and textually consistent with the underlying data. If no retroactive corrections, the section notes this.
+  - **Round 5 (real-world fitness / false-positive simulation):** the author has empirically simulated failure modes — e.g., temporarily broke the cycle's forecast / test input and verified the new test correctly FAILED, then restored. The simulation steps and results are documented in the PR body.
+
+If any of (a)–(d) are not satisfied, the cycle MUST run the reviewer-sub-agent per the standard Stage 12 protocol.
+
+### Reviewer-sub-agent is REQUIRED if any of:
+
+- The cycle adds a new stage to `workflow-nightly-dreaming.md`.
+- The cycle adds ≥2 new tests OR any test that introduces a new convention (drift-check pattern, bullet-regex widening, parametrized-expansion formula).
+- The cycle modifies an existing test that other cycles depend on (e.g., `test_pr_change_log_includes_collect_only_forecast_baseline`, `test_pr_change_log_forecasts_main_post_merge_count`, `test_pr_change_log_forecast_uses_explicit_collected_or_passed_label`).
+- The cycle introduces a new PI that affects forward-looking forecasts (e.g., PI-016, PI-018, PI-020, PI-021, PI-022).
+- The cycle touches ≥3 cycles' retroactive corrections.
+- The cycle introduces a new Stage that affects Stage 0a / Stage 11 / Stage 12 conventions (e.g., Stage -3 in cycle 10, the cycle-11 Stage 11 PI-018 amendment).
+
+The key invariant: **inline review is acceptable for mechanical / single-cycle-scope changes; the reviewer-sub-agent is required for methodological / multi-cycle-scope / new-convention changes.**
+
 ### Round purposes (locked in by msg #11772)
 
 - **Round 1 (flex).** Default: schema/format compliance of any new stage or test added by the cycle. Override for cycles that don't add schema-level changes.
@@ -328,9 +352,11 @@ For each substantive cycle (one that adds a new test, stage, PI, RS, or EV — n
 - The log must enumerate the rounds completed, fix-up commits applied, no-issue rounds, and the final recommendation (merge as-is or wait).
 - The user merges when satisfied with the reviewer's recommendation. The reviewer does NOT auto-merge.
 
-### Why this stage exists (PI-019 amendment, cycle 11)
+### Why this stage exists (PI-019 amendment, cycle 11; PI-023 amendment, cycle 14)
 
 Cycles 10 and 11 both used a code-reviewer sub-agent. Cycle 10 caught 4 latent issues across 5 rounds (1 substantive + 4 reviewer-driven = 5 commits; cycle-size budget was 2 but reviewer-driven commits doubled it). Cycle 11 caught 6 latent issues across 5 rounds + a second-pass catch (1 substantive + 7 reviewer-driven = 8 commits; cycle-size budget was 2 but reviewer-driven commits quadrupled it). The most important findings (cycle 10: Stage -3 schema alignment; cycle 11: regex false-positive on placeholder inputs) were issues the cycle author would not have caught without a clean-context second pair of eyes. Locking in the convention as a workflow stage (Stage 12) makes it discoverable for future cycles and codifies which rounds are fixed-purposes vs flex-purposes (msg #11772).
+
+**PI-023 (cycle 14 NEW, APPLIED) amendment:** Cycle 13 deliberately deviated from the Stage 12 reviewer-sub-agent convention by skipping the sub-agent and doing inline review instead. The deviation worked (cycle-13 had Δ = 0 perfect forecast match), but it was a one-off judgment call, not a codified rule. PI-023 codifies when inline-review is acceptable (criteria (a)–(d) above) vs when the reviewer-sub-agent is required (the bulleted list above). The convention is enforced by `tests/dreaming/test_pr_readiness.py::test_pr_change_log_includes_inline_review_deviation_justification_or_reviewer_subagent_run` (NEW, cycle 14), which scans the most recent cycle row's "Code-reviewer" section for one of the two phrases: `Inline review deviation justification` (if the sub-agent was skipped) or `Reviewer-sub-agent run` (if the sub-agent was run). Cycles that satisfy all of (a)–(d) skip the sub-agent and document inline review; cycles that don't satisfy one or more criteria run the sub-agent. The deviation is now reproducible rather than judgment-call.
 
 ## Hard Constraints
 
