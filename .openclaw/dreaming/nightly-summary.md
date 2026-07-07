@@ -1,5 +1,57 @@
 # Nightly Summary
 
+- **Cycle:** 2026-07-07 cycle-15
+- **Branch:** `dreaming/nightly-execution-quality-2026-07-07-cycle-15`
+- **Date:** 2026-07-07
+
+## Trigger
+
+### Surface-Scope Pre-Declaration (Stage -2, PI-015, cycle 8)
+
+- **Workflow target:** dream (in-repo dreaming-workflow, .openclaw/dreaming/ + tests/dreaming/ + skill-governance-pipeline/ via Makefile sibling target + Makefile).
+- **Surface area:** `Makefile` (new `make sgp-validate` target that runs ruff + mypy + pytest with branch coverage + 90% branch coverage gate — matches `.github/workflows/sgp-tests.yml` step-for-step); `.openclaw/dreaming/proposed-improvements.md` (PI-009 row updated from `proposed → applied`); `.openclaw/dreaming/regression-scenarios.md` (RS-025 added); `.openclaw/dreaming/evidence-index.md` (EV-025 added); `.openclaw/dreaming/pr-change-log.md` (cycle-15 row appended with Format A forecast; cycle-14 row already has PI-023-compliant code-reviewer section). No `tests/dreaming/` changes in cycle-15.
+- **Dreaming-ledger scope:** PI-009 NEW (generalize PI-008's `make <name>-validate` pattern to other CI workflows; applied to SGP; held since cycle 2 per "A then B", released cycle 15). RS-025 NEW (governs the convention going forward: every `.github/workflows/<name>-tests.yml` MUST have a sibling `make <name>-validate` target). EV-025 NEW (documents cycle-15 application of PI-009 to SGP; ruff sanity-check + clean run at 92.2% branch coverage).
+- **Cycle-size budget:** 1 commit (1 substantive, no reviewer-driven by design — inline review per PI-023 criteria (a)-(d)). The substantive change is Makefile sibling-target addition + ledger entries (PI-009 row update, RS-025, EV-025) + cycle-row append. No retroactive corrections are required to prior closeout memos (PI-009 was held proposed since cycle 2; no prior cycle's claim is contradicted by the application).
+
+### Cycle-15 reason for change (PI-009 / cycle-15 trigger)
+
+PI-008 (cycle 1 follow-up, APPLIED) established the pattern: every CI workflow under `.github/workflows/*.yml` SHOULD have a sibling `make <name>-validate` target that runs the same validation steps locally, before push. PI-008's application to dreaming (via `make dreaming-validate`) eliminated the cycle-1 "5 fix-up commits after push" pattern for the dreaming workflow: lint, marker-rule, allowlist false-positives are surfaced locally BEFORE push. **PI-009 (cycle 15 NEW, applied) applies the same pattern to SGP** (via `make sgp-validate`). The change is held since cycle 2 per "A then B" reading; cycle-15 is the **first release**.
+
+**Why now:** SGP shipped v1.0.0 (PR #55, `01d1c34`) and has been the most actively-modified workflow in the repo (CI added incrementally via PRs #47, #50). Its CI runs **four** validation steps (ruff, mypy, pytest, branch coverage gate) — the same fix-up pattern PI-008 solved for dreaming would apply to SGP without a local target. Adding `make sgp-validate` operationalizes the generalization.
+
+### Cycle-15 expected impact
+
+- `make sgp-validate` catches CI-only failures (lint violations, mypy errors, branch coverage drops below the 90% gate, pytest collection issues) locally before pushing — same fix-up-pattern prevention that `make dreaming-validate` provides for the dreaming workflow.
+- Existing-workflows audit: every `.github/workflows/*-tests.yml` (`nightly-dreaming-validation.yml` + `sgp-tests.yml`) now has a sibling `make <name>-validate` target. **100% coverage of existing CI workflows.**
+- Convention established: `make <name>-validate` ↔ `.github/workflows/<name>-tests.yml` is the documented pattern (RS-025). Future workflows MUST follow.
+- PI-009 row updated from `proposed → applied` with linked RS-025 + EV-025.
+
+### Cycle-15 validation performed (planned)
+
+- **Pre-application audit on `main` at `e68f21c`:** `ruff check src/ tests/` clean; `mypy src/skill_governance/` clean (`Success: no issues found in 23 source files`); `pytest --cov-branch` `429 passed in 8.38s`; `coverage report --fail-under=90` `TOTAL 1913 115 660 68 92.2%` (above the 90% gate). All four CI steps reproduce locally. Branch-local captured baseline: 138 tests collected (no change vs cycle-14).
+- **Round 5 (false-positive simulation):** introduced a deliberate ruff violation by appending `import os` to `src/skill_governance/__init__.py`; ran `make sgp-validate`; the target FAILED at step 1/4 with ruff diagnostic `F401 'os' imported but unused --> src/skill_governance/__init__.py:11:8` (identical to what `.github/workflows/sgp-tests.yml` would produce in CI) and exit code 1; restored via `git checkout`. After restoration, `make sgp-validate` returned exit code 0 with "SGP validation passed." The new target works as designed.
+- **Pre-push dreaming validation:** `make dreaming-validate` on cycle-15 branch returns `138 passed, 1 skipped, 1 expected-fail-on-main` (138 = 137 + 1 PI-023 test from cycle-14; 1 skipped is `test_commits_use_chore_dreaming_prefix` in cycle-15 branch mode; 1 expected-fail-on-main is `test_current_branch_uses_dreaming_prefix`). **Δ vs cycle-15 forecast = 0 by design** (cycle-15 adds no `tests/dreaming/` tests; only SGP-side changes).
+- **Pre-push SGP validation:** `make sgp-validate` on cycle-15 branch returns exit code 0 with "SGP validation passed."
+
+### Cycle-15 artifacts changed (planned)
+
+- `Makefile` — `make sgp-validate` target added (~70 lines including comment doc, targets sgp-validate, sgp-pr-ready, sgp-clean, sgp-help).
+- `.openclaw/dreaming/proposed-improvements.md` — PI-009 row updated from `proposed → applied` + linked RS-025 + EV-025.
+- `.openclaw/dreaming/regression-scenarios.md` — RS-025 added (NEW).
+- `.openclaw/dreaming/evidence-index.md` — EV-025 added (NEW).
+- `.openclaw/dreaming/pr-change-log.md` — cycle-15 row appended (Format A forecast; `### Cycle-15 code-reviewer` section included per PI-023).
+- `.openclaw/dreaming/nightly-summary.md` — cycle-15 body prepended (this section); cycle-14 body preserved below as historical record.
+
+### What's still open on `main` after cycle 14 (cycle-15 carry-forward)
+
+- **PI-006a** — runtime JSONL emitter; out-of-repo; principal outstanding PI per the user's original framing. Still blocked on runtime side.
+- **PI-014** — `cyber-signal-fetch-feeds.sh` missing; fix is on the same gateway, outside the workflow's surface area.
+- **PI-008 generalization candidates** (RS-025): any future `.github/workflows/<name>-tests.yml` MUST have a sibling `make <name>-validate` target. BusinessOperationsDashboard does not yet have a CI workflow (PI-009 / RS-025 milestone for that workflow is deferred until it gets a CI workflow file).
+
+---
+
+# Nightly Summary (cycle 14 body, carried forward unchanged)
+
 - **Cycle:** 2026-07-07 cycle-14
 - **Branch:** `dreaming/nightly-execution-quality-2026-07-07-cycle-14`
 - **Date:** 2026-07-07

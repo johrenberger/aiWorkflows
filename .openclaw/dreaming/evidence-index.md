@@ -440,3 +440,19 @@ Each entry is an evidence record. Every recommendation, lesson, pattern, scenari
   - Cycle-14 PI-023 application: Stage 12 amended with inline-acceptable + reviewer-required criteria; enforcing test added; RS-024 / EV-024 added to ledgers.
 - **Linked PIs:** PI-023 (NEW, cycle 14, auto_safe, applies-this-cycle)
 - **Linked regression scenarios:** RS-024 (NEW, cycle 14)
+
+---
+
+## EV-025 — PI-009 application to SGP (NEW, cycle 15)
+
+- **Evidence ID:** EV-025
+- **Evidence statement:** Cycle 15 applies PI-009 (held since cycle 2 per "A then B" reading; released cycle 15) by adding the `make sgp-validate` target to the root Makefile. The target mirrors `make dreaming-validate` exactly: ruff lint, mypy type check, pytest with branch coverage, and a 90% branch coverage gate — all steps that map 1:1 to `.github/workflows/sgp-tests.yml`. Pre-application audit (cycle 15, on `main` at `e68f21c`): `ruff check src/ tests/` clean; `mypy src/skill_governance/` clean ("Success: no issues found in 23 source files"); `pytest --cov-branch` reported `429 passed in 8.38s`; `coverage report --fail-under=90` reported `TOTAL 1913 115 660 68 92.2%` (above 90% gate). Round 5 (false-positive simulation): introduced a deliberate ruff violation by appending `import os` to `src/skill_governance/__init__.py`; ran `make sgp-validate`; the target FAILED at step 1/4 with ruff diagnostic `F401 'os' imported but unused --> src/skill_governance/__init__.py:11:8` (identical to what `.github/workflows/sgp-tests.yml` would produce in CI) and exit code 1; restored via `git checkout`. After restoration, `make sgp-validate` returned exit code 0 with "SGP validation passed." The convention `make <name>-validate` ↔ `.github/workflows/<name>-tests.yml` is now established: dreaming (since PI-008) and SGP (since PI-009 / cycle 15) both obey it. RS-025 (NEW, cycle 15) governs future workflows; BusinessOperationsDashboard does NOT yet have a CI workflow (PI-009 / RS-025 milestone for that workflow is deferred until it gets a CI workflow file).
+- **Quantitative summary:**
+  - Pre-application: 429 SGP tests collected, all pass; 92.2% branch coverage (above 90% gate).
+  - Round 5 false-positive simulation: ruff violation → `make sgp-validate` FAILED at step 1/4 with same diagnostic CI would produce.
+  - Round 5 restoration: `git checkout` → `make sgp-validate` PASSED end-to-end.
+  - New artifact: `make sgp-validate` target in `Makefile` (~70 lines including comment doc, targets sgp-validate, sgp-pr-ready, sgp-clean, sgp-help).
+  - Existing-workflows audit: every `.github/workflows/*-tests.yml` (dreaming-validation, sgp-tests) now has a sibling `make <name>-validate` target. **100% coverage of existing CI workflows.**
+  - Cross-cycle forecast-discipline impact: cycle-15 forecast is identical to cycle-14 (`138 collected → 136 passed + 1 + 1`) because cycle-15 adds NO new tests to `tests/dreaming/`; SGP-side changes don't affect the dreaming test count.
+- **Linked PIs:** PI-009 (NEW, cycle 15, applied; held since cycle 2 per "A then B")
+- **Linked regression scenarios:** RS-025 (NEW, cycle 15)

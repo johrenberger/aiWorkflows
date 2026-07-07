@@ -86,3 +86,54 @@ dreaming-help:
 	@echo "  make dreaming-pr-ready   Alias for dreaming-validate"
 	@echo "  make dreaming-precheck   Workspace-state pre-check (PI-012, cycle 4)"
 	@echo "  make dreaming-clean      Remove generated artifacts (none currently)"
+
+# SGP (skill-governance-pipeline) local validation.
+#
+# PI-009 (cycle 15 NEW, APPLIED): generalize PI-008 to other workflow artifact
+# sets. SGP has a `.github/workflows/sgp-tests.yml` CI workflow that runs
+# ruff + mypy + pytest + branch coverage gate on every push/PR to
+# skill-governance-pipeline/. Without a sibling `make sgp-validate`, CI-only
+# failures (ruff violations, mypy errors, branch coverage drops below 90%, test
+# collection issues) are only discoverable AFTER push — same fix-up pattern
+# PI-008 solved for the dreaming workflow.
+#
+# Usage:
+#   make sgp-validate          # run ruff + mypy + pytest + branch coverage
+#   make sgp-pr-ready          # alias for sgp-validate
+#   make sgp-clean             # remove generated coverage artifacts
+#   make sgp-help              # list targets
+#
+# Mirrors the structure of `make dreaming-validate` exactly so the convention
+# generalizes. Each step corresponds to one step in sgp-tests.yml CI.
+
+.PHONY: sgp-validate sgp-pr-ready sgp-clean sgp-help
+
+sgp-validate:
+	@echo "Running SGP validation (PI-009, cycle 15)..."
+	@echo "---"
+	@echo "Step 1/4: ruff lint"
+	@cd "$(CURDIR)/skill-governance-pipeline" && ruff check src/ tests/
+	@echo "---"
+	@echo "Step 2/4: mypy type check"
+	@cd "$(CURDIR)/skill-governance-pipeline" && mypy src/skill_governance/
+	@echo "---"
+	@echo "Step 3/4: pytest with branch coverage"
+	@cd "$(CURDIR)/skill-governance-pipeline" && coverage run --source=src/skill_governance -m pytest --cov-branch --cov-report=term-missing -q
+	@echo "---"
+	@echo "Step 4/4: enforce 90% branch coverage gate (matches CI)"
+	@cd "$(CURDIR)/skill-governance-pipeline" && coverage report --fail-under=90
+	@echo "---"
+	@echo "SGP validation passed."
+
+sgp-pr-ready: sgp-validate
+
+sgp-clean:
+	@cd "$(CURDIR)/skill-governance-pipeline" && rm -f .coverage coverage.xml
+	@echo "Removed .coverage and coverage.xml from skill-governance-pipeline/."
+
+sgp-help:
+	@echo "SGP targets (PI-009, cycle 15):"
+	@echo "  make sgp-validate   Run ruff + mypy + pytest + branch coverage gate (matches CI)"
+	@echo "  make sgp-pr-ready   Alias for sgp-validate"
+	@echo "  make sgp-clean      Remove generated coverage artifacts"
+	@echo "  make sgp-help       List targets"
