@@ -370,3 +370,21 @@ RS-001 through RS-009 are carried from cycle 1. RS-010 through RS-012 are new in
 - **Owner:** human
 - **Status:** proposed (cycle 12, NEW; PI-020 applies-this-cycle)
 - **Cycle:** 12
+
+## RS-023 — Cycle row's `Main post-merge (forecast)` line must use an explicit `collected` or `passed` label with consistent arithmetic (NEW, cycle 13)
+
+- **Improvement ID:** PI-021
+- **Evidence reference:** EV-023, cycle-12 final closeout memo (`memory/2026-07-07-cycle-12-final-closeout.md`).
+- **Severity:** informational
+- **Statement:** Every cycle row's `Main post-merge (forecast)` line in `pr-change-log.md` must use one of three explicit formats: (Format A, preferred) `Main post-merge (forecast): N collected → (N-2) passed + 1 skipped + 1 expected-fail-on-main`, with the explicit `collected → passed` arithmetic shown inline; (Format B, legacy-compatible) `Main post-merge (forecast): N passed + 1 skipped + 1 expected-fail-on-main` paired with a separate `Collected-test baseline (forecast): N tests collected` line in the same cycle row (per Stage 0a), with the arithmetic `N collected → (N-2) passed + 1 + 1` derivable from the row; (Format C, collected-only) `Main post-merge (forecast): N collected` with no `passed` count in the forecast, with the post-merge verification computing the actual `passed` count from the actual collect-only baseline. The forecast's numeric value must be unambiguously either `collected` or `passed`, never both without explicit arithmetic. The cycle-12 row's forecast line was written as `136 passed + 1 skipped + 1 expected-fail-on-main` where `136` was actually the **collected** count (133 branch-local baseline + 3 parametrized-test expansion delta), producing a −2 delta against the actual post-PR #72 count (`134 passed + 1 skipped + 1 expected-fail-on-main`). The arithmetic `136 collected → 134 passed + 1 + 1` matches the actual perfectly; the cycle-12 row's −2 was a forecast-format labeling bug, not a methodology or merge-state failure. PI-021 / RS-023 prevents recurrence by enforcing the label convention going forward.
+- **Given** a cycle is being authored with a `Main post-merge (forecast)` line in `pr-change-log.md`
+- **When** the cycle author writes the forecast line
+- **Then** the line must match Format A (preferred, `N collected → (N-2) passed + 1 skipped + 1 expected-fail-on-main`), Format B (legacy-compatible, `N passed + 1 skipped + 1 expected-fail-on-main` paired with a separate `Collected-test baseline (forecast): N tests collected` line in the same cycle row), or Format C (`N collected` only). The forecast's numeric value must be unambiguously labeled as either `collected` or `passed`, and the post-merge verification step (PI-018 / Stage 11) must be able to compute the actual `passed` count from the actual collect-only baseline.
+- **Expected behavior:** Future cycles' forecasts are unambiguously labeled, with explicit `collected → passed` arithmetic. The post-merge verification step (PI-018) compares the actual `main` collect-only count to the forecast's `collected` value (or the row's separate `Collected-test baseline (forecast)` line) and computes the actual `passed` count from the actual collect-only baseline. Format mismatches are caught deterministically.
+- **Pass / fail criteria:**
+  - **Pass** if the cycle row's `Main post-merge (forecast)` line matches Format A, Format B (with separate baseline line), or Format C, AND the arithmetic between `collected` and `passed` counts is explicit or trivially derivable from a separate baseline line in the same cycle row.
+  - **Fail** if the forecast line uses a numeric count without an unambiguous `collected` or `passed` label, or uses a `passed` count whose value is inconsistent with the row's separate `Collected-test baseline (forecast)` line (or with the actual `main` collect-only baseline + the standard −1 skipped −1 expected-fail-on-main deduction).
+- **Validation method:** `tests/dreaming/test_pr_readiness.py::test_pr_change_log_forecast_uses_explicit_collected_or_passed_label` (cycle 13 NEW) enforces the label convention. The post-merge verification step (PI-018 / Stage 11) is a manual discipline enforced by the cycle author.
+- **Owner:** human
+- **Status:** proposed (cycle 13, NEW; PI-021 applies-this-cycle)
+- **Cycle:** 13

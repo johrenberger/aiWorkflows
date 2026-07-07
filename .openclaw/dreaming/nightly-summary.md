@@ -1,5 +1,58 @@
 # Nightly Summary
 
+- **Cycle:** 2026-07-07 cycle-13
+- **Branch:** `dreaming/nightly-execution-quality-2026-07-07-cycle-13`
+- **Date:** 2026-07-07
+
+## Trigger
+
+### Surface-Scope Pre-Declaration (Stage -2, PI-015, cycle 8)
+
+- **Workflow target:** dream (in-repo dreaming-workflow, .openclaw/dreaming/ + tests/dreaming/).
+- **Surface area:** `.openclaw/dreaming/workflow-nightly-dreaming.md` (Stage 0a amended with PI-021 forecast-format-label convention + PI-022 forecast-merge-state-clarification sibling amendment), `tests/dreaming/test_pr_readiness.py` (new test enforcing the label convention: `test_pr_change_log_forecast_uses_explicit_collected_or_passed_label`; also fixed a missing closing `)` in the prior cycle-12 `test_pr_change_log_includes_collect_only_forecast_baseline` function that was orphaned at PR #71's Round-3 fix-up state), `.openclaw/dreaming/proposed-improvements.md` (PI-021 + PI-022 added), `.openclaw/dreaming/regression-scenarios.md` (RS-023 added), `.openclaw/dreaming/evidence-index.md` (EV-023 added), `.openclaw/dreaming/pr-change-log.md` (cycle-13 row appended with Format A forecast; cycle-12 row's `Main post-merge (forecast)` line rewritten in Format A as a PI-021 retroactive correction).
+- **Dreaming-ledger scope:** PI-021 NEW (forecast-format-label clarification — explicit `collected → passed` arithmetic). PI-022 NEW (forecast-merge-state-clarification sibling amendment — explicitly state assumed merge state in forecast; documentation-only). RS-023 NEW (forecast must use explicit `collected` or `passed` label with consistent arithmetic). EV-023 NEW (cycle-12 −2 forecast-format-label delta documentation).
+- **Cycle-size budget:** 2 commits (1 substantive + 1 reviewer-driven if needed). The Stage 0a amendment is a workflow-doc amendment + one new test + retroactive cycle-12 row correction; no retroactive corrections are required to prior closeout memos (the cycle-12 final closeout memo at `memory/2026-07-07-cycle-12-final-closeout.md` already documents the −2 forecast-format-label delta).
+
+### Cycle-13 reason for change (PI-021 / cycle-13 trigger)
+
+PI-018 (cycle 11 NEW, APPLIED) established the post-merge verification step: after the cycle's PR merges, run `make dreaming-validate` on actual `main` and compare to the cycle author's forecast. PI-020 (cycle 12 NEW, APPLIED) added a pre-merge collect-only baseline-capture step (Stage 0a) that makes the forecast a captured number rather than a reasoned estimate. However, the cycle-12 row's `Main post-merge (forecast)` line was written as `136 passed + 1 skipped + 1 expected-fail-on-main` where `136` was actually the **collected** count (133 branch-local baseline + 3 parametrized-test expansion delta). The actual post-PR-#72 `main` count was `134 passed + 1 skipped + 1 expected-fail-on-main` (136 collected − 1 skipped − 1 expected-fail-on-main), producing a −2 delta against the cycle-12 forecast. The arithmetic `136 collected → 134 passed + 1 + 1` matches the actual perfectly; the −2 delta was purely a **forecast-format labeling bug** — the cycle-12 row labeled `136` as "passed" when it was actually "collected". Per PI-018 / Stage 11, the cycle-12 final closeout memo (`memory/2026-07-07-cycle-12-final-closeout.md`) was created documenting the −2 forecast-format-label delta and proposing PI-021 (forecast-format-label clarification) for cycle 13.
+
+PI-021 (cycle 13 NEW, applies-this-cycle) strengthens the forecast-discipline (PI-016 / PI-018 / PI-020) by requiring cycle rows to use one of three explicit formats: (Format A, preferred) `N collected → M passed + 1 skipped + 1 expected-fail-on-main` where `M = N - 2`, with the explicit `collected → passed` arithmetic shown inline; (Format B, legacy-compatible) `N passed + 1 + 1` paired with a separate `Collected-test baseline (forecast): N tests collected` line in the same cycle row; (Format C, collected-only) `N collected` with no `passed` count in the forecast. The cycle-13 row uses Format A (preferred). PI-021 adds a forward-looking test (`test_pr_change_log_forecast_uses_explicit_collected_or_passed_label`) that asserts the cycle row's `Main post-merge (forecast)` line matches one of the three formats. PI-022 (cycle 13 NEW, sibling amendment, documentation-only) addresses the cycle-12 PR #71 merge-state assumption issue by requiring the cycle row to explicitly state the assumed merge state (substantive-commit-only / with-reviewer-driven-additions / mixed). The cycle-13 row's forecast explicitly states `substantive-commit-only` as the assumed merge state.
+
+### Cycle-13 expected impact
+
+- Cycle-13 row's `Main post-merge (forecast)` uses Format A (preferred), with explicit `137 collected → 135 passed + 1 + 1` arithmetic inline.
+- Cycle-12 row's `Main post-merge (forecast)` line is rewritten in Format A as a PI-021 retroactive correction, making the `136 collected → 134 passed + 1 + 1` arithmetic explicit. The cycle-12 closeout memo (`memory/2026-07-07-cycle-12-final-closeout.md`) is referenced for the −2 delta context.
+- Future cycles' forecasts are unambiguously labeled as `collected` or `passed` with explicit arithmetic. The post-merge verification step (PI-018) compares the actual `main` collect-only count to the forecast's `collected` value and computes the actual `passed` count from the actual collect-only baseline.
+- The cycle-13 forecast-discipline test (`test_pr_change_log_forecast_uses_explicit_collected_or_passed_label`) enforces the label convention going forward.
+
+### Cycle-13 validation performed (planned)
+
+- `python3 -m pytest tests/dreaming/ --collect-only -q | grep "tests collected"` to capture the precise baseline (137 tests collected on the cycle-13 branch).
+- `make dreaming-validate` on the cycle-13 branch — expected: 135 passed, 0 failed, 0 skipped (1 new test added in cycle 13).
+- The new test `test_pr_change_log_forecast_uses_explicit_collected_or_passed_label` enforces the label convention going forward and rejects forecasts that mix `collected` and `passed` labels without explicit arithmetic.
+
+### Cycle-13 artifacts changed (planned)
+
+- `.openclaw/dreaming/workflow-nightly-dreaming.md` — Stage 0a amended with PI-021 + PI-022 conventions (~30 lines).
+- `tests/dreaming/test_pr_readiness.py` — `test_pr_change_log_forecast_uses_explicit_collected_or_passed_label` added (NEW, ~80 lines); also fixed missing closing `)` in cycle-12's `test_pr_change_log_includes_collect_only_forecast_baseline`.
+- `.openclaw/dreaming/regression-scenarios.md` — RS-023 added (NEW).
+- `.openclaw/dreaming/evidence-index.md` — EV-023 added (NEW).
+- `.openclaw/dreaming/proposed-improvements.md` — PI-021 + PI-022 added (NEW).
+- `.openclaw/dreaming/pr-change-log.md` — cycle-13 row appended; cycle-12 row's `Main post-merge (forecast)` line rewritten in Format A.
+- `.openclaw/dreaming/nightly-summary.md` — cycle-13 body prepended (this section); cycle-12 body preserved below.
+
+### What's still open on `main` after cycle 12 (cycle-13 carry-forward)
+
+- **PI-006a** — runtime JSONL emitter; out-of-repo; principal outstanding PI per the user's original framing in #11557. Still blocked on runtime side.
+- **PI-014** — `cyber-signal-fetch-feeds.sh` missing; fix is on the same gateway, outside the workflow's surface area.
+- **PI-009** — held since cycle 2 per "A then B"; PI-008 APPLIED for many cycles now; hold may be obsolete. Cycle 14 candidate if not addressed in cycle 13.
+- **PI-022** — proposed in cycle 13; documentation-only sibling amendment to PI-021. Not enforced by a dedicated test; documented as a cycle-13 carry-forward in PI-021's application.
+
+---
+
+# Nightly Summary (cycle 12 body, carried forward unchanged)
+
 - **Cycle:** 2026-07-02 cycle-12
 - **Branch:** `dreaming/nightly-execution-quality-2026-07-02-cycle-12`
 - **Date:** 2026-07-02

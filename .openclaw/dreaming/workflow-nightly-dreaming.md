@@ -48,9 +48,31 @@ When writing the cycle row in `pr-change-log.md` (Stage -2 forward-looking schem
 
 Enforced by `tests/dreaming/test_pr_readiness.py::test_pr_change_log_includes_collect_only_forecast_baseline` (cycle 12 NEW). The test scans the most recent cycle section in `pr-change-log.md` and asserts a `Collected-test baseline (forecast): <digit> tests collected` line is present in one of three forms (heading + body, bullet, or plain line). Placeholder baselines (`TBD`, `to be determined`) and narrative mentions do NOT satisfy the test. See the test docstring for the regex shape and three failure modes.
 
-#### Why this stage exists (PI-020 amendment, cycle 12)
+#### Forecast format: explicit `collected → passed` arithmetic (PI-021 amendment, cycle 13)
+
+The cycle row's `Main post-merge (forecast)` line must use one of three explicit formats:
+
+- **Format A (preferred):** `Main post-merge (forecast): N collected → (N-2) passed + 1 skipped + 1 expected-fail-on-main`. The explicit `collected → passed` arithmetic is shown inline. Example: `Main post-merge (forecast): 136 collected → 134 passed + 1 skipped + 1 expected-fail-on-main`.
+- **Format B (legacy-compatible):** `Main post-merge (forecast): N passed + 1 skipped + 1 expected-fail-on-main` paired with a separate `Collected-test baseline (forecast): N tests collected` line in the same cycle row. The arithmetic `N collected → (N-2) passed + 1 + 1` must be derivable from the separate baseline line.
+- **Format C (collected-only):** `Main post-merge (forecast): N collected` with no `passed` count in the forecast. The post-merge verification (Stage 11) computes the actual `passed` count from the actual collect-only baseline.
+
+The forecast's numeric value must be unambiguously labeled as either `collected` or `passed`. Mixing the two without explicit arithmetic (e.g., `136 passed` where `136` is actually a collected count) is a forecast-format labeling bug — the cycle-12 row had this bug and produced a −2 delta against the actual post-PR-#72 count (see EV-023 and `memory/2026-07-07-cycle-12-final-closeout.md`). PI-021 (cycle 13 NEW) enforces the label convention via `test_pr_change_log_forecast_uses_explicit_collected_or_passed_label`.
+
+#### Forecast merge-state clarification (PI-022 amendment, cycle 13)
+
+The cycle row's `Main post-merge (forecast)` line must also explicitly state the **assumed merge state** — i.e., which reviewer-driven additions are assumed to be in the merge. Acceptable values:
+
+- `substantive-commit-only`: PR is merged at the cycle's substantive commit (no reviewer-driven additions in merge). Forecast arithmetic: `branch-local collect-only baseline − 1 (skipped) − 1 (expected-fail-on-main) = passed`.
+- `with-reviewer-driven-additions`: PR is merged with all reviewer-driven additions (5 rounds per Stage 12). Forecast arithmetic: `branch-local collect-only baseline + (3 × reviewer-added-files) − 1 (skipped) − 1 (expected-fail-on-main) = passed`.
+- `mixed`: PR is merged at a specific round (e.g., "merged at Round 3 fix-up state, no Rounds 4-5 additions"). Forecast arithmetic: explicit count of which reviewer rounds are in-merge, parametrized-expansion delta computed accordingly.
+
+The cycle-12 row implicitly assumed `with-reviewer-driven-additions` but the actual PR #71 merge was `mixed` (Round 3 fix-up state only, no Rounds 4-5), producing a −4 delta against the actual count (see cycle-12 closeout memo). PI-022 enforces the merge-state-clarification convention going forward; this is documentation-only and is not enforced by a dedicated test (cycle 13 carry-forward; may be promoted to a tested PI in a future cycle if the merge-state assumption becomes a recurring source of forecast failures).
+
+#### Why this stage exists (PI-020 amendment, cycle 12; PI-021 + PI-022 amendments, cycle 13)
 
 Cycle 11's forecast missed by +3 because the forecast reasoned from `def test_` count but did not account for `@pytest.mark.parametrize` driven by `_all_dreaming_files()` in `tests/dreaming/test_no_hidden_reasoning_capture.py`. The post-merge verification step (PI-018 / Stage 11) caught the +3 correctly, but the forecast itself was a reasoned estimate. Stage 0a makes the forecast a captured number. PI-020 is the symmetry partner of PI-018: pre-merge baseline-capture (Stage 0a) + post-merge verification (Stage 11).
+
+Cycle 12's forecast was numerically correct as a **collected** count but was labeled as **passed** in the cycle row (Format B without an explicit `collected → passed` arithmetic), producing a −2 delta against the actual post-PR-#72 count (EV-023). Cycle 12's forecast also implicitly assumed `with-reviewer-driven-additions` merge state but the actual PR #71 merge was `mixed` (Round 3 only), producing a −4 delta against the actual PR #71 count. PI-021 + PI-022 strengthen the forecast-discipline (PI-016 / PI-018 / PI-020) by requiring explicit `collected → passed` arithmetic (PI-021) and explicit merge-state assumption (PI-022) in the cycle row's `Main post-merge (forecast)` line.
 
 ## Stage -3: Post-amend verify (PI-017, cycle 10)
 

@@ -630,6 +630,205 @@ def test_pr_change_log_includes_collect_only_forecast_baseline() -> None:
         f"estimate. The tolerance of ±{MAX_DRIFT} accommodates legitimate drift from\n"
         f"reviewer-driven test additions (each round typically adds 1-5 tests, plus\n"
         f"parametrized-expansion additions from any new files in `.openclaw/dreaming/`);\n"
-        f"a larger drift indicates either a stale capture or a wildly wrong baseline.\n"
         f"See workflow-nightly-dreaming.md Stage 0a for the convention."
+        f"\n"
+    )
+
+
+def test_pr_change_log_forecast_uses_explicit_collected_or_passed_label() -> None:
+    """The most recent cycle row's `Main post-merge (forecast)` line must use an explicit `collected` or `passed` label with consistent arithmetic.
+
+    Enforces PI-021 (cycle 13 NEW): cycle row's `Main post-merge (forecast)` line must
+    match one of three explicit formats:
+
+    - Format A (preferred): `Main post-merge (forecast): N collected → (N-2) passed +
+      1 skipped + 1 expected-fail-on-main`. Explicit `collected → passed` arithmetic
+      inline.
+    - Format B (legacy-compatible): `Main post-merge (forecast): N passed + 1
+      skipped + 1 expected-fail-on-main` paired with a separate `Collected-test
+      baseline (forecast): N tests collected` line in the same cycle row. The
+      arithmetic `N collected → (N-2) passed + 1 + 1` must be derivable from the
+      separate baseline line.
+    - Format C (collected-only): `Main post-merge (forecast): N collected` with no
+      `passed` count in the forecast. The post-merge verification (Stage 11)
+      computes the actual `passed` count from the actual collect-only baseline.
+
+    The forecast's numeric value must be unambiguously labeled as either `collected`
+    or `passed`. Mixing the two without explicit arithmetic (e.g., `136 passed`
+    where `136` is actually a collected count) is a forecast-format labeling bug.
+
+    Cycle-12's forecast row had this bug: it labeled `136` as `passed` when `136`
+    was actually the **collected** count (133 branch-local baseline + 3
+    parametrized-test expansion delta). The actual post-PR-#72 main count was
+    `134 passed + 1 skipped + 1 expected-fail-on-main` (136 collected − 1 skipped
+    − 1 expected-fail-on-main). The arithmetic `136 collected → 134 passed + 1 + 1`
+    matches the actual perfectly; the −2 delta was purely a label-format issue.
+    See EV-023 and `memory/2026-07-07-cycle-12-final-closeout.md`.
+
+    The test is forward-looking: it checks the most recent committed cycle row.
+    It does NOT retroactively check past cycles (the cycle-12 row's label-format
+    bug is documented in the cycle-12 final closeout memo; backfilling the
+    cycle-12 row to Format A is the cycle-13 retroactive correction per PI-021
+    application).
+
+    Three failure modes the test catches:
+      (a) Forecast uses Format B (`N passed + 1 + 1`) WITHOUT a separate
+          `Collected-test baseline (forecast): N tests collected` line in the
+          same cycle row. This is the cycle-12 bug pattern: `passed` label
+          without explicit arithmetic.
+      (b) Forecast uses a numeric count with NO `collected` or `passed` label
+          at all (e.g., `Main post-merge (forecast): 130 + 1 + 1`).
+      (c) Forecast uses Format B (`N passed`) with a separate baseline line
+          that says `<M> tests collected` where `N != M` (inconsistent
+          arithmetic between the forecast's `passed` number and the row's
+          separate `collected` baseline).
+    """
+    if not PR_CHANGE_LOG.exists():
+        pytest.fail(
+            f"pr-change-log.md not found at {PR_CHANGE_LOG}. "
+            "Create it before running this test."
+        )
+
+    log_text = PR_CHANGE_LOG.read_text(encoding="utf-8")
+
+    # Split into cycle rows. Each cycle row starts with a `## Cycle-N`
+    # heading. We want the most recent one (the LAST one in the file).
+    cycle_sections = re.split(r"^## (Cycle-\d+)", log_text, flags=re.MULTILINE)
+    # cycle_sections alternates: [preamble, "Cycle-N", content, "Cycle-N+1", content, ...]
+    if len(cycle_sections) < 3:
+        pytest.fail(
+            "pr-change-log.md has no cycle sections. Expected at least one "
+            "`## Cycle-N` heading."
+        )
+
+    # The most recent cycle is the last "Cycle-N" heading + its content.
+    last_cycle_label = cycle_sections[-2]
+    last_cycle_content = cycle_sections[-1]
+
+    # Find the forecast line(s). The cycle row should contain the forecast as
+    # either (a) a bullet line starting with `- \`main\` post-merge (forecast`,
+    # or (b) a heading line `### Main post-merge (forecast)` followed by a
+    # body line with a numeric count. We anchor on `Main post-merge
+    # (forecast)` as a heading OR a bullet line whose left-side is
+    # `- \`main\` post-merge (forecast` (NOT a reference inside another
+    # bullet).
+    forecast_lines = []
+    for line in last_cycle_content.splitlines():
+        stripped = line.strip()
+        # Bullet form: `- **`main` post-merge (forecast, per PI-...):** <numeric>`
+        if re.match(
+            r"^[-*]\s+\S*?main[\s`]*post[- ]merge\s*\(forecast",
+            stripped,
+            re.IGNORECASE,
+        ):
+            forecast_lines.append(stripped)
+        # Heading form: `### Main post-merge (forecast)` (body on next line)
+        elif re.match(r"^#{2,4}\s+main\s+post[- ]merge\s*\(forecast", stripped, re.IGNORECASE):
+            forecast_lines.append(stripped)
+    if not forecast_lines:
+        pytest.skip(
+            f"Most recent cycle section (`{last_cycle_label}`) has no "
+            f"`Main post-merge (forecast)` heading or bullet line. The "
+            f"forecast-presence test will catch this case; PI-021's "
+            f"label-format test only fires when a forecast line is present."
+        )
+
+    # For heading form, the body is on the next non-empty line. If the
+    # first matched line is a heading, look at the body line that follows.
+    forecast_text = forecast_lines[0]
+    if forecast_text.startswith("#"):
+        heading_pattern = re.compile(
+            r"#{2,4}\s+main\s+post[- ]merge\s*\(forecast[^)]*\)\s*\n\s*([^\n]+)",
+            re.IGNORECASE,
+        )
+        heading_match = heading_pattern.search(last_cycle_content)
+        if heading_match:
+            forecast_text = heading_match.group(1).strip()
+        else:
+            forecast_text = ""
+    forecast_text_lower = forecast_text.lower()
+
+    # Check Format A: `N collected → M passed + 1 skipped + 1 expected-fail-on-main`
+    # where M = N - 2 (allow either literal `(N - 2) passed` or plain `M passed`
+    # with M = N - 2). Allow either `→` (Unicode arrow) or `->` (ASCII fallback).
+    # IMPORTANT: only consider the FIRST 200 characters of the forecast line so
+    # we don't accidentally match explanatory text like "Format A, explicit
+    # `collected → passed` arithmetic" that appears in parenthetical commentary.
+    forecast_line_prefix = forecast_text[:200]
+    format_a_match = re.search(
+        r"(\d+)\s+collected\s*(?:→|->)\s*(?:\(\1\s*-\s*2\)\s+)?(\d+)\s+passed",
+        forecast_line_prefix,
+    )
+    is_format_a = False
+    forecast_number_a = None
+    if format_a_match:
+        n_collected = int(format_a_match.group(1))
+        m_passed = int(format_a_match.group(2))
+        if m_passed == n_collected - 2:
+            is_format_a = True
+            forecast_number_a = n_collected
+
+    # Check Format B (passed): `N passed + 1 skipped + 1 expected-fail-on-main`.
+    # Restrict to forecast_line_prefix (first 200 chars) for the same reason as
+    # Format A: avoid matching explanatory text like "passed" in narrative.
+    format_b_passed_match = re.search(
+        r"(\d+)\s+passed\b",
+        forecast_line_prefix,
+        re.IGNORECASE,
+    )
+    is_format_b_passed_line = bool(format_b_passed_match)
+    forecast_number_b = int(format_b_passed_match.group(1)) if format_b_passed_match else None
+
+    # Look for separate `Collected-test baseline (forecast): N tests collected`
+    # line in the same cycle row.
+    separate_baseline_match = re.search(
+        r"collected-test baseline\s*\(forecast\)\s*:\s*(\d+)\s+tests collected",
+        last_cycle_content,
+        re.IGNORECASE,
+    )
+    has_separate_baseline = bool(separate_baseline_match)
+    separate_baseline_value = int(separate_baseline_match.group(1)) if separate_baseline_match else None
+
+    if is_format_b_passed_line and has_separate_baseline:
+        # Format B arithmetic: forecast's `N passed` should equal
+        # `separate_baseline - 1 (skipped) - 1 (expected-fail-on-main)`.
+        expected_passed = separate_baseline_value - 1 - 1
+        is_format_b = forecast_number_b == expected_passed
+    else:
+        is_format_b = False
+
+    # Check Format C: `N collected` only (no `passed` count anywhere in the
+    # forecast line prefix).
+    format_c_collected_match = re.search(r"(\d+)\s+collected\b", forecast_line_prefix, re.IGNORECASE)
+    is_format_c = bool(format_c_collected_match) and "passed" not in forecast_text_lower
+
+    assert is_format_a or is_format_b or is_format_c, (
+        f"Most recent cycle section (`{last_cycle_label}`) forecast does not "
+        f"use an explicit `collected` or `passed` label with consistent "
+        f"arithmetic.\n\n"
+        f"  Forecast line: `{forecast_text[:300]}`\n"
+        f"  Format A (preferred, `N collected → (N-2) passed + 1 + 1`): "
+        f"{'PASS' if is_format_a else 'FAIL'}"
+        f"{f' (N={forecast_number_a})' if is_format_a else ''}\n"
+        f"  Format B (legacy-compatible, `N passed + 1 + 1` with separate "
+        f"`Collected-test baseline (forecast): N tests collected` line, "
+        f"arithmetic consistent): {'PASS' if is_format_b else 'FAIL'}"
+        f"{f' (N={forecast_number_b}, baseline={separate_baseline_value}, expected_passed={separate_baseline_value - 2 if separate_baseline_value else None})' if is_format_b_passed_line else ''}\n"
+        f"  Format C (collected-only, `N collected`): "
+        f"{'PASS' if is_format_c else 'FAIL'}\n\n"
+        f"Per PI-021 (cycle 13 NEW), every cycle row's `Main post-merge "
+        f"(forecast)` line must match one of the three explicit formats. "
+        f"The cycle-12 row had this bug (labeled `136 passed` when `136` was "
+        f"actually a collected count, producing a −2 delta against the actual "
+        f"post-PR-#72 count). See EV-023 and "
+        f"`memory/2026-07-07-cycle-12-final-closeout.md`.\n\n"
+        f"Recommended fix:\n"
+        f"  - Use Format A: `Main post-merge (forecast): N collected → "
+        f"(N-2) passed + 1 skipped + 1 expected-fail-on-main` (preferred).\n"
+        f"  - Or use Format B: keep `Main post-merge (forecast): N passed + 1 "
+        f"skipped + 1 expected-fail-on-main` AND add a separate "
+        f"`Collected-test baseline (forecast): N tests collected` line in the "
+        f"cycle row.\n"
+        f"  - Or use Format C: `Main post-merge (forecast): N collected` "
+        f"(collected-only).\n"
     )
