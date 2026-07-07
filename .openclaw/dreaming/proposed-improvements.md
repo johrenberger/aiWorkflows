@@ -94,7 +94,8 @@ Status values: `proposed | applied | deferred | rejected`
 - **Risk level:** low
 - **Safety classification:** review_required (touches developer workflow conventions)
 - **Validation required:** Apply to SGP first; verify `make sgp-validate` catches a known CI-only failure locally before promoting the convention.
-- **Status:** proposed
+- **Cycle-15 update:** APPLIED (cycle 15, NEW; held since cycle 2 per "A then B" reading, released cycle 15). Cycle 15 adds the sibling `make sgp-validate` target to the Makefile. The target mirrors `make dreaming-validate` exactly: ruff lint, mypy type check, pytest with branch coverage, and a 90% branch coverage gate — all steps that map 1:1 to `.github/workflows/sgp-tests.yml`. Sanity-checked: introduced a deliberate ruff violation (`import os` in `src/skill_governance/__init__.py`), verified `make sgp-validate` FAILS at step 1/4 with `F401 'os' imported but unused`, restored. The convention `make <name>-validate` for each `make <name>-tests.yml` is now established. Linked: RS-025 (regression: any future workflow CI MUST have a sibling `make <name>-validate` target); EV-025 (evidence: cycle-15 application of PI-009 to SGP; ruff sanity-check + clean run at 92.2% branch coverage).
+- **Status:** applied
 
 ---
 

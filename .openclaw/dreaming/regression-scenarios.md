@@ -410,3 +410,23 @@ RS-001 through RS-009 are carried from cycle 1. RS-010 through RS-012 are new in
 - **Owner:** human
 - **Status:** applied (cycle 14, NEW; PI-023 applies-this-cycle)
 - **Cycle:** 14
+
+---
+
+## RS-025 — Every workflow CI must have a sibling `make <name>-validate` target (NEW, PI-009, cycle 15)
+
+- **Improvement ID:** PI-009
+- **Evidence reference:** EV-025, EV-008, L-009
+- **Severity:** informational
+- **Statement:** When a workflow has a CI workflow file under `.github/workflows/*.yml` AND runs validation steps (lint, type-check, tests, coverage gate), it MUST have a sibling `make <name>-validate` target that runs the same steps locally. The convention generalizes PI-008 (which established `make dreaming-validate`).
+- **Given** a CI workflow file exists at `.github/workflows/<name>-tests.yml` AND runs validation steps
+- **When** the cycle author adds or amends the CI workflow's validation steps
+- **Then** a corresponding `make <name>-validate` target must exist OR be added in the same PR. The local target must invoke the same validation steps as the CI workflow (or a strict superset).
+- **Expected behavior:** Developers catch CI-only failures (lint, type-check, coverage gates, test collection) BEFORE pushing, eliminating the cycle-1 fix-up pattern for any new workflow.
+- **Pass / fail criteria:**
+  - **Pass** if every `.github/workflows/<name>-tests.yml` that runs validation steps has a matching `make <name>-validate` target, AND the local target runs the same validation steps.
+  - **Fail** if a CI workflow exists without a sibling `make <name>-validate`, OR the local target omits a step present in CI.
+- **Validation method:** (1) Existing workflows audit: as of cycle 15, both `.github/workflows/nightly-dreaming-validation.yml` (covered by `make dreaming-validate`) and `.github/workflows/sgp-tests.yml` (NEWLY covered by `make sgp-validate` per PI-009 / cycle 15) have sibling targets. (2) Future workflows: cycle authors verify their PR adds the sibling target before opening. (The convention is governance; an enforcing test would be cycle-17 territory if the volume of workflows increases.)
+- **Owner:** human + workflow author
+- **Status:** applied (cycle 15, NEW)
+- **Cycle:** 15
