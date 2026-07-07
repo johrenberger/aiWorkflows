@@ -388,3 +388,25 @@ RS-001 through RS-009 are carried from cycle 1. RS-010 through RS-012 are new in
 - **Owner:** human
 - **Status:** proposed (cycle 13, NEW; PI-021 applies-this-cycle)
 - **Cycle:** 13
+
+## RS-024 — Cycle row's `Code-reviewer` section must document inline-review deviation or reviewer-sub-agent run (NEW, cycle 14)
+
+- **Improvement ID:** PI-023
+- **Evidence reference:** EV-024, cycle-13 closeout memo (`memory/2026-07-07-cycle-13-closeout.md` "Code-reviewer sub-agent deviation" section).
+- **Severity:** informational
+- **Statement:** Every cycle row in `pr-change-log.md` must include a `### Cycle-N code-reviewer` section that documents whether the Stage 12 / PI-019 reviewer-sub-agent convention was followed or deviated from. Acceptable values:
+  - `Inline review deviation justification`: cycle deviated from the convention by skipping the reviewer-sub-agent and doing inline review instead. The section must list which of PI-023 criteria (a)-(d) apply and demonstrate inline round-4 (retroactive-correction accuracy) + round-5 (real-world fitness / false-positive simulation) verification.
+  - `Reviewer-sub-agent run`: cycle followed the convention by running the reviewer-sub-agent. The section must reference the cycle-N-review-log.md and the rounds completed.
+
+  Cycles that satisfy all of PI-023's inline-acceptable criteria (a) no new stages, (b) ≤1 new mechanical test, (c) mechanical substantive change (workflow-doc + ledger + cycle-row backfill only), and (d) inline round-4 + round-5 verification demonstrated in PR body, may skip the sub-agent and use the `Inline review deviation justification` phrase. Cycles that don't satisfy one or more criteria must run the sub-agent and use the `Reviewer-sub-agent run` phrase. The deviation is now reproducible rather than judgment-call.
+- **Given** a cycle is being authored with a `### Cycle-N code-reviewer` section in `pr-change-log.md`
+- **When** the cycle author writes the code-reviewer section
+- **Then** the section must include either `Inline review deviation justification` (with PI-023 criteria (a)-(d) justification and round-4 + round-5 verification documentation) or `Reviewer-sub-agent run` (with cycle-N-review-log.md reference and rounds completed).
+- **Expected behavior:** Future cycles' code-reviewer sections are unambiguous about whether the convention was followed or deviated from. The enforcing test (`tests/dreaming/test_pr_readiness.py::test_pr_change_log_includes_inline_review_deviation_justification_or_reviewer_subagent_run`) catches cycles that omit the code-reviewer section or use ambiguous phrasing.
+- **Pass / fail criteria:**
+  - **Pass** if the cycle row's `Code-reviewer` section includes one of the two phrases AND the inline-review-deviation section documents PI-023 criteria (a)-(d) + round-4 + round-5 verification (if deviation was used).
+  - **Fail** if the code-reviewer section is missing, uses ambiguous phrasing, or uses inline-review-deviation without documenting criteria (a)-(d) + round-4 + round-5 verification.
+- **Validation method:** `tests/dreaming/test_pr_readiness.py::test_pr_change_log_includes_inline_review_deviation_justification_or_reviewer_subagent_run` (cycle 14 NEW) enforces the code-reviewer section convention. PI-023 application also amends Stage 12 of `workflow-nightly-dreaming.md` with the inline-acceptable + reviewer-required criteria.
+- **Owner:** human
+- **Status:** applied (cycle 14, NEW; PI-023 applies-this-cycle)
+- **Cycle:** 14

@@ -1,5 +1,55 @@
 # Nightly Summary
 
+- **Cycle:** 2026-07-07 cycle-14
+- **Branch:** `dreaming/nightly-execution-quality-2026-07-07-cycle-14`
+- **Date:** 2026-07-07
+
+## Trigger
+
+### Surface-Scope Pre-Declaration (Stage -2, PI-015, cycle 8)
+
+- **Workflow target:** dream (in-repo dreaming-workflow, .openclaw/dreaming/ + tests/dreaming/).
+- **Surface area:** `.openclaw/dreaming/workflow-nightly-dreaming.md` (Stage 12 amended with PI-023 inline-acceptable + reviewer-required criteria); `tests/dreaming/test_pr_readiness.py` (new test enforcing the code-reviewer section convention: `test_pr_change_log_includes_inline_review_deviation_justification_or_reviewer_subagent_run`); `.openclaw/dreaming/proposed-improvements.md` (PI-023 row updated from `proposed → APPLIED` + linked RS-024 + EV-024 added); `.openclaw/dreaming/regression-scenarios.md` (RS-024 added); `.openclaw/dreaming/evidence-index.md` (EV-024 added); `.openclaw/dreaming/pr-change-log.md` (cycle-14 row appended with Format A forecast; cycle-13 row's `### Cycle-13 code-reviewer` section added retroactively per PI-023 codification).
+- **Dreaming-ledger scope:** PI-023 NEW (reviewer-sub-agent convention refinement — codify when inline-review is acceptable vs when the reviewer-sub-agent is required; cycle 14 applies-this-cycle). RS-024 NEW (cycle row's `Code-reviewer` section must document inline-review deviation or reviewer-sub-agent run). EV-024 NEW (cycle-13 inline-review deviation verified Δ = 0; PI-023 codification applied cycle 14).
+- **Cycle-size budget:** 1 commit (1 substantive, no reviewer-driven by design — inline review per PI-023 criteria (a)-(d)). The Stage 12 amendment is a workflow-doc amendment + one new test + retroactive cycle-13 row correction; no retroactive corrections are required to prior closeout memos (the cycle-13 closeout memo at `memory/2026-07-07-cycle-13-closeout.md` already documents the deviation accurately).
+
+### Cycle-14 reason for change (PI-023 / cycle-14 trigger)
+
+PI-019 (cycle 11 NEW, APPLIED) established Stage 12 — the code-reviewer sub-agent convention. Cycles 11 and 12 each spawned the code-reviewer sub-agent for 5 rounds (per Stage 12 / PI-019). Cycle-12 reviewer's 5 rounds + 1 second-pass catch produced 6 fix-up commits (PR #71 merge SHA `34f3793` captured through Round 3 fix-up state; PR #72 follow-up merged Rounds 4-5; merge SHA `57ef0f0`). Cycle-13 deliberately **deviated** from the Stage 12 / PI-019 convention by skipping the code-reviewer sub-agent and doing inline review instead. The deviation worked (cycle-13 had Δ = 0 perfect forecast match), but it was a one-off judgment call, not a codified rule. PI-023 (cycle 14 NEW, applies-this-cycle) codifies when inline-review is acceptable (criteria (a)-(d)) vs when the reviewer-sub-agent is required (the bulleted list above). The convention is enforced by `tests/dreaming/test_pr_readiness.py::test_pr_change_log_includes_inline_review_deviation_justification_or_reviewer_subagent_run` (NEW, cycle 14) which scans the most recent cycle row's `Code-reviewer` section for one of the two phrases.
+
+### Cycle-14 expected impact
+
+- Cycle-14 row's `Main post-merge (forecast)` uses Format A (preferred), with explicit `138 collected → 136 passed + 1 + 1` arithmetic inline.
+- Cycle-13 row's `### Cycle-13 code-reviewer` section added retroactively per PI-023 codification, documenting the cycle-13 inline-review deviation with round-4 + round-5 verification.
+- Stage 12 amended with inline-acceptable + reviewer-required criteria, codifying when the reviewer-sub-agent is required vs when inline review is acceptable.
+- PI-023's enforcing test ensures future cycles' PR bodies include a `Code-reviewer` section with unambiguous phrasing (`Inline review deviation justification` or `Reviewer-sub-agent run`).
+
+### Cycle-14 validation performed (planned)
+
+- `python3 -m pytest tests/dreaming/ --collect-only -q | grep "tests collected"` to capture the precise baseline (138 tests collected on the cycle-14 branch).
+- `make dreaming-validate` on the cycle-14 branch — expected: 136 passed, 0 failed, 0 skipped (1 new test added in cycle 14).
+- The new test `test_pr_change_log_includes_inline_review_deviation_justification_or_reviewer_subagent_run` enforces the code-reviewer section convention going forward. Sanity check: temporarily stripped all `inline review deviation justification`, `reviewer-sub-agent run`, and `code-reviewer` phrases from the most recent cycle row — the test correctly FAILED with the message "Most recent cycle section (`Cycle-14`) does not document whether the Stage 12 / PI-019 reviewer-sub-agent convention was followed or deviated from." Restored.
+
+### Cycle-14 artifacts changed (planned)
+
+- `.openclaw/dreaming/workflow-nightly-dreaming.md` — Stage 12 amended with PI-023 inline-acceptable + reviewer-required criteria (~50 lines).
+- `tests/dreaming/test_pr_readiness.py` — `test_pr_change_log_includes_inline_review_deviation_justification_or_reviewer_subagent_run` added (NEW, ~70 lines).
+- `.openclaw/dreaming/regression-scenarios.md` — RS-024 added (NEW).
+- `.openclaw/dreaming/evidence-index.md` — EV-024 added (NEW).
+- `.openclaw/dreaming/proposed-improvements.md` — PI-023 row updated from `proposed → APPLIED` + linked RS-024 + EV-024.
+- `.openclaw/dreaming/pr-change-log.md` — cycle-14 row appended; cycle-13 row's `### Cycle-13 code-reviewer` section added retroactively.
+- `.openclaw/dreaming/nightly-summary.md` — cycle-14 body prepended (this section); cycle-13 body preserved below.
+
+### What's still open on `main` after cycle 13 (cycle-14 carry-forward)
+
+- **PI-006a** — runtime JSONL emitter; out-of-repo; principal outstanding PI per the user's original framing in #11557. Still blocked on runtime side.
+- **PI-014** — `cyber-signal-fetch-feeds.sh` missing; fix is on the same gateway, outside the workflow's surface area.
+- **PI-009** — held since cycle 2 per "A then B"; PI-008 APPLIED for many cycles now; hold may be obsolete. Cycle 15 candidate if not addressed in cycle 14.
+
+---
+
+# Nightly Summary (cycle 13 body, carried forward unchanged)
+
 - **Cycle:** 2026-07-07 cycle-13
 - **Branch:** `dreaming/nightly-execution-quality-2026-07-07-cycle-13`
 - **Date:** 2026-07-07

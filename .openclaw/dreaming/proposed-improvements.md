@@ -442,7 +442,7 @@ No blocked-class changes proposed in cycle 9. Cycle 9 ships PI-016 only — a pr
 | PI-020 | auto_safe | APPLIED (cycle 12, NEW) |
 | PI-021 | auto_safe | APPLIED (cycle 13, NEW) |
 | PI-022 | auto_safe | APPLIED (cycle 13, NEW; cycle-12 carry-forward) |
-| PI-023 | auto_safe | proposed (cycle 14, NEW; cycle-13 carry-forward candidate) |
+| PI-023 | auto_safe | APPLIED (cycle 14, NEW; cycle-13 carry-forward) |
 
 ---
 
@@ -506,8 +506,8 @@ No blocked-class changes proposed in cycle 9. Cycle 9 ships PI-016 only — a pr
 - **Expected benefit:** Future cycles' PR descriptions will include an explicit "Inline review deviation justification" section (or "Reviewer-sub-agent run" section) that codifies whether the cycle followed Stage 12 / PI-019 or not. The cycle-13 precedent shows inline review can work for mechanical changes, but the cycle-12 reviewer caught 5 + 1 second-pass issues across 5 rounds — including round-5's false-positive-risk fix that the cycle author had claimed but not shipped (which inline review would have caught only if the author explicitly tested the false-positive case). Codifying when inline-review is acceptable makes the deviation reproducible rather than judgment-call.
 - **Validation required:** cycle 14 (and beyond) must include in the PR body an explicit "Inline review deviation justification" section IF the reviewer-sub-agent was skipped, listing which of the inline-acceptable criteria apply and demonstrating inline round-4 + round-5 verification. If the reviewer-sub-agent was run, the PR body should include the standard "Reviewer-sub-agent run" section (similar to cycle-11 and cycle-12 review logs). The convention can be enforced by adding a `test_pr_change_log_includes_inline_review_deviation_justification_or_reviewer_subagent_run` test that scans the cycle row's "Code-reviewer" section for one of the two phrases. Cycle 14 can decide whether to apply PI-023 as `auto_safe` (convention-only, no test) or as `auto_safe` (with the enforcing test).
 - **Linked PIs:** PI-019 (cycle 11, APPLIED; Stage 12 reviewer-sub-agent convention)
-- **Linked regression scenarios:** none yet (cycle 14 candidate)
-- **Linked evidence:** EV-023 (cycle 13; documents the cycle-13 inline-review deviation that PI-023 codifies by adding inline-vs-sub-agent criteria)
+- **Linked regression scenarios:** RS-024 (cycle 14 NEW; documents the inline-acceptable + reviewer-required criteria; enforces the deviation convention)
+- **Linked evidence:** EV-023 (cycle 13; documents the cycle-13 inline-review deviation that PI-023 codifies by adding inline-vs-sub-agent criteria), EV-024 (cycle 14 NEW; documents PI-023 application and the cycle-14 inline-review verification)
 - **Cycle:** 14
 - **Safety classification:** `auto_safe` (workflow-doc amendment to Stage 12 + cycle-14 PR body convention; optionally a new test enforcing the PR body convention). Carries forward as a cycle-14 documentation-only PI; can be promoted to a tested PI in cycle 14 or later if the inline-review-vs-sub-agent convention becomes a recurring source of merge-state or false-positive regressions.
 
