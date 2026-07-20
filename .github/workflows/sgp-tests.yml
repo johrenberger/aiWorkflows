@@ -23,7 +23,15 @@ jobs:
     timeout-minutes: 10
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
+
+      - name: Set up Node 24
+        # Silences the GitHub Actions Node 20 deprecation warning and pre-positions us
+        # for the 2026-06-16 default switch to Node 24. We do not run any JS actions;
+        # this step is purely a version pin on the runner image.
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
 
       - name: Set up Python
         uses: actions/setup-python@v5
