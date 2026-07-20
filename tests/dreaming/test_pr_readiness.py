@@ -14,6 +14,31 @@ BRANCH_PREFIX = "dreaming/nightly-execution-quality-"
 BRANCH_DATE_RE = re.compile(r"^dreaming/nightly-execution-quality-(\d{4}-\d{2}-\d{2})$")
 
 
+def _is_dreaming_pr() -> bool:
+    """Return True if the current PR's head branch is a dreaming-cycle branch.
+
+    The nightly-dreaming-validation workflow fires on any PR that touches
+    .openclaw/dreaming/**, tests/dreaming/**, DREAMING.md, or its own workflow
+    file. The PR-readiness invariants (branch naming, commit prefix) only
+    apply to dreaming-cycle PRs themselves; non-dreaming PRs that incidentally
+    touch these paths (e.g. a CI bump that edits this workflow file) must skip.
+
+    Detection priority:
+      1. GITHUB_HEAD_REF (set on PR events) — authoritative in CI.
+      2. Local HEAD branch name (developer-machine case).
+    """
+    head_ref = os.environ.get("GITHUB_HEAD_REF", "").strip()
+    if head_ref:
+        return head_ref.startswith(BRANCH_PREFIX)
+    try:
+        branch = _git("rev-parse", "--abbrev-ref", "HEAD").strip()
+    except subprocess.CalledProcessError:
+        return False
+    if branch == "HEAD":
+        return False
+    return branch.startswith(BRANCH_PREFIX)
+
+
 def _git(*args: str) -> str:
     return subprocess.check_output(["git", "-C", str(REPO_ROOT), *args], text=True)
 
@@ -79,7 +104,12 @@ def test_pr_change_log_separates_safety_classes() -> None:
 
 def test_current_branch_uses_dreaming_prefix() -> None:
     """The dreaming branch name must match dreaming/nightly-execution-quality-YYYY-MM-DD
-    plus an optional -N cycle suffix."""
+    plus an optional -N cycle suffix.
+
+    Skipped on non-dreaming PRs (see _is_dreaming_pr docstring).
+    """
+    if not _is_dreaming_pr():
+        pytest.skip("Not a dreaming-cycle PR; branch/commit prefix invariants do not apply.")
     branch = _git("rev-parse", "--abbrev-ref", "HEAD").strip()
     if branch == "HEAD":
         # Detached HEAD (CI checkout) — fall back to env var on PR.
@@ -121,7 +151,11 @@ def test_commits_use_chore_dreaming_prefix() -> None:
 
     Uses HEAD explicitly (not the branch name) because the branch ref may point at
     the same commit as the merge-base on a freshly-checked-out branch.
+
+    Skipped on non-dreaming PRs (see _is_dreaming_pr docstring).
     """
+    if not _is_dreaming_pr():
+        pytest.skip("Not a dreaming-cycle PR; commit-prefix invariant does not apply.")
     merge_base = os.environ.get("DREAMING_MERGE_BASE", "").strip()
     head = os.environ.get("GITHUB_HEAD_REF", "").strip()
     head_commit = _git("rev-parse", "HEAD").strip()  # always defined, regardless of ref state
