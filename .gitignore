@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.lake/
+lake-packages/
+build/
+dist/
+*.egg-info/
+results/
+!experiments/**/results/.gitkeep

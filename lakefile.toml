@@ -1,0 +1,10 @@
+name = "collatz-research"
+version = "0.1.0"
+defaultTargets = ["CollatzResearch"]
+
+[[require]]
+name = "mathlib"
+git = "https://github.com/leanprover-community/mathlib4.git"
+
+[[lean_lib]]
+name = "CollatzResearch"
