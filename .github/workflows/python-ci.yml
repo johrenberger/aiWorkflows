@@ -5,7 +5,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v5
-        with: { python-version: "3.12" }
+      - name: Install uv
+        # Use the official installer instead of the astral-sh/setup-uv action.
+        # This CI was observed to fail with "Failed to resolve action download
+        # info. Error: Service Unavailable" on the action. The installer
+        # script is distro-agnostic and avoids the action registry entirely.
+        run: curl -LsSf https://astral.sh/uv/install.sh | sh
+      - name: Add uv to PATH
+        run: echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - run: uv sync --group dev
       - run: make ci
