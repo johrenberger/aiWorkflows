@@ -5,19 +5,16 @@ jobs:
     runs-on: self-hosted
     steps:
       - uses: actions/checkout@v4
-      - name: Install elan
-        # Use the official elan installer instead of the
-        # leanprover/lean-action@v1 action. This CI was observed to fail
-        # with "Failed to resolve action download info. Error: Service
-        # Unavailable" on the action registry across both Python and Lean
-        # setups. The installer script is the same path elan-action uses
-        # under the hood and avoids the action registry entirely.
-        run: curl -sSf https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh | sh -s -- -y --default-toolchain none
-      - name: Add elan to PATH
-        run: echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
-      - name: Install Lean toolchain from lean-toolchain
+      - name: Add elan/lake to PATH
+        # Self-hosted runner on this host has elan and lake pre-installed at
+        # /data/.elan/bin. Use the system copy instead of running the
+        # elan-init.sh installer (which downloads Lean from the network).
         # The pinned toolchain (leanprover/lean4:v4.19.0) is the same one
-        # the action would have installed. The lake-manifest.json locks
+        # the installer would put in place. lake-manifest.json locks
         # transitive revisions.
-        run: elan toolchain install $(cat lean-toolchain)
+        run: echo "/data/.elan/bin" >> "$GITHUB_PATH"
+      - name: Verify toolchain
+        run: |
+          which lake && lake --version
+          cat lean-toolchain
       - run: make lean
