@@ -16,12 +16,14 @@ def twoAdicValuation (n : Nat) : Nat := n.factorization 2
 def acceleratedStep (n : Nat) : Nat := (3 * n + 1) / 2 ^ twoAdicValuation (3 * n + 1)
 
 /-- Iteration of the accelerated map. -/
-def trajectory (n steps : Nat) : Nat := (acceleratedStep^[steps]) n
+def trajectory (n : Nat) : Nat → Nat
+  | 0 => n
+  | steps + 1 => acceleratedStep (trajectory n steps)
 
 @[simp] theorem trajectory_zero (n : Nat) : trajectory n 0 = n := rfl
 
 @[simp] theorem trajectory_succ (n steps : Nat) :
     trajectory n (steps + 1) = acceleratedStep (trajectory n steps) := by
-  simp [trajectory, Function.iterate_succ_apply]
+  rfl
 
 end CollatzResearch
