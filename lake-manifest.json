@@ -12,6 +12,6 @@
       "configFile": "lakefile.lean"
     }
   ],
-  "name": "collatz-research",
+  "name": "collatz_research",
   "lakeDir": ".lake"
 }

@@ -1,4 +1,4 @@
-name = "collatz-research"
+name = "collatz_research"
 version = "0.1.0"
 defaultTargets = ["CollatzResearch"]
 
