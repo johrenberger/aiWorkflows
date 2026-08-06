@@ -9,3 +9,4 @@ rev = "v4.19.0"
 
 [[lean_lib]]
 name = "CollatzResearch"
+srcDir = "Lean"
