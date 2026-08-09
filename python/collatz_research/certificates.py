@@ -1,4 +1,5 @@
 """Certificate data structures. Validation does not confer proof status."""
+
 from dataclasses import asdict, dataclass
 
 

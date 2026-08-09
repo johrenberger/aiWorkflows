@@ -1,9 +1,39 @@
 name: Lean CI
-on: [pull_request]
+on:
+  pull_request:
+    paths:
+      - 'lean-toolchain'
+      - 'lakefile.toml'
+      - 'lake-manifest.json'
+      - 'Lean/**'
+      - '.github/workflows/lean-ci.yml'
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - uses: actions/checkout@v4
-      - uses: leanprover/lean-action@v1
-      - run: lake build
+      - name: Add elan/lake to PATH
+        # Self-hosted runner has elan + lake pre-installed at /data/.elan/bin.
+        run: echo "/data/.elan/bin" >> "$GITHUB_PATH"
+      - name: Verify toolchain
+        run: |
+          which lake && lake --version
+          cat lean-toolchain
+      - name: Cache Lake build
+        # actions/cache@v4 persists on the self-hosted runner host (its
+        # backing store lives at /data/... on this host, not in GitHub's
+        # cache service). Keyed on the manifest + toolchain so a bump
+        # invalidates and re-warms the cache.
+        uses: actions/cache@v4
+        with:
+          path: .lake
+          key: lake-${{ hashFiles('lake-manifest.json', 'lean-toolchain') }}
+          restore-keys: |
+            lake-
+      - name: Lake binary cache
+        # Pull precompiled Mathlib oleans from the Lean community cache.
+        # Drops cold-cache Mathlib from ~2h to ~2min on first run when
+        # network egress is available. || true so a cache miss doesn't
+        # fail the step — actions/cache@v4 still serves the next run.
+        run: lake exe cache get || true
+      - run: make lean
