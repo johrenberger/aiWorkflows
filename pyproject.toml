@@ -14,6 +14,7 @@ dev = [
     "pytest==8.3.4",
     "jsonschema==4.23.0",
     "ruff==0.8.6",
+    "hypothesis==6.111.1",
 ]
 
 [tool.hatch.build.targets.wheel]
