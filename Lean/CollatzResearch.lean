@@ -1,2 +1,3 @@
 import CollatzResearch.Basic
 import CollatzResearch.Certificate
+import CollatzResearch.Dynamics
