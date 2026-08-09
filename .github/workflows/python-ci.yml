@@ -1,24 +1,31 @@
 name: Python CI
-on: [pull_request]
+on:
+  pull_request:
+    paths:
+      - 'python/**'
+      - 'tests/**'
+      - 'pyproject.toml'
+      - 'uv.lock'
+      - 'Makefile'
+      - '.github/workflows/python-ci.yml'
 jobs:
   test:
     runs-on: self-hosted
     steps:
       - uses: actions/checkout@v4
-      - name: Install uv
-        # Use the official installer instead of the astral-sh/setup-uv action.
-        # This CI was observed to fail with "Failed to resolve action download
-        # info. Error: Service Unavailable" on the action. The installer
-        # script is distro-agnostic and avoids the action registry entirely.
-        run: curl -LsSf https://astral.sh/uv/install.sh | sh
-      - name: Add uv to PATH
-        run: echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      # uv is pre-installed on the runner image at /usr/local/bin/uv (no
+      # per-job install needed). The Lean toolchain is pre-installed at
+      # /data/.elan/bin and is added to PATH for downstream steps.
       - name: Add elan/lake to PATH
-        # The self-hosted runner on this host has elan and lake pre-installed
-        # at /data/.elan/bin (the action leaked from the prior local setup).
-        # The runner pick-up step doesn't add them to PATH for subsequent
-        # steps, so we do it explicitly here. `make ci` includes `make lean`
-        # which runs `lake build`.
         run: echo "/data/.elan/bin" >> "$GITHUB_PATH"
+      - name: Cache uv dependencies
+        # actions/cache@v4 persists on the self-hosted runner host. Keyed
+        # on uv.lock so a dep bump invalidates the cache.
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/uv
+          key: uv-${{ hashFiles('uv.lock') }}
       - run: uv sync --group dev
-      - run: make ci
+      # `make python-ci` runs format-check + lint + test (no Lean build).
+      # The Lean gate is owned by lean-ci.yml.
+      - run: make python-ci

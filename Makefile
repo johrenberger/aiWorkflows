@@ -50,6 +50,10 @@ reproduce: smoke
 # Per backlog: "make ci runs, then formatting, lint, Python tests, and lake build pass."
 ci: format-check lint test lean
 
+# Python-only CI gate (no Lean build). Used by python-ci.yml to keep the
+# Python gate fast; the Lean gate is owned by lean-ci.yml.
+python-ci: format-check lint test
+
 # Lightweight sanity check used by the reproducibility workflow.
 smoke:
 	uv run python scripts/check.py
