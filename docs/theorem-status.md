@@ -18,6 +18,17 @@
 | `BranchWord.appliesTo` | Defined (predicate) | `CollatzResearch.Affine` | Symbolic validity: word applies to `n` iff positive odd + each step's valuation matches `ν₂(3nᵢ + 1)` |
 | `BranchWord.execute` | Defined (function) | `CollatzResearch.Affine` | Operational executor: `execute (k :: rest) n = execute rest ((3*n+1)/2^k)` |
 | `BranchWord.execute_eq_toAffine_apply` | Pending | `CollatzResearch.Affine` | Executing a branch word equals applying its induced affine map under `appliesTo` (empty case proved by `rfl`; cons case admitted `sorry` pending `comp_apply_eq`) |
+| `Residue` | Defined (predicate) | `CollatzResearch.Residues` | `r < m` (canonical representative of a residue class) |
+| `residue` | Defined (function) | `CollatzResearch.Residues` | `residue m n = n % m` |
+| `residue_lt` | Checked | `CollatzResearch.Residues` | `residue m n < m` when `m > 0` |
+| `residue_zero` | Checked | `CollatzResearch.Residues` | `residue m 0 = 0` when `m > 0` |
+| `Partition` | Defined (structure) | `CollatzResearch.Residues` | Completeness + disjointness + validity for a residue partition |
+| `Partition.trivial` | Defined (function) | `CollatzResearch.Residues` | `[0, 1, ..., m-1]` |
+| `Partition.trivial_mem` | Checked | `CollatzResearch.Residues` | `r ∈ [0, m) ↔ r < m` (via `List.mem_range`) |
+| `Partition.trivial_nodup` | Checked | `CollatzResearch.Residues` | The trivial partition has no duplicates (via `List.nodup_range`) |
+| `Partition.trivial_valid` | Checked | `CollatzResearch.Residues` | All elements of the trivial partition are `< m` |
+| `Partition.trivial_complete` | Checked | `CollatzResearch.Residues` | The trivial partition covers all of `[0, m)` |
+| `Partition.trivial_partition` | Defined (function) | `CollatzResearch.Residues` | The trivial partition as a valid `Partition m` |
 | Global convergence | Not started | — | No claim |
 | Nontrivial cycle exclusion | Not started | — | No claim |
 
