@@ -142,3 +142,73 @@ def test_m_validity_checked_before_residue() -> None:
     with pytest.raises(PartitionError) as exc_info:
         is_partition(0, [-1])  # m=0 invalid
     assert exc_info.value.category == ERR_INVALID_RESIDUE
+
+
+# --- Type validation (P1 review feedback on PR #9) ---
+
+
+def test_rejects_bool_modulus() -> None:
+    """Adversarial: bool modulus is rejected as ERR_INVALID_RESIDUE (not treated as int)."""
+    with pytest.raises(PartitionError) as exc_info:
+        is_partition(True, [0])  # type: ignore[arg-type]
+    assert exc_info.value.category == ERR_INVALID_RESIDUE
+
+
+def test_rejects_bool_residue() -> None:
+    """Adversarial: bool residue is rejected as ERR_INVALID_RESIDUE."""
+    with pytest.raises(PartitionError) as exc_info:
+        is_partition(3, [0, True])  # type: ignore[list-item]
+    assert exc_info.value.category == ERR_INVALID_RESIDUE
+
+
+def test_rejects_string_modulus() -> None:
+    """Adversarial: string modulus is rejected as ERR_INVALID_RESIDUE."""
+    with pytest.raises(PartitionError) as exc_info:
+        is_partition("3", [0, 1, 2])  # type: ignore[arg-type]
+    assert exc_info.value.category == ERR_INVALID_RESIDUE
+
+
+def test_rejects_string_residue() -> None:
+    """Adversarial: string residue is rejected as ERR_INVALID_RESIDUE."""
+    with pytest.raises(PartitionError) as exc_info:
+        is_partition(3, ["0", "1"])  # type: ignore[list-item]
+    assert exc_info.value.category == ERR_INVALID_RESIDUE
+
+
+def test_rejects_float_modulus() -> None:
+    """Adversarial: float modulus is rejected as ERR_INVALID_RESIDUE."""
+    with pytest.raises(PartitionError) as exc_info:
+        is_partition(3.0, [0, 1, 2])  # type: ignore[arg-type]
+    assert exc_info.value.category == ERR_INVALID_RESIDUE
+
+
+def test_rejects_float_residue() -> None:
+    """Adversarial: float residue is rejected as ERR_INVALID_RESIDUE."""
+    with pytest.raises(PartitionError) as exc_info:
+        is_partition(3, [0.0, 1.0, 2.0])  # type: ignore[list-item]
+    assert exc_info.value.category == ERR_INVALID_RESIDUE
+
+
+def test_rejects_non_iterable_residues() -> None:
+    """Adversarial: non-iterable input is rejected with ERR_INVALID_RESIDUE."""
+    with pytest.raises(PartitionError) as exc_info:
+        is_partition(3, 5)  # type: ignore[arg-type]
+    assert exc_info.value.category == ERR_INVALID_RESIDUE
+
+
+def test_accepts_iterator_residues() -> None:
+    """Functional: an iterator (consumed once) is accepted."""
+
+    def gen():
+        yield 0
+        yield 1
+        yield 2
+
+    assert is_partition(3, gen()) is True
+
+
+def test_accepts_empty_list() -> None:
+    """Functional: empty list raises INCOMPLETE (not INVALID_RESIDUE)."""
+    with pytest.raises(PartitionError) as exc_info:
+        is_partition(3, [])
+    assert exc_info.value.category == ERR_INCOMPLETE

@@ -283,3 +283,47 @@ def test_parse_jsonl_strict_invalid_record_raises() -> None:
         )
     assert exc_info.value.category == ERR_MISSING_FIELD
     assert exc_info.value.line_no == 2
+
+
+def test_parse_jsonl_strict_rejects_duplicate_keys() -> None:
+    """Adversarial: duplicate object keys raise MALFORMED_JSON.
+
+    `json.loads` silently accepts duplicate keys (last wins), so two
+    distinct certificate byte streams would parse to the same record
+    and digest. For canonical certificates, we reject duplicates.
+    """
+    # Two `start` keys in the same object — ambiguous certificate.
+    with pytest.raises(StrictParseError) as exc_info:
+        parse_jsonl_strict(b'{"schema_version":"1.0","start":1,"start":2,"steps":0,"target":1}\n')
+    assert exc_info.value.category == ERR_MALFORMED_JSON
+    assert exc_info.value.line_no == 1
+
+
+def test_parse_jsonl_strict_rejects_duplicate_keys_in_second_line() -> None:
+    """Adversarial: duplicate keys on a non-first line yield the right line number."""
+    with pytest.raises(StrictParseError) as exc_info:
+        parse_jsonl_strict(
+            b'{"schema_version":"1.0","start":1,"steps":0,"target":1}\n{"schema_version":"1.0","start":1,"start":3,"steps":1,"target":1}\n'
+        )
+    assert exc_info.value.category == ERR_MALFORMED_JSON
+    assert exc_info.value.line_no == 2
+
+
+def test_parse_jsonl_strict_rejects_nested_duplicate_keys() -> None:
+    """Adversarial: duplicate keys in a nested object are also rejected."""
+    # The nested object has duplicate `x` keys; the whole record must fail.
+    with pytest.raises(StrictParseError) as exc_info:
+        parse_jsonl_strict(
+            b'{"schema_version":"1.0","start":1,"steps":0,"target":1,"meta":{"x":1,"x":2}}\n'
+        )
+    assert exc_info.value.category == ERR_MALFORMED_JSON
+    assert exc_info.value.line_no == 1
+
+
+def test_parse_jsonl_strict_rejects_three_duplicate_keys_in_one_object() -> None:
+    """Adversarial: three-way duplicate keys (not just two) are rejected."""
+    with pytest.raises(StrictParseError) as exc_info:
+        parse_jsonl_strict(
+            b'{"schema_version":"1.0","start":1,"steps":0,"target":1,"steps":99,"steps":100}\n'
+        )
+    assert exc_info.value.category == ERR_MALFORMED_JSON

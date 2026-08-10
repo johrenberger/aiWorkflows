@@ -21,7 +21,7 @@
 | `Residue` | Defined (predicate) | `CollatzResearch.Residues` | `r < m` (canonical representative of a residue class) |
 | `residue` | Defined (function) | `CollatzResearch.Residues` | `residue m n = n % m` |
 | `residue_lt` | Checked | `CollatzResearch.Residues` | `residue m n < m` when `m > 0` |
-| `residue_zero` | Checked | `CollatzResearch.Residues` | `residue m 0 = 0` when `m > 0` |
+| `residue_zero` | Checked | `CollatzResearch.Residues` | `residue m 0 = 0` (true for all `m`, including `m = 0`; no positivity hypothesis) |
 | `Partition` | Defined (structure) | `CollatzResearch.Residues` | Completeness + disjointness + validity for a residue partition |
 | `Partition.trivial` | Defined (function) | `CollatzResearch.Residues` | `[0, 1, ..., m-1]` |
 | `Partition.trivial_mem` | Checked | `CollatzResearch.Residues` | `r ∈ [0, m) ↔ r < m` (via `List.mem_range`) |

@@ -37,12 +37,17 @@ theorem residue_zero (m : ℕ) : residue m 0 = 0 := by
 /-- A partition of `ℤ/mℤ` is a list of residues that:
 - Has no duplicates (disjointness).
 - Covers all of `[0, m)` (completeness).
-- All elements are valid residues (`< m`). -/
+- All elements are valid residues (`< m`).
+- The modulus is positive (`0 < m`), encoded as a structure field so
+  that `Partition 0` is uninhabitable. This matches Python
+  `is_partition`'s `m >= 1` rejection and makes the Lean type a sound
+  target for a future checker-soundness theorem. -/
 structure Partition (m : ℕ) where
   residues : List ℕ
   disjoint : residues.Nodup
   complete : ∀ r : ℕ, r < m → r ∈ residues
   valid : ∀ r ∈ residues, r < m
+  positive : 0 < m
 
 namespace Partition
 
@@ -68,12 +73,13 @@ theorem trivial_complete (m : ℕ) :
   rw [Partition.trivial, List.mem_range]
   exact hr
 
-/-- The trivial partition is a valid partition. -/
-def trivial_partition (m : ℕ) : Partition m where
+/-- The trivial partition is a valid partition (requires `0 < m`). -/
+def trivial_partition (m : ℕ) (hm : 0 < m) : Partition m where
   residues := Partition.trivial m
   disjoint := Partition.trivial_nodup m
   complete := Partition.trivial_complete m
   valid := Partition.trivial_valid m
+  positive := hm
 
 end Partition
 
