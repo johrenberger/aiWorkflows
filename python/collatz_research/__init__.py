@@ -31,6 +31,7 @@ from .partitions import (
     is_partition,
 )
 from .standard import is_even, is_odd, is_positive, standard_step, standard_trajectory
+from .strict_json import decode_strict_json
 
 __all__ = [
     "accelerated_step",
@@ -39,6 +40,7 @@ __all__ = [
     "canonical_jsonb",
     "canonical_jsonb_with_newline",
     "compute_digest",
+    "decode_strict_json",
     "DescentCertificate",
     "ERR_INCOMPLETE",
     "ERR_INVALID_RESIDUE",

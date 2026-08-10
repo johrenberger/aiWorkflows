@@ -4,12 +4,18 @@ Errors fall into stable categories so that downstream tooling can
 distinguish user errors (unknown schema, missing field) from
 malformed-input errors (broken JSON, bad encoding). All categories are
 uppercase strings to match the project's conventions.
+
+**Important:** JSON-layer strictness (duplicate-key rejection, strict
+UTF-8 decoding, decoder-failure mapping) lives in `strict_json.py`. Do
+**not** use the stdlib `json.loads` directly at any certificate trust
+boundary; route through `strict_json.decode_strict_json` instead.
 """
 
 from __future__ import annotations
 
-import json
 from typing import Any
+
+from .strict_json import decode_strict_json
 
 # Error categories (stable, uppercase).
 ERR_MALFORMED_JSON = "MALFORMED_JSON"
@@ -54,38 +60,17 @@ def field_constraints_for_version(schema_version: str) -> dict[str, dict[str, in
     return None
 
 
-# Reject duplicate JSON keys during decoding (P1 review feedback on PR #9).
-# json.loads with object_pairs_hook is the only way to see duplicates, since
-# Python dicts collapse them on construction. object_pairs_hook is
-# deprecated in Python 3.13+ but still works in our pinned 3.12.
-def _reject_duplicate_keys(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
-    seen: set[str] = set()
-    result: dict[str, Any] = {}
-    for key, value in pairs:
-        if key in seen:
-            raise ValueError(f"duplicate JSON object key: {key!r}")
-        seen.add(key)
-        result[key] = value
-    return result
-
-
-_strict_json_decoder = json.JSONDecoder(object_pairs_hook=_reject_duplicate_keys)
-
-
-def _parse_strict_json(text: str) -> Any:
-    """Parse a JSON string, rejecting duplicate object keys.
-
-    Raises `ValueError` (caught by `parse_jsonl_strict` and mapped to
-    `StrictParseError(...MALFORMED_JSON...)`).
-    """
-    return _strict_json_decoder.decode(text)
-
-
 def strict_parse_record(obj: dict[str, Any], line_no: int = 1) -> dict[str, Any]:
     """Strict-parse a single certificate record.
 
     Raises StrictParseError with a stable category. Returns the record
     unchanged on success (no transformation).
+
+    Pre-condition: the caller must have already produced `obj` via
+    `strict_json.decode_strict_json` (or an equivalent that rejects
+    duplicate object keys and decoder failures). This function does
+    NOT re-decode; it only validates the already-parsed dict against
+    the schema.
     """
     if not isinstance(obj, dict):
         raise StrictParseError(
@@ -164,17 +149,19 @@ def strict_parse_record(obj: dict[str, Any], line_no: int = 1) -> dict[str, Any]
 def parse_jsonl_strict(data: bytes) -> list[dict[str, Any]]:
     """Parse JSONL bytes with strict per-record validation.
 
-    Each non-empty line is parsed as JSON and then validated by
-    strict_parse_record. Malformed JSON raises StrictParseError with
-    category MALFORMED_JSON and the offending line number.
+    Each non-empty line is decoded via `strict_json.decode_strict_json`
+    (which rejects duplicate object keys, strict UTF-8, and decoder
+    failures as `ValueError` / `UnicodeDecodeError`) and then validated
+    by `strict_parse_record` against the schema. Malformed JSON raises
+    `StrictParseError` with category `MALFORMED_JSON` and the offending
+    line number.
     """
     records: list[dict[str, Any]] = []
     for line_no, line in enumerate(data.split(b"\n"), start=1):
         if not line.strip():
             continue
         try:
-            text = line.decode("utf-8")
-            obj = _parse_strict_json(text)
+            obj = decode_strict_json(line)
         except (ValueError, UnicodeDecodeError) as e:
             raise StrictParseError(line_no, ERR_MALFORMED_JSON, str(e)) from e
         strict_parse_record(obj, line_no=line_no)
