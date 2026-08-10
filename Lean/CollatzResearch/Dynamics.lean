@@ -38,15 +38,19 @@ Attempted approaches and blockers:
      + `exact Nat.zero_le _`. This branch works in isolation.
    - Remaining blocker: `omega` on `(3*n+1).factorization 2 ≠ 0`
      for `factorization_le_iff_dvd.hn` — omega doesn't see
-     `Odd n → n ≥ 1 → 3n+1 ≥ 4 → 3n+1 ≠ 0`.
+     `Odd n → 0 < n → 3n+1 ≥ 4 → 3n+1 ≠ 0`.
 
 The shared root blocker is that `omega` doesn't see
-`Odd n → n ≥ 1 → n ≠ 0` and `n % 2 = 0 ∧ n > 0 → n ≥ 2` without
+`Odd n → 0 < n` and `n % 2 = 0 ∧ n > 0 → n ≥ 2` without
 explicit `Nat.lt_of_succ_le`/`Nat.succ_le_succ`/`Nat.le_succ_succ`
-step-by-step arguments. A targeted Mathlib update providing
-`Nat.Odd.one_lt : Odd n → 1 < n` (or equivalent) and
-`Nat.pos_of_mul_pos_right : 0 < a * b → 0 < b` would close both
-proofs in a single pass.
+step-by-step arguments. The needed lemma is `Odd n → 0 < n`
+(available in Mathlib as `Odd.pos : Odd n → 0 < n`, or
+equivalently `Nat.pos_of_neZero (n := n) (Nat.Odd.ne_zero n)`);
+the previously-listed `Nat.Odd.one_lt : Odd n → 1 < n` is
+impossible (it would prove `1 < 1` from `Odd 1`) and is
+corrected here. Adding `Nat.pos_of_mul_pos_right : 0 < a * b → 0 < b`
+(Mathlib already has this) and teaching `omega` to dispatch
+`Odd.pos` would close both proofs in a single pass.
 
 **Conclusion:** the definitions are correct and the file compiles.
 The proof closure is tracked as Story 02b/03b proof completion in
