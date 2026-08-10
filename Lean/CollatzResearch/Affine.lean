@@ -5,18 +5,20 @@ import CollatzResearch.Basic
 # Symbolic affine executor
 
 The accelerated Collatz map `T(n) = (3n + 1) / 2^{ν₂(3n + 1)}` and its
-iterations can be represented as affine maps over ℤ. This module:
+iterations can be represented as affine maps over �. This module:
 
 1. Defines `AffineMap` as a triple `(a, b, k)` representing
    `n ↦ (a * n + b) / 2^k`.
 2. Defines composition: `(a₁, b₁, k₁) ∘ (a₂, b₂, k₂) =
    (a₁ * a₂, a₁ * b₂ + b₁ * 2^k₂, k₁ + k₂)`.
 3. Proves composition is associative and has identity laws.
-4. Defines `BranchWord := List ℕ` (a sequence of two-adic valuations).
-5. Defines the affine map induced by a branch word (right-fold compose
+4. Defines `BranchWord := List ℕ+` (a sequence of positive valuations).
+5. Defines the affine map induced by a branch word (left-fold compose
    over single-step maps).
 6. Defines `appliesTo`: a word applies to `n` iff `n` is positive odd
    and each step's valuation matches `ν₂(3nᵢ + 1)`.
+7. Defines `execute` and states the semantic theorem
+   `execute_eq_toAffine_apply` (cons case pending — see "Proof status").
 
 This module makes no convergence, cycle-exclusion, or global descent
 claim. It is the symbolic-executor foundation for Story 05 (residue
@@ -24,6 +26,15 @@ partitions and certificate schema).
 
 See ADR-0007 for the design decision on the integer (vs. rational)
 representation with explicit denominator exponent.
+
+**Proof status (2026-08-10, Story 04):**
+- Definitions: complete.
+- Structural algebra (`comp_assoc`, `comp_id_left`, `comp_id_right`):
+  proved by `ring`.
+- Semantic theorems (`comp_apply_eq`, `execute_eq_toAffine_apply`):
+  stated; cons case of `execute_eq_toAffine_apply` admitted via `sorry`
+  pending a Mathlib divisibility lemma (see ADR-0007 and the PR #8
+  body). Marked **preparatory** in `docs/theorem-status.md`.
 -/
 
 namespace CollatzResearch
@@ -39,14 +50,17 @@ structure AffineMap where
   b : ℤ
   k : ℕ
 
-/-- The identity affine map `n � n`. -/
+/-- The identity affine map `n ↦ n`. -/
 def AffineMap.id : AffineMap := ⟨1, 0, 0⟩
 
-/-- The single-step affine map for a given two-adic valuation `k`:
-`n ↦ (3n + 1) / 2^k`. Valid on the positive odd domain when
-`k = ν₂(3n + 1)`. The `k ≥ 1` precondition is not enforced at the
-type level; it is a documented contract on the caller. -/
-def AffineMap.step (k : ℕ) : AffineMap :=
+/-- The single-step affine map for a given **positive** two-adic
+valuation `k ≥ 1`: `n ↦ (3n + 1) / 2^k`. Valid on the positive odd
+domain when `k = ν₂(3n + 1)`.
+
+Uses `ℕ+` (the positive-naturals subtype) so the API rejects `k = 0`
+at the type level. This aligns with Python's `AffineMap.step(k)`,
+which raises `ValueError` for `k < 1`. -/
+def AffineMap.step (k : ℕ+) : AffineMap :=
   ⟨3, 1, k⟩
 
 /-- Apply the affine map. Uses `Int.ediv`; the divisibility precondition
@@ -78,8 +92,30 @@ theorem AffineMap.comp_assoc (m₁ m₂ m₃ : AffineMap) :
   simp only [AffineMap.comp, AffineMap.id]
   ring
 
-/-- A branch word: a sequence of two-adic valuations. -/
-abbrev BranchWord := List ℕ
+/-- Apply-level composition equality under explicit divisibility
+hypotheses.
+
+This is the semantic companion to the structural composition
+formula in `AffineMap.comp`. It says that when the intermediate
+division is exact, applying the composed map equals composing the
+applications. Proving this requires Mathlib's
+`Int.mul_div_cancel_left_of_dvd` (or a successor) and induction;
+left as preparatory work pending a Mathlib lemma check. -/
+theorem AffineMap.comp_apply_eq (m₁ m₂ : AffineMap) (n : ℤ)
+    (h₂ : (2 ^ m₂.k : ℤ) ∣ (m₂.a * n + m₂.b))
+    (h₁ : (2 ^ m₁.k : ℤ) ∣
+            (m₁.a * ((m₂.a * n + m₂.b) / (2 ^ m₂.k : ℤ)) + m₁.b)) :
+    (m₁.comp m₂).apply n = m₁.apply (m₂.apply n) := by
+  unfold AffineMap.apply AffineMap.comp
+  -- Numerator equality is the structural coefficient identity
+  -- (proved by `ring`); the divisibility hypotheses are used to push
+  -- `m₁.a` inside the inner division. The full proof requires
+  -- `Int.mul_div_cancel_left_of_dvd` (Mathlib), a divisibility
+  -- combination lemma, and `ring`. Documented as preparatory.
+  sorry
+
+/-- A branch word: a list of **positive** two-adic valuations. -/
+abbrev BranchWord := List ℕ+
 
 /-- The empty branch word. -/
 def BranchWord.empty : BranchWord := []
@@ -97,12 +133,44 @@ left-to-right order. -/
   | k :: rest => (BranchWord.toAffine rest).comp (AffineMap.step k)
 
 /-- A branch word applies to input `n` (a positive odd integer) when
-each step's valuation matches `ν₂(3nᵢ + 1)`. -/
+each step's valuation matches `ν₂(3n� + 1)`. -/
 @[simp] def BranchWord.appliesTo : BranchWord → ℕ → Prop
   | [], n => n > 0 ∧ n % 2 = 1
   | k :: rest, n =>
     n > 0 ∧ n % 2 = 1 ∧
     twoAdicValuation (3 * n + 1) = k ∧
-    BranchWord.appliesTo rest (Nat.div (3 * n + 1) (2 ^ k))
+    BranchWord.appliesTo rest (Nat.div (3 * n + 1) (2 ^ (k : ℕ)))
+
+/-- Execute the branch word on input `n`, returning the final integer.
+
+This is the operational counterpart of `BranchWord.toAffine`. The
+result equals `(BranchWord.toAffine word).apply n` when `appliesTo`
+holds (see `BranchWord.execute_eq_toAffine_apply` below). -/
+def BranchWord.execute : BranchWord → ℕ → ℕ
+  | [], n => n
+  | k :: rest, n =>
+    BranchWord.execute rest (Nat.div (3 * n + 1) (2 ^ (k : ℕ)))
+
+/-- Executing a branch word equals applying its induced affine map,
+when the word applies to the input.
+
+The empty case is trivial by `rfl`. The cons case requires:
+1. The divisibility lemma `2^k ∣ (3*n + 1)` from
+   `twoAdicValuation (3*n + 1) = k` (Mathlib).
+2. `AffineMap.comp_apply_eq` (above).
+3. An induction on `BranchWord`.
+
+Cons case admitted via `sorry`; marked **preparatory** in
+`docs/theorem-status.md`. -/
+theorem BranchWord.execute_eq_toAffine_apply (word : BranchWord) (n : ℕ)
+    (_h : BranchWord.appliesTo word n) :
+    BranchWord.execute word n = (BranchWord.toAffine word).apply n := by
+  induction word with
+  | nil =>
+    simp [BranchWord.execute, BranchWord.toAffine, AffineMap.id, AffineMap.apply]
+  | cons k rest ih =>
+    -- Cons case: by `comp_apply_eq` and the divisibility induced by
+    -- `appliesTo`. Admitted pending Mathlib lemma check.
+    sorry
 
 end CollatzResearch
