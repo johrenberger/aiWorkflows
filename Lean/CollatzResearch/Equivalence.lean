@@ -60,18 +60,23 @@ theorem acceleratedStep_equiv_standardStep (n : Nat) (h : Odd n) :
   -- TODO: complete the proof by induction on (3n+1).factorization 2.
   sorry
 
-/-- A positive accelerated trajectory reaching `1` corresponds to a
-(finite) standard trajectory reaching `1`.
+/-- An accelerated trajectory starting on the odd domain and reaching
+`1` corresponds to a (finite) standard trajectory reaching `1`.
 
 Forward direction of the standard ↔ accelerated equivalence at
 trajectory level: a finite accelerated witness to convergence lifts
 to a finite standard witness.
 
-The `Positive n` precondition is essential: `acceleratedStep 0 = 1`
-in `Nat` (since `0.factorization 2 = 0`, so `(0+1)/2^0 = 1`), but
-`standardStep 0 = 0`, so the maps diverge at `n = 0`. For positive
-`n`, `acceleratedStep n ≥ 1`, so the standard trajectory stays positive
-and reaches `1` in finite steps when the accelerated trajectory does.
+The `Odd n` precondition is essential for two reasons:
+- `n = 0` divergence: `acceleratedStep 0 = 1` in `Nat` (since
+  `0.factorization 2 = 0`, so `(0+1)/2^0 = 1`), but `standardStep 0 = 0`,
+  so the maps diverge at `n = 0`. (Covered by `Odd n`, which implies
+  `n ≥ 1` on `Nat`.)
+- Even-input divergence: `acceleratedStep 2 = 7` while `standardStep 2 = 1`,
+  so the forward equivalence `acceleratedStep_equiv_standardStep` does
+  not hold on even inputs. Restricting to `Odd n` makes every iterate
+  of the accelerated trajectory stay in the odd domain, where the
+  forward equivalence applies at each step.
 
 **Proof sketch.** Induction on the accelerated-trajectory length `m`.
 - Base case `m = 0`: `trajectory n 0 = n = 1` forces `n = 1`, and
@@ -82,7 +87,7 @@ and reaches `1` in finite steps when the accelerated trajectory does.
   the sum of `1 + ν₂(3 n_i + 1)` over `i = 0 .. k-1` plus the final segment.
 -/
 theorem acceleratedTrajectory_reaches_one_implies_standard (n m : Nat)
-    (h_pos : Positive n) (h : trajectory n m = 1) : ∃ m', standardTrajectory n m' = 1 := by
+    (h_odd : Odd n) (h : trajectory n m = 1) : ∃ m', standardTrajectory n m' = 1 := by
   -- TODO: complete the proof by induction on `m`, using
   -- `acceleratedStep_equiv_standardStep` as the inductive step.
   sorry
