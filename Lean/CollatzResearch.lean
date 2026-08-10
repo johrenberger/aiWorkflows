@@ -1,3 +1,4 @@
+import CollatzResearch.Affine
 import CollatzResearch.Basic
 import CollatzResearch.Certificate
 import CollatzResearch.Dynamics
