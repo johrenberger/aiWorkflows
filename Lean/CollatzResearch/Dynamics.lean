@@ -12,28 +12,50 @@ odd domain.
 This file contains only definitions and elementary interface lemmas.
 It makes no convergence, cycle-exclusion, or global descent claim.
 
-**Proof status (2026-08-10):** `standardStep_positive` and
-`acceleratedStep_positive_of_odd` use `sorry` for the closing step.
+**Proof status (2026-08-10, Story 02b/03b attempt):**
+`standardStep_positive` and `acceleratedStep_positive_of_odd` use `sorry`.
+Attempted approaches and blockers:
 
-The blockers are:
-- `standardStep_positive`: proving `0 < n / 2` from `n` even and
-  `n > 0` requires `0 < 2 * k → 0 < k` (where `n = 2 * k`); `omega`
-  does not see this without `Nat.pos_of_mul_pos_right` or similar.
-- `acceleratedStep_positive_of_odd`: proving `2^ν₂(3n+1) | 3n+1`
-  requires unfolding `(2^k).factorization` through `factorization_pow`
-  + `Finsupp.smul_apply` + `Finsupp.single_apply` + `Prime.factorization`
-  (for `Prime 2`); the chain is mechanically correct but the rewrite
-  unfolds don't quite close under `simp` in this Mathlib build.
+1. `standardStep_positive` (even branch `0 < n / 2` from `n` positive even):
+   - `Nat.div_pos_iff.mpr ⟨by norm_num, omega⟩` — `omega` couldn't derive
+     `2 ≤ n` from `0 < n ∧ n % 2 = 0` (omega doesn't see
+     `n % 2 = 0 ∧ n > 0 → n ≥ 2`).
+   - `rcases` + `subst` + `Nat.div_pos` — `Nat.div_pos` has signature
+     `b ≤ a → 0 < b → 0 < a / b`, so we still need to prove `2 ≤ n`.
+   - `rcases` + `False.elim` for the `n = 0`/`n = 1` cases — `False.elim`
+     has typeclass issues and `decide` errors with `if p = 2` vs
+     `if 2 = p` order.
 
-Per Codex review feedback, these are tracked for a release-blocking
-follow-up (Story 02b / 03b) that completes both positivity proofs in
-one pass, then merges them together with the equivalence proofs from
-`CollatzResearch.Equivalence`.
+2. `acceleratedStep_positive_of_odd` (`0 < T(n)` from `n` odd):
+   - `Nat.div_pos_iff` + `Nat.factorization_le_iff_dvd` + `factorization_pow`
+     + `Prime.factorization` + `Finsupp.smul_single'` + `Finsupp.single_apply`
+     rewrite chain. `Finsupp.single_apply` DOES exist in this Mathlib
+     (used in `ToDFinsupp.lean`) but `rw [Finsupp.single_apply]` fails
+     because of the `if p = 2` vs `if 2 = p` order mismatch in the
+     goal (fixed by `by_cases hp : 2 = p`).
+   - `by_cases hp : 2 = p; subst hp; rw [Nat.mul_one]; rfl` works
+     for the `p = 2` case. The `¬p = 2` case uses `rw [if_neg hp]`
+     + `exact Nat.zero_le _`. This branch works in isolation.
+   - Remaining blocker: `omega` on `(3*n+1).factorization 2 ≠ 0`
+     for `factorization_le_iff_dvd.hn` — omega doesn't see
+     `Odd n → n ≥ 1 → 3n+1 ≥ 4 → 3n+1 ≠ 0`.
+
+The shared root blocker is that `omega` doesn't see
+`Odd n → n ≥ 1 → n ≠ 0` and `n % 2 = 0 ∧ n > 0 → n ≥ 2` without
+explicit `Nat.lt_of_succ_le`/`Nat.succ_le_succ`/`Nat.le_succ_succ`
+step-by-step arguments. A targeted Mathlib update providing
+`Nat.Odd.one_lt : Odd n → 1 < n` (or equivalent) and
+`Nat.pos_of_mul_pos_right : 0 < a * b → 0 < b` would close both
+proofs in a single pass.
+
+**Conclusion:** the definitions are correct and the file compiles.
+The proof closure is tracked as Story 02b/03b proof completion in
+the PR template's "Known limitations and follow-up" section.
 -/
 
 namespace CollatzResearch
 
-/-- The standard (unaccelerated) Collatz map: n ↦ n/2 if even, 3n+1 if odd. -/
+/-- The standard (unaccelerated) Collatz map: n ↦ n / 2 if even, 3n + 1 if odd. -/
 def standardStep (n : Nat) : Nat :=
   if n % 2 = 0 then n / 2 else 3 * n + 1
 
@@ -49,7 +71,9 @@ applies directly).
 -/
 theorem standardStep_positive (n : Nat) (h : Positive n) :
     Positive (standardStep n) := by
-  -- TODO: closing step needs `0 < 2 * k → 0 < k`. See file header.
+  -- TODO: see file-header blocker notes. Needs `omega` to see
+  -- `n % 2 = 0 ∧ n > 0 → n ≥ 2` (or equivalent step-by-step
+  -- reasoning). `n = 0` and `n = 1` cases need contradiction proofs.
   sorry
 
 /-- The accelerated Collatz step `T(n)` preserves positivity on the odd
@@ -64,8 +88,8 @@ Story 03's one-step equivalence theorem.
 -/
 theorem acceleratedStep_positive_of_odd (n : Nat) (h_odd : Odd n) :
     Positive (acceleratedStep n) := by
-  -- TODO: closing step needs the Finsupp / factorization_pow chain.
-  -- See file header.
+  -- TODO: see file-header blocker notes. Needs `omega` to see
+  -- `Odd n → n ≥ 1 → 3n+1 ≠ 0` for `factorization_le_iff_dvd.hn`.
   sorry
 
 end CollatzResearch
