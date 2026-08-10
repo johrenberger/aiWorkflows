@@ -14,8 +14,8 @@ Bridges the two maps:
 
 The forward theorem states that one accelerated step on an odd input
 is equivalent to `1 + ν₂(3n + 1)` standard steps. The reverse theorem
-states that an accelerated trajectory reaching `1` (starting from a
-positive input) corresponds to a (finite) standard trajectory also
+states that an accelerated trajectory reaching `1` (starting from an
+odd input) corresponds to a (finite) standard trajectory also
 reaching `1`.
 
 Both theorems make no global convergence, cycle-exclusion, or
