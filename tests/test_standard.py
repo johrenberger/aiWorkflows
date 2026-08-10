@@ -98,12 +98,9 @@ def test_standard_trajectory_reaches_one_for_known_inputs() -> None:
     for vec in data["vectors"]:
         if "standard_trajectory_to_1" not in vec:
             continue
-        # Just sanity-check the first few entries match what we'd compute live.
         n = vec["input"]
         expected = vec["standard_trajectory_to_1"]
-        # Verify length matches
-        assert len(standard_trajectory(n, len(expected) - 1)) == len(expected)
-        # Verify the first entry and the last entry match
         live = standard_trajectory(n, len(expected) - 1)
-        assert live[0] == expected[0]
-        assert live[-1] == expected[-1]
+        assert live == expected, (
+            f"standard_trajectory({n}, {len(expected) - 1}) = {live} " f"!= expected {expected}"
+        )

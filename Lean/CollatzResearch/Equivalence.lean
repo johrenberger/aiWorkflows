@@ -14,11 +14,14 @@ Bridges the two maps:
 
 The forward theorem states that one accelerated step on an odd input
 is equivalent to `1 + ν₂(3n + 1)` standard steps. The reverse theorem
-states that an accelerated trajectory reaching `1` corresponds to a
-(finite) standard trajectory also reaching `1`.
+states that an accelerated trajectory reaching `1` (starting from a
+positive input) corresponds to a (finite) standard trajectory also
+reaching `1`.
 
 Both theorems make no global convergence, cycle-exclusion, or
-termination claim — they are local equivalences on the odd domain.
+termination claim — they are local equivalences on the positive odd
+domain. `n = 0` is explicitly excluded: `acceleratedStep 0 = 1` in
+Nat, but `standardStep 0 = 0`, so the maps are not equivalent at 0.
 -/
 
 namespace CollatzResearch
@@ -54,32 +57,34 @@ the odd part is exactly `1 + ν₂(3n + 1)`.
 -/
 theorem acceleratedStep_equiv_standardStep (n : Nat) (h : Odd n) :
     standardTrajectory n (1 + (3 * n + 1).factorization 2) = acceleratedStep n := by
-  -- TODO: complete the proof. The induction on (3n+1).factorization 2
-  -- requires a lemma that `2^(n.factorization p) ∣ n` (the same blocker
-  -- as `acceleratedStep_positive_of_odd` in Story 02).
+  -- TODO: complete the proof by induction on (3n+1).factorization 2.
   sorry
 
-/-- If an accelerated trajectory reaches `1`, the corresponding standard
-trajectory also reaches `1`.
+/-- A positive accelerated trajectory reaching `1` corresponds to a
+(finite) standard trajectory reaching `1`.
 
 Forward direction of the standard ↔ accelerated equivalence at
 trajectory level: a finite accelerated witness to convergence lifts
 to a finite standard witness.
 
+The `Positive n` precondition is essential: `acceleratedStep 0 = 1`
+in `Nat` (since `0.factorization 2 = 0`, so `(0+1)/2^0 = 1`), but
+`standardStep 0 = 0`, so the maps diverge at `n = 0`. For positive
+`n`, `acceleratedStep n ≥ 1`, so the standard trajectory stays positive
+and reaches `1` in finite steps when the accelerated trajectory does.
+
 **Proof sketch.** Induction on the accelerated-trajectory length `m`.
-- Base case `m = 0`: `trajectory n 0 = n = 1`, so `n = 1` and
+- Base case `m = 0`: `trajectory n 0 = n = 1` forces `n = 1`, and
   `standardTrajectory 1 0 = 1`.
-- Inductive case `m = k + 1`: from `trajectory n (k+1) = 1` and the
-  inductive hypothesis on `k`, there exists `m''` with
-  `standardTrajectory (trajectory n k) m'' = 1`. By
-  `acceleratedStep_equiv_standardStep` (which establishes that
-  `T(trajectory n k)` equals `standardTrajectory (trajectory n k) (1 + k₂)`),
-  set `m' = m'' + 1 + k₂` and use `standardTrajectory_succ` to chain.
+- Inductive case `m = k + 1`: by the forward theorem,
+  `standardTrajectory (trajectory n k) (1 + ν₂(3*(trajectory n k) + 1)) = 1`.
+  Take `m' = (1 + ν₂(3*(trajectory n k) + 1)) + (1 + ν₂(3n + 1) + ... + 1 + ν₂(...))`,
+  the sum of `1 + ν₂(3 n_i + 1)` over `i = 0 .. k-1` plus the final segment.
 -/
 theorem acceleratedTrajectory_reaches_one_implies_standard (n m : Nat)
-    (h : trajectory n m = 1) : ∃ m', standardTrajectory n m' = 1 := by
-  -- TODO: complete the proof. Depends on `acceleratedStep_equiv_standardStep`
-  -- (the forward equivalence) plus induction on the accelerated length.
+    (h_pos : Positive n) (h : trajectory n m = 1) : ∃ m', standardTrajectory n m' = 1 := by
+  -- TODO: complete the proof by induction on `m`, using
+  -- `acceleratedStep_equiv_standardStep` as the inductive step.
   sorry
 
 end CollatzResearch

@@ -14,15 +14,21 @@ It makes no convergence, cycle-exclusion, or global descent claim.
 
 **Proof status (2026-08-10):** `standardStep_positive` and
 `acceleratedStep_positive_of_odd` use `sorry` for the closing step.
-The Python side of Story 02 is fully validated; the Lean proofs are
-tracked as a follow-up to this PR. The blockers are:
-- `standardStep_positive`: `omega` does not see `0 < 2 * k → 0 < k`
-  without an explicit lemma (e.g., `Nat.mul_pos_iff`); needs a
-  hand-rolled proof or a mathlib update.
-- `acceleratedStep_positive_of_odd`: needs
-  `2^(m.factorization p) ∣ m` (or equivalent), which is fundamental
-  but expressed in mathlib only via the `factorization_le_iff_dvd`
-  iff, not as a standalone lemma in this build.
+
+The blockers are:
+- `standardStep_positive`: proving `0 < n / 2` from `n` even and
+  `n > 0` requires `0 < 2 * k → 0 < k` (where `n = 2 * k`); `omega`
+  does not see this without `Nat.pos_of_mul_pos_right` or similar.
+- `acceleratedStep_positive_of_odd`: proving `2^ν₂(3n+1) | 3n+1`
+  requires unfolding `(2^k).factorization` through `factorization_pow`
+  + `Finsupp.smul_apply` + `Finsupp.single_apply` + `Prime.factorization`
+  (for `Prime 2`); the chain is mechanically correct but the rewrite
+  unfolds don't quite close under `simp` in this Mathlib build.
+
+Per Codex review feedback, these are tracked for a release-blocking
+follow-up (Story 02b / 03b) that completes both positivity proofs in
+one pass, then merges them together with the equivalence proofs from
+`CollatzResearch.Equivalence`.
 -/
 
 namespace CollatzResearch
@@ -36,18 +42,18 @@ def Positive (n : Nat) : Prop := 0 < n
 
 /-- Standard step preserves positivity on the positive domain.
 
-For the even branch, `n` is positive even, so `n = 2 * (n / 2)` (from
-`Nat.div_add_mod` after substituting `n % 2 = 0`) and `n > 0`, hence
-`n / 2 > 0`. For the odd branch, `3n + 1` is a positive successor.
+For the even branch, `n` is positive even, so `n ≥ 2` (since `1` is odd)
+and `n / 2 ≥ 1 > 0`. For the odd branch, `3n + 1` is a positive
+successor (`Nat.add` with `1` reduces to `Nat.succ`, so `Nat.succ_pos`
+applies directly).
 -/
 theorem standardStep_positive (n : Nat) (h : Positive n) :
     Positive (standardStep n) := by
-  -- TODO: see proof-status note above. Closing step:
-  -- even: `n = 2 * (n / 2) ∧ n > 0 ⟹ n / 2 > 0`;
-  -- odd: `3n + 1` is a `Nat.succ`.
+  -- TODO: closing step needs `0 < 2 * k → 0 < k`. See file header.
   sorry
 
-/-- The accelerated Collatz step `T(n)` preserves positivity on the odd domain.
+/-- The accelerated Collatz step `T(n)` preserves positivity on the odd
+domain.
 
 The odd precondition is necessary: `T(0) = 1` is well-defined but
 `T(n)` for non-positive `n` is not part of the project's contract.
@@ -58,9 +64,8 @@ Story 03's one-step equivalence theorem.
 -/
 theorem acceleratedStep_positive_of_odd (n : Nat) (h_odd : Odd n) :
     Positive (acceleratedStep n) := by
-  -- TODO: see proof-status note above. Closing step:
-  -- `2^v_2(3n+1) ∣ 3n+1` (definition of `Nat.factorization`)
-  -- combined with `0 < 3n+1` via `Nat.le_of_dvd`.
+  -- TODO: closing step needs the Finsupp / factorization_pow chain.
+  -- See file header.
   sorry
 
 end CollatzResearch
