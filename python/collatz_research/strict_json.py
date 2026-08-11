@@ -46,11 +46,31 @@ def _no_duplicate_keys(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
     return result
 
 
-_decoder = json.JSONDecoder(object_pairs_hook=_no_duplicate_keys)
+def _reject_non_standard_numeric(c: object) -> None:
+    """`parse_constant` callback that rejects non-standard JSON numeric constants.
+
+    Python's `json.JSONDecoder` accepts `NaN`, `Infinity`, and `-Infinity`
+    by default. These are NOT in the JSON spec (RFC 8259) and conflict with
+    the strict-JSON contract at certificate trust boundaries. The
+    helper raises a `ValueError` instead; the caller (`parse_jsonl_strict`)
+    maps it to `StrictParseError(..., ERR_MALFORMED_JSON, ...)`.
+
+    `parse_constant` is only invoked for these non-standard tokens (the
+    standard literals `true`/`false`/`null` and numbers are handled
+    separately by the decoder), so raising unconditionally is correct.
+    """
+    raise ValueError(f"non-standard JSON numeric constant not allowed: {c!r}")
+
+
+_decoder = json.JSONDecoder(
+    object_pairs_hook=_no_duplicate_keys,
+    parse_constant=_reject_non_standard_numeric,
+)
 
 
 def decode_strict_json(data: bytes | str) -> Any:
-    """Decode JSON from bytes (strict UTF-8) or text, rejecting duplicate object keys.
+    """Decode JSON from bytes (strict UTF-8) or text, rejecting duplicate object keys
+    and non-standard numeric constants (`NaN`, `Infinity`, `-Infinity`).
 
     Args:
         data: JSON bytes (strict UTF-8) or text.
@@ -60,9 +80,10 @@ def decode_strict_json(data: bytes | str) -> Any:
 
     Raises:
         `UnicodeDecodeError`: if `data` is bytes and contains invalid UTF-8.
-        `ValueError`: on duplicate object keys, malformed JSON, or any
-            other decoder failure. The message is stable across runs for a
-            given failure mode, so callers can use it for diagnostics.
+        `ValueError`: on duplicate object keys, non-standard numeric
+            constants (`NaN` / `Infinity` / `-Infinity`), malformed JSON,
+            or any other decoder failure. The message is stable across runs
+            for a given failure mode, so callers can use it for diagnostics.
     """
     if isinstance(data, bytes):
         text = data.decode("utf-8", errors="strict")

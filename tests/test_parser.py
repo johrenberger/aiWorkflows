@@ -275,6 +275,15 @@ def test_parse_jsonl_strict_malformed_json_raises() -> None:
     assert exc_info.value.line_no == 2
 
 
+def test_parse_jsonl_strict_nan_constant_raises_malformed_json() -> None:
+    """A `NaN` token at the parser boundary is `MALFORMED_JSON` (P2 review feedback)."""
+    with pytest.raises(StrictParseError) as exc_info:
+        parse_jsonl_strict(b'{"k":NaN}\n')
+    assert exc_info.value.category == ERR_MALFORMED_JSON
+    assert exc_info.value.line_no == 1
+    assert "non-standard JSON numeric constant" in str(exc_info.value)
+
+
 def test_parse_jsonl_strict_invalid_record_raises() -> None:
     """An invalid record (e.g., missing field) raises with the right line number."""
     with pytest.raises(StrictParseError) as exc_info:

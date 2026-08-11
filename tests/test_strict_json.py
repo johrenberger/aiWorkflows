@@ -120,3 +120,42 @@ def test_number_is_valid() -> None:
 
 def test_string_is_valid() -> None:
     assert decode_strict_json(b'"hello"') == "hello"
+
+
+# --- Non-standard numeric constant rejection (P2 review feedback) ---
+
+
+def test_nan_constant_raises() -> None:
+    """`NaN` is not in RFC 8259; the strict helper rejects it."""
+    with pytest.raises(ValueError, match="non-standard JSON numeric constant not allowed: 'NaN'"):
+        decode_strict_json(b"NaN")
+
+
+def test_infinity_constant_raises() -> None:
+    """`Infinity` is not in RFC 8259; the strict helper rejects it."""
+    with pytest.raises(
+        ValueError, match="non-standard JSON numeric constant not allowed: 'Infinity'"
+    ):
+        decode_strict_json(b"Infinity")
+
+
+def test_negative_infinity_constant_raises() -> None:
+    """`-Infinity` is not in RFC 8259; the strict helper rejects it."""
+    with pytest.raises(
+        ValueError, match="non-standard JSON numeric constant not allowed: '-Infinity'"
+    ):
+        decode_strict_json(b"-Infinity")
+
+
+def test_nan_in_object_value_raises() -> None:
+    """`NaN` inside an object value is rejected with a clear message."""
+    with pytest.raises(ValueError, match="non-standard JSON numeric constant not allowed: 'NaN'"):
+        decode_strict_json(b'{"k": NaN}')
+
+
+def test_infinity_in_array_value_raises() -> None:
+    """`Infinity` inside an array value is rejected with a clear message."""
+    with pytest.raises(
+        ValueError, match="non-standard JSON numeric constant not allowed: 'Infinity'"
+    ):
+        decode_strict_json(b"[1, Infinity, 3]")
