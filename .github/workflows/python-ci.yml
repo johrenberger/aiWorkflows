@@ -10,22 +10,18 @@ on:
       - '.github/workflows/python-ci.yml'
 jobs:
   test:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      # uv is pre-installed on the runner image at /usr/local/bin/uv (no
-      # per-job install needed). The Lean toolchain is pre-installed at
-      # /data/.elan/bin and is added to PATH for downstream steps.
-      - name: Add elan/lake to PATH
-        run: echo "/data/.elan/bin" >> "$GITHUB_PATH"
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
       - name: Cache uv dependencies
-        # actions/cache@v4 persists on the self-hosted runner host. Keyed
-        # on uv.lock so a dep bump invalidates the cache.
         uses: actions/cache@v4
         with:
           path: ~/.cache/uv
-          key: uv-${{ hashFiles('uv.lock') }}
+          key: uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
+          restore-keys: |
+            uv-${{ runner.os }}-
       - run: uv sync --group dev
-      # `make python-ci` runs format-check + lint + test (no Lean build).
-      # The Lean gate is owned by lean-ci.yml.
       - run: make python-ci
