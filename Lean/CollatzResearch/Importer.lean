@@ -1,5 +1,4 @@
 import CollatzResearch.Basic
-import CollatzResearch.Certificate
 
 /-!
 # Certificate importer — plumbing stub
@@ -95,16 +94,5 @@ def parseV1Record (_jsonBytes : String) : ParseResult DescentWitness := by
 file header. -/
 def parseJsonl (_bytes : String) : List (Except JsonParseError DescentWitness) := by
   sorry
-
-/-- The `LeanAccepts` predicate: the Lean-side mirror of "the Python checker
-accepted this certificate". This is what `check_certificate_sound` ranges
-over.
-
-**Stub status.** For now the predicate is defined as `DescentWitness.Valid`
-itself (the trivial case). The real implementation will import a parser
-result + a recomputed digest and connect them, and the bridge theorem
-will prove `LeanAccepts w → w.Valid` non-trivially. -/
-def LeanAccepts (w : DescentWitness) : Prop :=
-  DescentWitness.Valid w
 
 end CollatzResearch

@@ -1,4 +1,5 @@
 import CollatzResearch.Basic
+import CollatzResearch.Importer
 
 /-!
 # Certificate interface
@@ -96,5 +97,57 @@ theorem DescentWitness.trajectory_odd (start k : Nat) (h : Odd start) :
   induction k with
   | zero => exact h
   | succ k ih => exact acceleratedStep_odd_of_odd _ ih
+
+/-- The `LeanAccepts` predicate: the Lean-side mirror of "the Python checker
+accepted this certificate". This is what `check_certificate_sound` ranges
+over.
+
+**Stub status.** For now the predicate is defined as `DescentWitness.Valid`
+itself (the trivial case). The real implementation will incorporate the
+parser result (from `Importer.lean`) + a recomputed SHA-256 digest
+(`Digest.lean`, FFI target TBD) + a recomputed trajectory
+(`CollatzResearch.Basic.trajectory`). The bridge theorem will then
+prove `LeanAccepts w → w.Valid` non-trivially — reconstructing `Valid`
+from the imported fields **independently** (the anti-circularity
+property called out in `PLAN.md` Story 06b's risk section). -/
+def LeanAccepts (w : DescentWitness) : Prop :=
+  DescentWitness.Valid w
+
+/-- The formal acceptance-to-`Valid` bridge (Story 06b acceptance criterion 4).
+
+`LeanAccepts w` (from `Importer.lean`) is the Lean-side mirror of "the
+Python checker accepted this certificate". It is the predicate the
+bridge theorem ranges over. The full predicate will incorporate:
+  (a) the JSONL parser result (the imported `DescentWitness`),
+  (b) the recomputed SHA-256 digest over the canonical proof-bearing
+      fields (matching `python/collatz_research/canonical.py`),
+  (c) the recomputed accelerated trajectory via
+      `CollatzResearch.Basic.trajectory`,
+combined with the structural constraints encoded in `Valid`.
+
+`check_certificate_sound` is the formal statement that acceptance
+implies the structural `Valid` predicate. This is what the PR #10
+Codex review (P0) carved out from the original `Valid.sound`
+projection: the new theorem is *generic* over `w : DescentWitness`
+(no test-enumeration discharge) and is the *bridge* between the
+Python checker's accept/reject decision and the Lean `Valid`
+predicate.
+
+**Current status (Story 06b step 1.4):** the theorem shape is correct
+(quantified over all `w : DescentWitness`, statement matches the
+P0 carve-out). The proof is currently `intro h; exact h` because
+`LeanAccepts` is currently defined as `DescentWitness.Valid` itself
+(a placeholder; see `Importer.lean`). Once `LeanAccepts` is expanded
+to incorporate the parser result + recomputed digest + recomputed
+trajectory, the proof must reconstruct `Valid` from those imported
+fields **independently** — the anti-circularity property called out
+in `PLAN.md` Story 06b's risk section. Specifically, the proof
+cannot use `Valid` to discharge `LeanAccepts`; it must build `Valid`
+from the imported fields without circular reference. That is the
+substantive work that closes the M3 "formally established" claim
+language. -/
+theorem check_certificate_sound (w : DescentWitness) : LeanAccepts w → w.Valid := by
+  intro h
+  exact h
 
 end CollatzResearch
