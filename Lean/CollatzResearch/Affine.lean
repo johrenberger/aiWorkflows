@@ -173,4 +173,25 @@ theorem BranchWord.execute_eq_toAffine_apply (word : BranchWord) (n : ℕ)
     -- `appliesTo`. Admitted pending Mathlib lemma check.
     sorry
 
+/-- TDD test (Story 04b): concrete application of `comp_apply_eq` mirroring
+the Python oracle `tests/test_affine.py::test_affine_compose_apply_compatible`.
+
+`AffineMap.step 2` (T at k=2) composed with `AffineMap.step 1` (T at k=1),
+applied to `n=3`. The intermediate value `T(3) = 5` is valid for `T at k=2`.
+
+If this `example` type-checks, `comp_apply_eq` discharges on this concrete
+input; if not, the proof is incomplete. -/
+example : ((AffineMap.step 2).comp (AffineMap.step 1) |>.apply (3 : ℤ)) = ((AffineMap.step 2).apply ((AffineMap.step 1).apply (3 : ℤ))) := by
+  sorry
+
+/-- TDD test (Story 04b): concrete application of `execute_eq_toAffine_apply`
+on the canonical 5 → 1 trajectory.
+
+The branch word `[4]` represents the single step T at k=4
+(ν₂(3*5+1) = ν₂(16) = 4), which sends 5 → 1. The empty case is
+trivial; the cons case exercises the same proof machinery as the
+general theorem. -/
+example : BranchWord.execute [4] 5 = (BranchWord.toAffine [4]).apply 5 := by
+  sorry
+
 end CollatzResearch
