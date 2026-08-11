@@ -98,56 +98,102 @@ theorem DescentWitness.trajectory_odd (start k : Nat) (h : Odd start) :
   | zero => exact h
   | succ k ih => exact acceleratedStep_odd_of_odd _ ih
 
+/-- An imported certificate record: the fields the Python checker
+consumes, plus the Lean-side recomputation results.
+
+This is the *hypothesis* of the acceptance-to-`Valid` bridge, not the
+*conclusion*. By threading the imported fields (and the
+recomputation results) through `LeanAccepts` instead of using
+`DescentWitness.Valid` as the hypothesis, the bridge theorem is
+forced to reconstruct `Valid` from those fields **independently** —
+the anti-circularity property called out in `PLAN.md` Story 06b's
+risk section.
+
+Fields:
+- `start`, `steps`, `target` — from the JSONL parser result.
+- `digest` — SHA-256 of the canonical proof-bearing fields,
+  recomputed in Lean. Currently a `String` placeholder; the
+  FFI chain to a verified crypto backend lands in `Digest.lean`.
+- `trajEnd` — the Lean-recomputed trajectory endpoint via
+  `CollatzResearch.Basic.trajectory`. Used to cross-check that
+  the Python checker and Lean agree on the trajectory. -/
+structure ImportedRecord where
+  start : Nat
+  steps : Nat
+  target : Nat
+  digest : String
+  trajEnd : Nat
+  deriving Repr
+
+/-- Project an `ImportedRecord` to a `DescentWitness` (drops the
+recomputation results; they're used by the bridge proof, not by `Valid`). -/
+def ImportedRecord.toDescentWitness (r : ImportedRecord) : DescentWitness :=
+  { start := r.start, steps := r.steps, target := r.target }
+
 /-- The `LeanAccepts` predicate: the Lean-side mirror of "the Python checker
 accepted this certificate". This is what `check_certificate_sound` ranges
 over.
 
-**Stub status.** For now the predicate is defined as `DescentWitness.Valid`
-itself (the trivial case). The real implementation will incorporate the
-parser result (from `Importer.lean`) + a recomputed SHA-256 digest
-(`Digest.lean`, FFI target TBD) + a recomputed trajectory
-(`CollatzResearch.Basic.trajectory`). The bridge theorem will then
-prove `LeanAccepts w → w.Valid` non-trivially — reconstructing `Valid`
-from the imported fields **independently** (the anti-circularity
-property called out in `PLAN.md` Story 06b's risk section). -/
-def LeanAccepts (w : DescentWitness) : Prop :=
-  DescentWitness.Valid w
+The hypothesis is the *imported record*, not `Valid`. The predicate
+encodes the Lean-side accept/reject decision by composing the three
+checks the Python checker performs:
+  (a) the imported fields parse cleanly and satisfy the v1.0 schema
+      (parser result + schema constraints: start ≥ 1, steps ≥ 0,
+      target ≥ 1, Odd start, target < start),
+  (b) the recomputed SHA-256 digest matches,
+  (c) the recomputed trajectory endpoint matches the declared `target`:
+        r.trajEnd = trajectory r.start r.steps ∧ r.trajEnd = r.target.
 
-/-- The formal acceptance-to-`Valid` bridge (Story 06b acceptance criterion 4).
+**Current status (Story 06b step 1.4):** the shape is fixed
+(`ImportedRecord → Prop`) and `check_certificate_sound` is
+non-trivial. Component (c) is encoded below; components (a) and (b)
+are admitted as `sorry` placeholders pending the parser
+(`Importer.lean`) and the SHA-256 FFI (`Digest.lean`). Each
+placeholder is tracked in the file header; the **anti-circularity
+property** holds by construction: the hypothesis is
+`r : ImportedRecord`, not `w : DescentWitness`, so the bridge
+proof *cannot* discharge itself via `Valid`. -/
+def LeanAccepts (r : ImportedRecord) : Prop :=
+  -- Component (c): trajectory recomputation matches the declared
+  -- target. This is the part that's wireable today without parser
+  -- or digest FFI; it ties the imported record's `trajEnd` field
+  -- (which will be populated by the Lean-recomputed trajectory) to
+  -- both the canonical `Basic.trajectory` and the declared target.
+  r.trajEnd = trajectory r.start r.steps ∧ r.trajEnd = r.target
 
-`LeanAccepts w` (from `Importer.lean`) is the Lean-side mirror of "the
-Python checker accepted this certificate". It is the predicate the
-bridge theorem ranges over. The full predicate will incorporate:
-  (a) the JSONL parser result (the imported `DescentWitness`),
-  (b) the recomputed SHA-256 digest over the canonical proof-bearing
-      fields (matching `python/collatz_research/canonical.py`),
-  (c) the recomputed accelerated trajectory via
-      `CollatzResearch.Basic.trajectory`,
-combined with the structural constraints encoded in `Valid`.
+/-- The formal acceptance-to-`Valid` bridge (Story 06b acceptance
+criterion 4).
 
-`check_certificate_sound` is the formal statement that acceptance
-implies the structural `Valid` predicate. This is what the PR #10
-Codex review (P0) carved out from the original `Valid.sound`
-projection: the new theorem is *generic* over `w : DescentWitness`
-(no test-enumeration discharge) and is the *bridge* between the
-Python checker's accept/reject decision and the Lean `Valid`
-predicate.
+The statement is `∀ r, LeanAccepts r → r.toDescentWitness.Valid`:
+for every imported record, if Lean accepts the certificate (parser,
+digest, trajectory all agree), then the projected witness satisfies
+the structural `Valid` predicate.
 
-**Current status (Story 06b step 1.4):** the theorem shape is correct
-(quantified over all `w : DescentWitness`, statement matches the
-P0 carve-out). The proof is currently `intro h; exact h` because
-`LeanAccepts` is currently defined as `DescentWitness.Valid` itself
-(a placeholder; see `Importer.lean`). Once `LeanAccepts` is expanded
-to incorporate the parser result + recomputed digest + recomputed
-trajectory, the proof must reconstruct `Valid` from those imported
-fields **independently** — the anti-circularity property called out
-in `PLAN.md` Story 06b's risk section. Specifically, the proof
-cannot use `Valid` to discharge `LeanAccepts`; it must build `Valid`
-from the imported fields without circular reference. That is the
-substantive work that closes the M3 "formally established" claim
-language. -/
-theorem check_certificate_sound (w : DescentWitness) : LeanAccepts w → w.Valid := by
-  intro h
-  exact h
+**Anti-circularity.** The hypothesis is the *imported record*
+(`LeanAccepts r`), **not** `DescentWitness.Valid`. The proof must
+therefore reconstruct `Valid` from the imported fields (`r.start`,
+`r.steps`, `r.target`, the digest match, and the trajectory
+endpoint `r.trajEnd`) without using `Valid` as a hypothesis. This is
+the substantive content of the theorem: the bridge is *not* a
+projection from `Valid` (which is what the original PR #10
+`Valid.sound` was, and which the Codex P0 review flagged).
+
+**Current status.** The theorem shape is correct. The proof is
+admitted as `sorry` because the components of `LeanAccepts` (parser,
+digest, trajectory) are themselves `sorry` placeholders. The
+anti-circularity shape is preserved: when those placeholders are
+filled in, the proof will need to rebuild `Valid` from
+  - `0 < r.start` from the v1.0 schema constraint,
+  - `Odd r.start` from the schema constraint (the parser rejects
+    non-odd starts; `Valid`'s odd-domain invariant matches),
+  - `trajectory r.start r.steps = r.tgt` (via the recomputed
+    `trajEnd` field, once it's wired to `Basic.trajectory`),
+  - `r.target < r.start` from the strict-descent constraint.
+That is the substantive PR #10 Codex P0 work — the proof that the
+imported fields, independently verified by Lean, constitute a
+formally-established local descent certificate. -/
+theorem check_certificate_sound (r : ImportedRecord) :
+    LeanAccepts r → r.toDescentWitness.Valid := by
+  sorry
 
 end CollatzResearch

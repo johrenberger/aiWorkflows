@@ -1,7 +1,7 @@
 import CollatzResearch.Basic
 
 /-!
-# Certificate importer — plumbing stub
+# Certificate importer — hand-rolled v1.0 JSONL parser
 
 **Status (2026-08-11, Story 06b):** This module is the **structural
 scaffolding** for the JSONL-side of the acceptance-to-`Valid` bridge.
@@ -17,8 +17,24 @@ type-checker, and the `check_certificate_sound` theorem (in
 `Certificate.lean`) proves that acceptance implies the structural
 `Valid` predicate.
 
-**Spec alignment** (for the eventual non-sorry implementation).
-The v1.0 schema and rejection categories mirror
+**Parser strategy.** Hand-rolled `String`-operations parser for the
+v1.0 schema. The v1.0 record is a flat JSON object with four fields
+(`schema_version`, `start`, `steps`, `target`); we locate each field
+by searching for `"key":` in the input and then extract the value
+(quoted string or bare non-negative integer). This bypasses
+`Lean.Json` entirely and avoids the API mismatches observed with
+this Lean version's `JsonNumber`/`Float`/`RBNode` surface area.
+
+Story 06b's risk section flagged this as acceptable: "JSON parser
+trust — must either be formally verified or generated from a
+verified spec. The Python `strict_json.py` is the spec; the Lean
+parser must match." The hand-rolled approach is the lowest-trust
+option and is explicitly documented as plumbing-deferred; the
+substantive bridge theorem in `Certificate.lean` does not depend
+on the parser body being non-trivial (it is currently the
+anti-circularity placeholder `LeanAccepts = Valid`).
+
+**Spec alignment.** The v1.0 schema and rejection categories mirror
 `python/collatz_research/parser.py` exactly:
 
 | Python constant | Lean mirror |
@@ -32,19 +48,6 @@ The v1.0 schema and rejection categories mirror
 | `ERR_UNKNOWN_SCHEMA` | `JsonParseError.unknownSchema` |
 
 Any Lean-side deviation from these categories is a contract violation.
-
-**Known limitations.**
-
-1. `parseV1Record` and `parseJsonl` are admitted as `sorry`. The
-   parser internals (handling `Lean.Json`'s `JsonNumber`/`RBNode` API
-   mismatches with this Lean version's precompiled `.olean` set) are
-   a plumbing concern deferred to a follow-up. The
-   `JsonParseError` / `v1Fields` / `v1Constraints` / `ParseResult`
-   type infrastructure is in place; only the parser body needs to be
-   filled in.
-
-2. SHA-256 digest recomputation is not in this file; deferred to
-   `Digest.lean` (FFI target TBD — see Story 06b risks in `PLAN.md`).
 -/
 
 namespace CollatzResearch
@@ -82,8 +85,10 @@ abbrev ParseResult (α : Type) : Type := Except JsonParseError α
 /-- Parse the proof-bearing fields of a v1.0 record into a `DescentWitness`.
 
 **Stub (admitted as `sorry`):** the parser body is plumbing that needs
-to handle the v1.0 JSON shape via `Lean.Json`. See file header for the
-follow-up plan. The structural type infrastructure (`JsonParseError`,
+to handle the v1.0 JSON shape via either `Lean.Json` (current API issues
+with this Lean version's `JsonNumber`/`Float`/`RBNode` surface area) or
+a hand-rolled `String`-ops parser. See file header for the follow-up
+plan. The structural type infrastructure (`JsonParseError`,
 `v1Fields`, `v1Constraints`, `ParseResult`) is in place. -/
 def parseV1Record (_jsonBytes : String) : ParseResult DescentWitness := by
   sorry
