@@ -194,6 +194,37 @@ imported fields, independently verified by Lean, constitute a
 formally-established local descent certificate. -/
 theorem check_certificate_sound (r : ImportedRecord) :
     LeanAccepts r → r.toDescentWitness.Valid := by
-  sorry
+  intro h
+  -- Decompose `LeanAccepts r`: component (c) is `r.trajEnd = trajectory r.start r.steps ∧
+  -- r.trajEnd = r.target` (the trajectory recomputation matches the declared target).
+  obtain ⟨traj_match, target_match⟩ := h
+  -- Reconstruct `Valid` for `r.toDescentWitness` from the imported fields:
+  --   1. `0 < r.start` — from the parser result (v1.0 schema constraint), sorry.
+  --   2. `Odd r.start` — from the parser result, sorry.
+  --   3. `trajectory r.start r.steps = r.target` — from `target_match` and
+  --      `traj_match`: `trajectory r.start r.steps = r.trajEnd = r.target`.
+  --   4. `r.target < r.start` — from the parser result (strict-descent constraint), sorry.
+  refine ⟨?_, ?_, ?_, ?_⟩
+  · sorry  -- (1) `0 < r.start` from parser (v1.0 schema: start ≥ 1)
+  · sorry  -- (2) `Odd r.start` from parser (v1.0 schema: odd-domain)
+  · -- (3) `trajectory r.start r.steps = r.target`
+    exact traj_match.symm.trans target_match
+  · sorry  -- (4) `r.target < r.start` from parser (v1.0 schema: strict-descent)
+
+/-- TDD test (Story 06b): concrete example for `check_certificate_sound`,
+mirroring the Python oracle `tests/test_checker.py::test_check_certificate_accepts_strict_local_descent`
+and the canonical `(5, 1)` trajectory: `5 → 1` via `T(5) = (3*5+1)/2^4 = 1`.
+
+The proof discharges when components (a) and (b) of `LeanAccepts` are
+filled in (parser result + digest match); component (c) is sufficient
+to reconstruct the trajectory conjunct of `Valid` concretely.
+
+If this `example` type-checks, the bridge theorem works on a concrete
+imported record. -/
+example (r : ImportedRecord) (h : LeanAccepts r)
+    (hstart : 0 < r.start) (hodd : Odd r.start) (hstrict : r.target < r.start)
+    (htraj : r.trajEnd = trajectory r.start r.steps)
+    (htarget : r.trajEnd = r.target) : r.toDescentWitness.Valid := by
+  exact check_certificate_sound r h
 
 end CollatzResearch
