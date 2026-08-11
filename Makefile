@@ -34,11 +34,8 @@ test:
 lean:
 	lake build
 
-# Run certificate checker. Stub until Story 05 lands — exits with a clear
-# error so CI surfaces the missing capability rather than silently passing.
 cert-test:
-	@echo "cert-test: certificate checker not yet implemented (Story 05 dependency)."
-	@exit 1
+	uv run pytest tests/test_checker.py tests/test_checker_lean.py
 
 # Canonical reproduction command. Runs the Python smoke check and the
 # experiment smoke. After Story 09 lands, this will also regenerate canonical
