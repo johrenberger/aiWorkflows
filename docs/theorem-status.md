@@ -29,6 +29,9 @@
 | `Partition.trivial_valid` | Checked | `CollatzResearch.Residues` | All elements of the trivial partition are `< m` |
 | `Partition.trivial_complete` | Checked | `CollatzResearch.Residues` | The trivial partition covers all of `[0, m)` |
 | `Partition.trivial_partition` | Defined (function) | `CollatzResearch.Residues` | The trivial partition as a valid `Partition m` |
+| `DescentWitness.Valid.ends_at` | Checked | `CollatzResearch.Certificate` | A valid local-descent witness has the declared accelerated-trajectory endpoint |
+| `DescentWitness.Valid.strict_descent` | Checked | `CollatzResearch.Certificate` | A valid local-descent witness has target strictly below start |
+| `DescentWitness.Valid.sound` | Checked | `CollatzResearch.Certificate` | Generic checker-soundness theorem: valid witness implies declared endpoint and strict descent |
 | Global convergence | Not started | — | No claim |
 | Nontrivial cycle exclusion | Not started | — | No claim |
 
