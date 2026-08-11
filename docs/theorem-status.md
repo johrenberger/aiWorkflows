@@ -29,9 +29,12 @@
 | `Partition.trivial_valid` | Checked | `CollatzResearch.Residues` | All elements of the trivial partition are `< m` |
 | `Partition.trivial_complete` | Checked | `CollatzResearch.Residues` | The trivial partition covers all of `[0, m)` |
 | `Partition.trivial_partition` | Defined (function) | `CollatzResearch.Residues` | The trivial partition as a valid `Partition m` |
+| `DescentWitness.Valid` | Defined (predicate) | `CollatzResearch.Certificate` | A valid local-descent witness has positive-odd start, the declared accelerated-trajectory endpoint, and target strictly below start (P1 from PR #10 Codex review: odd-domain invariant matching Python's `accelerated_step`) |
 | `DescentWitness.Valid.ends_at` | Checked | `CollatzResearch.Certificate` | A valid local-descent witness has the declared accelerated-trajectory endpoint |
 | `DescentWitness.Valid.strict_descent` | Checked | `CollatzResearch.Certificate` | A valid local-descent witness has target strictly below start |
-| `DescentWitness.Valid.sound` | Checked | `CollatzResearch.Certificate` | Generic checker-soundness theorem: valid witness implies declared endpoint and strict descent |
+| `DescentWitness.Valid.start_pos_odd` | Checked | `CollatzResearch.Certificate` | A valid local-descent witness has a positive, odd start (matching Python's `accelerated_step`) |
+| `acceleratedStep_odd_of_odd` | Pending | `CollatzResearch.Certificate` | `acceleratedStep` preserves oddness on the odd domain (admitted `sorry`; pending Mathlib `Nat.factorization_div` / `Nat.factorization_pow` chain — same Mathlib blocker as `Dynamics.lean::acceleratedStep_positive_of_odd`, tracked as Story 02c/03c workstream) |
+| `DescentWitness.trajectory_odd` | Checked | `CollatzResearch.Certificate` | Oddness is preserved along the accelerated trajectory (induction on `steps`, uses `acceleratedStep_odd_of_odd`) |
 | Global convergence | Not started | — | No claim |
 | Nontrivial cycle exclusion | Not started | — | No claim |
 
