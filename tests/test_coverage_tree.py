@@ -11,15 +11,13 @@ import copy
 import json
 
 import pytest
-
 from collatz_research.tree import (
-    CoverageLeaf,
-    CoverageNode,
-    CoverageTree,
-    CoverageTreeError,
     ERR_HAS_CYCLE,
     ERR_NOT_COMPLETE,
     ERR_NOT_DISJOINT,
+    CoverageNode,
+    CoverageTree,
+    CoverageTreeError,
     check_tree,
     deterministic_children,
     from_dict,
@@ -29,7 +27,6 @@ from collatz_research.tree import (
     sample_tree,
     to_dict,
 )
-
 
 # ---- Happy path ----
 
@@ -56,9 +53,7 @@ def test_sample_tree_round_trips_through_dict():
 
 def test_deterministic_children_order_is_sorted_by_residue():
     tree = sample_tree()
-    reversed_children = {
-        r: tree.root.children[r] for r in reversed(list(tree.root.children))
-    }
+    reversed_children = {r: tree.root.children[r] for r in reversed(list(tree.root.children))}
     reverse_node = CoverageNode(
         modulus=tree.root.modulus,
         partition=tree.root.partition,

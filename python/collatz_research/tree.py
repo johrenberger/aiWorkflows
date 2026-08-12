@@ -24,7 +24,6 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
-
 # Stable error categories; uppercase. Mirrors the partitions.py style.
 ERR_NOT_COMPLETE = "TREE_NOT_COMPLETE"
 ERR_NOT_DISJOINT = "TREE_NOT_DISJOINT"
@@ -55,7 +54,7 @@ class CoverageNode:
 
     modulus: int
     partition: tuple[int, ...]
-    children: dict[int, "CoverageNode | CoverageLeaf"] = field(default_factory=dict)
+    children: dict[int, CoverageNode | CoverageLeaf] = field(default_factory=dict)
 
 
 @dataclass
@@ -98,8 +97,7 @@ def to_dict(tree: CoverageTree) -> dict[str, Any]:
         "max_depth": tree.max_depth,
         "root": node_d(tree.root),
         "leaves": [
-            {"leaf_id": lf.leaf_id, "leaf_property": lf.leaf_property}
-            for lf in tree.leaves
+            {"leaf_id": lf.leaf_id, "leaf_property": lf.leaf_property} for lf in tree.leaves
         ],
     }
 
@@ -130,8 +128,8 @@ def from_dict(d: dict[str, Any]) -> CoverageTree:
     return CoverageTree(
         root=node_n(d["root"]),
         leaves=tuple(
-            CoverageLeaf(leaf_id=l["leaf_id"], leaf_property=l["leaf_property"])
-            for l in d["leaves"]
+            CoverageLeaf(leaf_id=leaf["leaf_id"], leaf_property=leaf["leaf_property"])
+            for leaf in d["leaves"]
         ),
         max_depth=d["max_depth"],
         schema_version=d.get("schema", "collatz-research/coverage-tree@0.1.0"),
@@ -159,10 +157,7 @@ def is_disjoint(tree: CoverageTree) -> bool:
     def node_ok(n: CoverageNode) -> bool:
         if not _is_disjoint_partition(n.modulus, n.partition):
             return False
-        return all(
-            node_ok(c) if isinstance(c, CoverageNode) else True
-            for c in n.children.values()
-        )
+        return all(node_ok(c) if isinstance(c, CoverageNode) else True for c in n.children.values())
 
     return node_ok(tree.root)
 
@@ -173,10 +168,7 @@ def is_complete(tree: CoverageTree) -> bool:
     def node_ok(n: CoverageNode) -> bool:
         if set(n.children.keys()) != set(n.partition):
             return False
-        return all(
-            node_ok(c) if isinstance(c, CoverageNode) else True
-            for c in n.children.values()
-        )
+        return all(node_ok(c) if isinstance(c, CoverageNode) else True for c in n.children.values())
 
     return node_ok(tree.root)
 
@@ -218,13 +210,9 @@ def check_tree(tree: CoverageTree) -> None:
     if not has_no_cycles(tree):
         raise CoverageTreeError(ERR_HAS_CYCLE, "tree revisits a node or exceeds max_depth")
     if not is_disjoint(tree):
-        raise CoverageTreeError(
-            ERR_NOT_DISJOINT, "tree has overlapping or out-of-range residues"
-        )
+        raise CoverageTreeError(ERR_NOT_DISJOINT, "tree has overlapping or out-of-range residues")
     if not is_complete(tree):
-        raise CoverageTreeError(
-            ERR_NOT_COMPLETE, "tree is missing children for some residues"
-        )
+        raise CoverageTreeError(ERR_NOT_COMPLETE, "tree is missing children for some residues")
 
 
 # ---- Determinism ----
@@ -264,7 +252,5 @@ def sample_tree() -> CoverageTree:
         partition=(1, 2),
         children={1: leaves[2], 2: leaves[3]},
     )
-    root = CoverageNode(
-        modulus=4, partition=(1, 3), children={1: inner1, 3: inner2}
-    )
+    root = CoverageNode(modulus=4, partition=(1, 3), children={1: inner1, 3: inner2})
     return CoverageTree(root=root, leaves=leaves, max_depth=2)
