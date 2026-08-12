@@ -1,19 +1,29 @@
 """Coverage-tree model and checker (Story 07, M4 Finite coverage).
 
 A `CoverageTree` is a rooted tree whose internal nodes carry a residue
-partition (residue list in `[0, m)`, no duplicates; coverage of `[0, m)`
-is a tree-level concern, not a partition concern) and one child per
-residue class. Leaves carry a `leaf_property` symbol.
+partition (residues in `[0, m)`, non-bool ints, no duplicates; coverage
+of `[0, m)` is a tree-level concept distinct from partition validity)
+and one child per residue class. Leaves carry a `leaf_property` symbol.
 
 Checks (per `check_tree`, ordered):
 
-1. `disjoint` — every internal node's partition is internally consistent
-   (residues are non-bool ints in `[0, m)` with no duplicates). Coverage
-   of `[0, m)` is `is_complete`'s job, not `is_disjoint`'s.
-2. `complete` — every residue class declared in the partition has a child.
-3. `acyclic` — depth ≤ `max_depth` and no node is revisited through its
-   ancestry (tracked by `id()` along the parent → child path, so distinct
-   subtrees with identical shape are not flagged).
+1. `acyclic` — depth ≤ `max_depth` and no node is revisited through its
+   ancestry (tracked by `id()` along the parent → child path).
+2. `leaves_consistent` — the top-level `leaves` field is a one-to-one
+   match with leaves reachable from `root`, and `leaf_id` is unique.
+   (Codex review P1.1: arbitrary/missing/duplicate descriptors
+   otherwise pass `check_tree`.)
+3. `disjoint` — every internal node's partition is partition-valid.
+4. `has_child_for_each_declared_residue` — at every internal node,
+   every residue class declared in the partition has a child.
+   Code-named this way (not `is_complete`) because partition-completeness
+   is NOT full coverage of `[0, m)`; the latter depends on a
+   `rootDomain` predicate introduced in the Story 07 follow-up
+   (Codex review naming note).
+
+External interchange (`from_dict`) is fail-closed: malformed input maps
+to `CoverageTreeError(ERR_INVALID_NODE, ...)` rather than leaking
+`TypeError` / `ValueError` / `KeyError` (Codex review P2).
 
 Exporters + the Python checker iterate children in sorted-by-residue
 order, so round-trips and external checks are deterministic.
@@ -25,10 +35,13 @@ from dataclasses import dataclass, field
 from typing import Any
 
 # Stable error categories; uppercase. Mirrors the partitions.py style.
-ERR_NOT_COMPLETE = "TREE_NOT_COMPLETE"
+ERR_NOT_CHILD_TOTAL = "TREE_NOT_CHILD_TOTAL"
 ERR_NOT_DISJOINT = "TREE_NOT_DISJOINT"
 ERR_HAS_CYCLE = "TREE_HAS_CYCLE"
-ERR_INVALID_NODE = "INVALID_NODE"
+ERR_LEAVES_MISMATCH = "TREE_LEAVES_MISMATCH"
+ERR_INVALID_NODE = "TREE_INVALID_NODE"
+
+EXPECTED_SCHEMA = "collatz-research/coverage-tree@0.1.0"
 
 
 class CoverageTreeError(Exception):
@@ -59,7 +72,12 @@ class CoverageNode:
 
 @dataclass
 class CoverageTree:
-    """Rooted coverage tree with a depth bound."""
+    """Rooted coverage tree with a depth bound.
+
+    `leaves` is the top-level leaf descriptor list; `check_tree`
+    enforces a one-to-one correspondence with leaves reachable from
+    `root` (Codex review P1.1 — see `leaves_consistent`).
+    """
 
     root: CoverageNode
     leaves: tuple[CoverageLeaf, ...]
@@ -67,7 +85,7 @@ class CoverageTree:
     schema_version: str = "collatz-research/coverage-tree@0.1.0"
 
 
-# ---- JSONL I/O (deterministic; sorted by residue) ----
+# ---- JSONL I/O (deterministic; sorted by residue; fail-closed) ----
 
 
 def to_dict(tree: CoverageTree) -> dict[str, Any]:
@@ -103,45 +121,161 @@ def to_dict(tree: CoverageTree) -> dict[str, Any]:
 
 
 def from_dict(d: dict[str, Any]) -> CoverageTree:
-    """Deserialize a tree from a dict; raises `CoverageTreeError` on shape mismatch."""
+    """Deserialize a tree from a dict. Fail-closed (Codex P2).
 
-    def node_n(n: dict[str, Any]) -> CoverageNode:
-        kind = n.get("kind")
-        if kind != "internal":
-            raise CoverageTreeError(ERR_INVALID_NODE, f"expected internal node, got {kind!r}")
-        children: dict[int, CoverageNode | CoverageLeaf] = {}
-        for r_str, c_d in n["children"].items():
-            r = int(r_str)
-            if c_d.get("kind") == "leaf":
-                children[r] = CoverageLeaf(
-                    leaf_id=c_d["leaf_id"],
-                    leaf_property=c_d["leaf_property"],
-                )
-            else:
-                children[r] = node_n(c_d)
-        return CoverageNode(
-            modulus=n["modulus"],
-            partition=tuple(n["partition"]),
-            children=children,
+    Maps malformed input — wrong schema, missing fields, malformed
+    values — to `CoverageTreeError(ERR_INVALID_NODE, ...)` rather than
+    leaking `TypeError` / `ValueError` / `KeyError`.
+    """
+    if not isinstance(d, dict):
+        raise CoverageTreeError(
+            ERR_INVALID_NODE,
+            f"expected JSON object, got {type(d).__name__}",
+        )
+    schema = d.get("schema")
+    if schema != EXPECTED_SCHEMA:
+        raise CoverageTreeError(
+            ERR_INVALID_NODE,
+            f"unsupported schema: {schema!r}; expected {EXPECTED_SCHEMA!r}",
         )
 
+    try:
+        root = _node_from_dict(d["root"])
+        leaves_data = d["leaves"]
+        max_depth_raw = d["max_depth"]
+    except (TypeError, ValueError, KeyError) as exc:
+        raise CoverageTreeError(ERR_INVALID_NODE, f"malformed tree dict: {exc}") from exc
+
+    if not isinstance(leaves_data, list):
+        raise CoverageTreeError(
+            ERR_INVALID_NODE,
+            f"leaves must be list, got {type(leaves_data).__name__}",
+        )
+    if not isinstance(max_depth_raw, int) or isinstance(max_depth_raw, bool):
+        raise CoverageTreeError(
+            ERR_INVALID_NODE,
+            f"max_depth must be int, got {type(max_depth_raw).__name__}",
+        )
+
+    try:
+        leaves = tuple(
+            CoverageLeaf(
+                leaf_id=leaf["leaf_id"],
+                leaf_property=leaf["leaf_property"],
+            )
+            for leaf in leaves_data
+        )
+    except (TypeError, KeyError) as exc:
+        raise CoverageTreeError(ERR_INVALID_NODE, f"malformed leaf entry: {exc}") from exc
+
     return CoverageTree(
-        root=node_n(d["root"]),
-        leaves=tuple(
-            CoverageLeaf(leaf_id=leaf["leaf_id"], leaf_property=leaf["leaf_property"])
-            for leaf in d["leaves"]
-        ),
-        max_depth=d["max_depth"],
-        schema_version=d.get("schema", "collatz-research/coverage-tree@0.1.0"),
+        root=root,
+        leaves=leaves,
+        max_depth=max_depth_raw,
+        schema_version=schema,
     )
+
+
+def _node_from_dict(n: Any) -> CoverageNode:
+    """Internal: parse a single CoverageNode dict; fail-closed."""
+    if not isinstance(n, dict):
+        raise CoverageTreeError(
+            ERR_INVALID_NODE,
+            f"expected node object, got {type(n).__name__}",
+        )
+    try:
+        kind = n["kind"]
+        modulus = n["modulus"]
+        partition = n["partition"]
+        children_data = n["children"]
+    except (KeyError, TypeError) as exc:
+        raise CoverageTreeError(ERR_INVALID_NODE, f"node missing required field: {exc}") from exc
+
+    if kind != "internal":
+        raise CoverageTreeError(ERR_INVALID_NODE, f"expected internal node, got {kind!r}")
+    if not isinstance(modulus, int) or isinstance(modulus, bool):
+        raise CoverageTreeError(
+            ERR_INVALID_NODE,
+            f"modulus must be int, got {type(modulus).__name__}",
+        )
+    if not isinstance(partition, list | tuple):
+        raise CoverageTreeError(
+            ERR_INVALID_NODE,
+            f"partition must be list/tuple, got {type(partition).__name__}",
+        )
+    if not isinstance(children_data, dict):
+        raise CoverageTreeError(
+            ERR_INVALID_NODE,
+            f"children must be object, got {type(children_data).__name__}",
+        )
+
+    children: dict[int, CoverageNode | CoverageLeaf] = {}
+    for r_str, c_d in children_data.items():
+        try:
+            r = int(r_str)
+        except (TypeError, ValueError) as exc:
+            raise CoverageTreeError(
+                ERR_INVALID_NODE,
+                f"child key {r_str!r} is not an int-convertible residue",
+            ) from exc
+        kind_c = c_d.get("kind") if isinstance(c_d, dict) else None
+        if kind_c == "leaf":
+            leaf_id = c_d.get("leaf_id")
+            leaf_property = c_d.get("leaf_property")
+            if not isinstance(leaf_id, str) or not isinstance(leaf_property, str):
+                raise CoverageTreeError(
+                    ERR_INVALID_NODE,
+                    (
+                        f"leaf fields must be str; got "
+                        f"{type(leaf_id).__name__}/{type(leaf_property).__name__}"
+                    ),
+                )
+            children[r] = CoverageLeaf(leaf_id=leaf_id, leaf_property=leaf_property)
+        else:
+            children[r] = _node_from_dict(c_d)
+
+    return CoverageNode(
+        modulus=modulus,
+        partition=tuple(partition),
+        children=children,
+    )
+
+
+# ---- Tree walks ----
+
+
+def deterministic_children(
+    n: CoverageNode,
+) -> list[tuple[int, CoverageNode | CoverageLeaf]]:
+    """Sorted-by-residue deterministic iteration order."""
+    return [(r, n.children[r]) for r in sorted(n.children.keys())]
+
+
+def reachable_leaves(root: CoverageNode) -> tuple[CoverageLeaf, ...]:
+    """Walk the tree deterministically and return every leaf reachable
+    from `root`. Prerequisite for `leaves_consistent` (Codex P1.1).
+    """
+    out: list[CoverageLeaf] = []
+
+    def walk(n: CoverageNode) -> None:
+        for _r, c in deterministic_children(n):
+            if isinstance(c, CoverageLeaf):
+                out.append(c)
+            else:
+                walk(c)
+
+    walk(root)
+    return tuple(out)
 
 
 # ---- Checkers ----
 
 
 def _is_disjoint_partition(modulus: int, partition: tuple[int, ...]) -> bool:
-    """Partition is internally consistent: residues are non-bool ints in `[0, m)`
-    with no duplicates. Does NOT check coverage of `[0, m)` — that's `is_complete`.
+    """Partition is internally consistent: residues are non-bool ints in
+    `[0, m)` with no duplicates. Does NOT check coverage of `[0, m)` —
+    coverage is a separate invariant scoped under the Story 07 rootDomain
+    follow-up.
     """
     for r in partition:
         if not isinstance(r, int) or isinstance(r, bool):
@@ -162,8 +296,16 @@ def is_disjoint(tree: CoverageTree) -> bool:
     return node_ok(tree.root)
 
 
-def is_complete(tree: CoverageTree) -> bool:
-    """`True` iff every residue class declared in the partition has a child."""
+def has_child_for_each_declared_residue(tree: CoverageTree) -> bool:
+    """`True` iff at every internal node, every residue class declared in
+    the partition has a child.
+
+    Renamed from `is_complete` per Codex review naming note: this is
+    **partition-completeness** (every declared residue → child), NOT
+    full `[0, m)` coverage. Full root-domain coverage is a Story 07
+    follow-up and depends on the tree's `rootDomain` predicate, which
+    the Lean layer introduces in the next story.
+    """
 
     def node_ok(n: CoverageNode) -> bool:
         if set(n.children.keys()) != set(n.partition):
@@ -173,11 +315,28 @@ def is_complete(tree: CoverageTree) -> bool:
     return node_ok(tree.root)
 
 
+def leaves_consistent(tree: CoverageTree) -> bool:
+    """`True` iff (Codex P1.1):
+    - The set of leaves reachable from `root` equals `set(tree.leaves)`.
+    - All `leaf_id` values across `tree.leaves` are unique.
+
+    Catches arbitrary, missing, duplicate, and unreachable (but listed)
+    descriptors in `CoverageTree.leaves`.
+    """
+    reachable = set(reachable_leaves(tree.root))
+    top = set(tree.leaves)
+    if reachable != top:
+        return False
+    if len({leaf.leaf_id for leaf in tree.leaves}) != len(tree.leaves):
+        return False
+    return True
+
+
 def has_no_cycles(tree: CoverageTree) -> bool:
-    """`True` iff depth at every node stays within `max_depth` and no node is
-    revisited through its parent → child ancestry. The cycle test is tracked
-    by Python `id()` along the current descent path, so distinct subtrees
-    with identical shape are not flagged (only true ancestry revisits).
+    """`True` iff depth ≤ `max_depth` at every node and no node is
+    revisited through its parent → child ancestry. The cycle test is
+    tracked by Python `id()` along the current descent path, so distinct
+    subtrees with identical shape are not flagged.
     """
 
     def node_ok(n: CoverageNode, depth: int, path_ids: frozenset[int]) -> bool:
@@ -191,7 +350,6 @@ def has_no_cycles(tree: CoverageTree) -> bool:
                 if not node_ok(c, depth + 1, path_ids):
                     return False
             else:
-                # Leaf: must also respect max_depth.
                 if depth + 1 > tree.max_depth:
                     return False
         return True
@@ -200,32 +358,36 @@ def has_no_cycles(tree: CoverageTree) -> bool:
 
 
 def check_tree(tree: CoverageTree) -> None:
-    """Run acyclic → disjoint → complete checks; raise on first failure.
+    """Run acyclic → leaves-consistent → disjoint → child-total checks.
 
-    Cycle detection runs first because a true ancestry revisit would make
-    `is_disjoint` and `is_complete` infinite-recurse (Python RecursionError)
-    on the loop. Detecting acyclicity up-front turns infinite-recurse into
-    a clean category-stable error.
+    Order rationale:
+    - `acyclic` first: a real ancestry cycle makes downstream recursion
+      unsafe.
+    - `leaves_consistent` next: structural coherence; walks the tree
+      cheaply to cross-check the top-level field.
+    - `disjoint` and `child_total` last: same internal structure, runs
+      only after structural checks pass.
     """
     if not has_no_cycles(tree):
         raise CoverageTreeError(ERR_HAS_CYCLE, "tree revisits a node or exceeds max_depth")
+    if not leaves_consistent(tree):
+        raise CoverageTreeError(
+            ERR_LEAVES_MISMATCH,
+            (
+                "tree.leaves does not match leaves reachable from root "
+                "(missing, extra, unreachable-but-listed, or duplicate leaf_id)"
+            ),
+        )
     if not is_disjoint(tree):
         raise CoverageTreeError(ERR_NOT_DISJOINT, "tree has overlapping or out-of-range residues")
-    if not is_complete(tree):
-        raise CoverageTreeError(ERR_NOT_COMPLETE, "tree is missing children for some residues")
+    if not has_child_for_each_declared_residue(tree):
+        raise CoverageTreeError(
+            ERR_NOT_CHILD_TOTAL,
+            "tree is missing children for some residues declared in the partition",
+        )
 
 
-# ---- Determinism ----
-
-
-def deterministic_children(
-    n: CoverageNode,
-) -> list[tuple[int, CoverageNode | CoverageLeaf]]:
-    """Sorted-by-residue deterministic iteration order."""
-    return [(r, n.children[r]) for r in sorted(n.children.keys())]
-
-
-# ---- Sample demonstrator (depth-2, root uses only odd residues) ----
+# ---- Sample demonstrator ----
 
 
 def sample_tree() -> CoverageTree:
@@ -233,8 +395,9 @@ def sample_tree() -> CoverageTree:
     modulus 3 each → all residues (1, 2) → 4 leaves total.
 
     The root partition is intentionally non-covering (only odd residues
-    at modulus 4) to demonstrate that partition validity is disjoint-only
-    and coverage is a separate tree-level invariant.
+    at modulus 4) so the demonstrator exercises the deliberate
+    distinction between partition-completeness (`has_child_for_each_...`)
+    and the still-followup root-domain coverage property.
     """
     leaves = (
         CoverageLeaf(leaf_id="leaf_1_2", leaf_property="L(1,2)"),
