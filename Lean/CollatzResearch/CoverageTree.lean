@@ -33,8 +33,15 @@ The proof uses both hypotheses — `hv : ValidTree t` for the depth
 bound and `hic : IsComplete t` for the residue coverage — so
 `hv` is no longer unused.
 
-Claim level: `formally established` per the v2 github-pr-workflow
-skill (Story 07b / round-4 — substantive proof body).
+Claim level: `preparatory` per the v2 github-pr-workflow skill.
+The theorem proves total structural **reachability** of a nonempty
+leaf descriptor over positive naturals — it does not formalize
+the declared `leafProperty` for the reached input, nor relate the
+tree to Collatz/Syracuse dynamics. M4 Finite coverage stays open
+pending a semantic leaf predicate (see Codex P1 scope note on PR
+#15 review of `e0d1203`, 2026-08-12T23:48:17Z). Promoting to
+`formally established` requires a `leafProperty`-indexed semantic
+predicate plus a proof that descend lands a witness satisfying it.
 -/
 
 import Mathlib

@@ -228,9 +228,7 @@ def test_mutation_empty_leaf_id_fails_leaf_id_non_empty():
     tree = sample_tree()
     inner1 = tree.root.children[1]
     reachable_leaf = inner1.children[1]  # leaves[0]
-    mutated_leaf = CoverageLeaf(
-        leaf_id="", leaf_property=reachable_leaf.leaf_property
-    )
+    mutated_leaf = CoverageLeaf(leaf_id="", leaf_property=reachable_leaf.leaf_property)
     inner1.children[1] = mutated_leaf
     tree.leaves = (mutated_leaf,) + tree.leaves[1:]
     # structural checks still pass

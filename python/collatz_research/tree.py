@@ -410,7 +410,11 @@ def check_tree(tree: CoverageTree) -> None:
     if not leaf_id_non_empty(tree):
         raise CoverageTreeError(
             ERR_LEAF_ID_EMPTY,
-            "tree.leaves contains a leaf with an empty leaf_id (required by the Lean coverage_tree_soundness proof body's `verified` predicate)",
+            (
+                "tree.leaves contains a leaf with empty leaf_id "
+                "(required by the Lean coverage_tree_soundness "
+                "proof body's `verified` predicate)"
+            ),
         )
 
 
