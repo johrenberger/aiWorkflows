@@ -15,6 +15,7 @@ import pytest
 from collatz_research.tree import (
     ERR_HAS_CYCLE,
     ERR_INVALID_NODE,
+    ERR_LEAF_ID_EMPTY,
     ERR_LEAVES_MISMATCH,
     ERR_NOT_CHILD_TOTAL,
     ERR_NOT_DISJOINT,
@@ -29,6 +30,7 @@ from collatz_research.tree import (
     has_child_for_each_declared_residue,
     has_no_cycles,
     is_disjoint,
+    leaf_id_non_empty,
     leaves_consistent,
     reachable_leaves,
     sample_tree,
@@ -44,6 +46,7 @@ def test_sample_tree_passes_all_checks():
     assert is_disjoint(tree)
     assert leaves_consistent(tree)
     assert has_no_cycles(tree)
+    assert leaf_id_non_empty(tree)
     # check_tree raises only on failure; no exception == pass.
     check_tree(tree)
 
@@ -197,6 +200,49 @@ def test_mutation_unreachable_leaf_in_top_level_fails_leaves_consistency():
     with pytest.raises(CoverageTreeError) as exc:
         check_tree(bad)
     assert exc.value.category == ERR_LEAVES_MISMATCH
+
+
+# ---- Leaf-id mutations (Story 07b / round-4; mirrors Lean's `verified` predicate) ----
+
+
+def test_happy_path_leaf_id_non_empty():
+    """`sample_tree` has all non-empty leaf_ids; the helper returns True.
+
+    Mirrors the `hconsistent` hypothesis in the Lean
+    `coverage_tree_soundness` proof body — every leaf in
+    `t.leaves` must have non-empty `leafId`.
+    """
+    tree = sample_tree()
+    assert leaf_id_non_empty(tree)
+
+
+def test_mutation_empty_leaf_id_fails_leaf_id_non_empty():
+    """An existing reachable leaf has its `leaf_id` mutated to the
+    empty string. The structural checks (`acyclic`,
+    `leaves_consistent`, `disjoint`, `child-total`) all pass; the new
+    `leaf_id_non_empty` check is the first to fail. Mirrors the
+    `hconsistent` hypothesis in the Lean
+    `coverage_tree_soundness` proof body — without a non-empty
+    `leafId`, the `verified` predicate cannot be discharged.
+    """
+    tree = sample_tree()
+    inner1 = tree.root.children[1]
+    reachable_leaf = inner1.children[1]  # leaves[0]
+    mutated_leaf = CoverageLeaf(
+        leaf_id="", leaf_property=reachable_leaf.leaf_property
+    )
+    inner1.children[1] = mutated_leaf
+    tree.leaves = (mutated_leaf,) + tree.leaves[1:]
+    # structural checks still pass
+    assert has_no_cycles(tree)
+    assert leaves_consistent(tree)
+    assert is_disjoint(tree)
+    assert has_child_for_each_declared_residue(tree)
+    # leaf_id_non_empty fails
+    assert not leaf_id_non_empty(tree)
+    with pytest.raises(CoverageTreeError) as exc:
+        check_tree(tree)
+    assert exc.value.category == ERR_LEAF_ID_EMPTY
 
 
 # ---- Cycle mutations ----

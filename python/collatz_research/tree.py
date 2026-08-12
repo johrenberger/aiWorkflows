@@ -39,6 +39,7 @@ ERR_NOT_CHILD_TOTAL = "TREE_NOT_CHILD_TOTAL"
 ERR_NOT_DISJOINT = "TREE_NOT_DISJOINT"
 ERR_HAS_CYCLE = "TREE_HAS_CYCLE"
 ERR_LEAVES_MISMATCH = "TREE_LEAVES_MISMATCH"
+ERR_LEAF_ID_EMPTY = "TREE_LEAF_ID_EMPTY"
 ERR_INVALID_NODE = "TREE_INVALID_NODE"
 
 EXPECTED_SCHEMA = "collatz-research/coverage-tree@0.1.0"
@@ -357,8 +358,24 @@ def has_no_cycles(tree: CoverageTree) -> bool:
     return node_ok(tree.root, 0, frozenset())
 
 
+def leaf_id_non_empty(tree: CoverageTree) -> bool:
+    """`True` iff every leaf in `tree.leaves` has a non-empty `leaf_id`.
+
+    Mirrors the `hconsistent` hypothesis in the Lean
+    `CoverageTree.lean` (Story 07b / round-4) so that any tree that
+    passes `check_tree` carries the assumption needed by the
+    `coverage_tree_soundness` proof body. Without this check, a tree
+    with empty `leaf_id` entries would silently pass structural
+    validation but fail to discharge the `verified` predicate in
+    Lean — which requires `l.leafId ≠ ""`. Adding this check makes
+    Python `check_tree` a faithful mirror of the Lean-side
+    assumptions.
+    """
+    return all(leaf.leaf_id != "" for leaf in tree.leaves)
+
+
 def check_tree(tree: CoverageTree) -> None:
-    """Run acyclic → leaves-consistent → disjoint → child-total checks.
+    """Run acyclic → leaves-consistent → disjoint → child-total → leaf-id checks.
 
     Order rationale:
     - `acyclic` first: a real ancestry cycle makes downstream recursion
@@ -367,6 +384,11 @@ def check_tree(tree: CoverageTree) -> None:
       cheaply to cross-check the top-level field.
     - `disjoint` and `child_total` last: same internal structure, runs
       only after structural checks pass.
+    - `leaf_id_non_empty` last: depends on the descriptor list
+      being structurally sound (covered by `leaves_consistent`); this
+      check validates the descriptor fields that the Lean
+      `coverage_tree_soundness` proof body's `verified` predicate
+      depends on.
     """
     if not has_no_cycles(tree):
         raise CoverageTreeError(ERR_HAS_CYCLE, "tree revisits a node or exceeds max_depth")
@@ -384,6 +406,11 @@ def check_tree(tree: CoverageTree) -> None:
         raise CoverageTreeError(
             ERR_NOT_CHILD_TOTAL,
             "tree is missing children for some residues declared in the partition",
+        )
+    if not leaf_id_non_empty(tree):
+        raise CoverageTreeError(
+            ERR_LEAF_ID_EMPTY,
+            "tree.leaves contains a leaf with an empty leaf_id (required by the Lean coverage_tree_soundness proof body's `verified` predicate)",
         )
 
 
