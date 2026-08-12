@@ -40,3 +40,5 @@ jobs:
       - name: Lake binary cache
         run: lake exe cache get || true
       - run: make lean
+      - name: Build CoverageTree explicitly (Codex P0 on PR #15 round-3)
+        run: lake build CollatzResearch.CoverageTree
