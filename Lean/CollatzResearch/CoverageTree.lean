@@ -168,14 +168,16 @@ theorem coverage_tree_soundness (t : CoverageTree)
         have hlookup : (children.lookup (x % m)).isSome := halls.2 (x % m) hx_mod
         obtain ⟨child, hchild_lookup⟩ := Option.isSome_iff_exists.mp hlookup
         have hmem : ∃ pair ∈ children, pair.1 = x % m ∧ pair.2 = child := by
-          obtain ⟨l₁, l₂, heq, _⟩ := List.lookup_eq_some_iff.mp hchild_lookup
-          refine ⟨(x % m, child), ?_, rfl, rfl⟩
-          rw [heq]
-          exact List.mem_append_right List.Mem.head
+          have h_belongs : child ∈ children.lookup (x % m) := by
+            rw [Option.mem_iff]
+            exact hchild_lookup
+          exact List.mem_lookup.mp h_belongs
         obtain ⟨pair, hpmem, hpfst, hpsnd⟩ := hmem
         obtain ⟨_, _, hvn_rest⟩ := hvn
-        have hchild_vn : ValidNode depth' child := hvn_rest pair hpmem
-        have hchild_ic : IsCompleteAux t child := hall pair hpmem
+        have hchild_vn : ValidNode depth' child := by
+          simpa [hpsnd] using hvn_rest pair hpmem
+        have hchild_ic : IsCompleteAux t child := by
+          simpa [hpsnd] using hall pair hpmem
         have hresult := ih child hchild_vn hchild_ic x hx
         obtain ⟨l, hl, hv', hdesc_child⟩ := hresult
         refine ⟨l, hl, hv', ?_⟩
