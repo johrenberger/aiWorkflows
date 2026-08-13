@@ -137,7 +137,7 @@ theorem coverage_tree_soundness (t : CoverageTree)
         ∃ l, l ∈ t.leaves ∧ verified t l ∧ descendFrom depth n x = some l by
     exact h t.maxDepth hv.1 t.root hv.2 hic x hx
   intro depth hd_pos
-  induction depth using Nat.induction generalizing n with
+  induction depth using Nat.rec generalizing n with
   | zero =>
     -- depth = 0, contradicts hd_pos
     cases depth
