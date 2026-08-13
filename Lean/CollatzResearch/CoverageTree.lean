@@ -1,31 +1,40 @@
 /-
 Coverage trees (Story 07b / round-4, M4 Finite coverage) — REVISED.
 
-After CI failure on commit 3c8cac7 (run 31656010999, submitted
-2026-08-13T00:54:58Z):
+After Codex re-review on commit a3f7127 (review 4922482533,
+submitted 2026-08-13T00:57:51Z) + CI run 31657397630:
 
-- Line 142: `'induction' tactic does not support nested inductive types,
-  the eliminator 'CollatzResearch.CoverageNode.rec' has multiple
-  motives` — the structural induction on `CoverageNode` failed
-  because `CoverageNode` is nested-inductive (its `internal`
-  constructor takes `children : List (Nat × CoverageNode)`).
-- Line 167: `unexpected token 'section'; expected 'lemma'` — the
-  parser was confused by an unclosed `by` block from the previous
-  proof attempt and rejected the `section regression` keyword.
+- **P0 (merge-blocking):** the proof used
+  `induction depth using Nat.rec generalizing n with` — but `n` is not
+  in scope at the induction site, so the parser raised
+  `unknown identifier 'n'` at line 140.
+  Codex's recommendation: use induction on an explicit `d : Nat` with
+  the helper shape `∀ d n, ValidNode d n → IsCompleteAux t n → ...
+  descendFrom d n ...`; base `d = 0` eliminates internal nodes via
+  `ValidNode` (since `ValidNode 0 (.internal _) = False`); successor
+  internal case invokes IH at `d` using child validity from
+  `ValidNode (d+1)`.
 
-This commit fixes both:
+- **P1 (parser):** `section regression` keyword wasn't being parsed
+  correctly in this Lean version. Once the theorem is rewritten to a
+  complete syntactic proof, the `section` issue resolves; the
+  examples are now placed outside any `section` wrapper.
 
-1. **`Nat.induction` on depth** instead of `induction` on
-   `CoverageNode`. The depth parameter is a plain `Nat` with a
-   built-in recursor, so the nested-inductive issue is avoided.
-   The IH is `∀ n, ValidNode depth' n → IsCompleteAux t n →
-   ∀ x, x > 0 → ∃ l, ...` and we apply it to a child at depth
-   `depth' < depth`.
-2. **`refine + simp + exact`** instead of `exact ⟨…, by simp; exact⟩`
-   to avoid the unclosed-by-block parser confusion.
-3. **Removed `section regression` wrapper** around the depth-0/1/2
-   regression examples. The examples stand alone in the namespace;
-   no section grouping needed.
+This commit applies Codex's full recommendation:
+
+1. **Helper without `depth > 0` precondition.** Drops the positive-
+   depth premise; the base case (`d = 0`) eliminates internal nodes
+   via `ValidNode 0 (.internal _) = False` and the leaf case uses
+   `descendFrom 0 (.leaf l) _ = some l` directly.
+2. **Dropped `generalizing n` from `Nat.rec`.** The motive is implicit;
+   `n` is introduced inside each case via `intro n hvn hic x hx`.
+3. **`cases n` (not `induction n`) on `CoverageNode`.** Plain
+   pattern matching avoids the nested-inductive elimination issue.
+4. **`False.elim hvn` in the base-case internal branch.** The
+   contradiction `ValidNode 0 (.internal _) = False` discharges the
+   goal via ex falso.
+5. **Removed `section regression` wrapper.** The regression examples
+   stand alone in the namespace.
 
 Claim level remains `preparatory` per the v2 github-pr-workflow
 skill (see ed80287 demotion rationale; promotion criteria still
@@ -131,16 +140,21 @@ def satisfies (t : CoverageTree) (x : Nat) (l : CoverageLeaf) : Prop :=
 theorem coverage_tree_soundness (t : CoverageTree)
     (hv : ValidTree t) (hic : IsComplete t) (x : Nat) (hx : x > 0) :
     ∃ l, l ∈ t.leaves ∧ verified t l ∧ descend t x = some l := by
-  suffices h : ∀ (depth : Nat), depth > 0 →
+  suffices h : ∀ (depth : Nat),
       ∀ (n : CoverageNode), ValidNode depth n → IsCompleteAux t n →
       ∀ x, x > 0 →
         ∃ l, l ∈ t.leaves ∧ verified t l ∧ descendFrom depth n x = some l by
-    exact h t.maxDepth hv.1 t.root hv.2 hic x hx
-  intro depth hd_pos
-  induction depth using Nat.rec generalizing n with
+    exact h t.maxDepth t.root hv.2 hic x hx
+  intro depth
+  induction depth using Nat.rec with
   | zero =>
-    -- depth = 0 contradicts `hd_pos : depth > 0`. `omega` closes the goal.
-    omega
+    intro n hvn hic x hx
+    cases n with
+    | leaf l =>
+      cases hic with
+      | leafC _ hleaf hver => exact ⟨l, hleaf, hver, rfl⟩
+    | internal m children =>
+      exact False.elim hvn
   | succ depth' ih =>
     intro n hvn hic x hx
     cases n with
