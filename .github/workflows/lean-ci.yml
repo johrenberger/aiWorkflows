@@ -1,44 +1,26 @@
 name: Lean CI
+
 on:
   pull_request:
-    paths:
-      - 'lean-toolchain'
-      - 'lakefile.toml'
-      - 'lake-manifest.json'
-      - 'Lean/**'
-      - '.github/workflows/lean-ci.yml'
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: lean-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+
     steps:
       - uses: actions/checkout@v4
-      - name: Restore pinned elan and Lean toolchain
-        uses: actions/cache@v4
+
+      - name: Build and validate Lean
+        uses: leanprover/lean-action@v1
         with:
-          path: ~/.elan
-          key: elan-${{ runner.os }}-v4.1.2-${{ hashFiles('lean-toolchain') }}
-          restore-keys: |
-            elan-${{ runner.os }}-v4.1.2-
-      - name: Install pinned elan bootstrap
-        run: |
-          if [ ! -x "$HOME/.elan/bin/elan" ]; then
-            curl -sSfL https://github.com/leanprover/elan/releases/download/v4.1.2/elan-x86_64-unknown-linux-gnu.tar.gz | tar xz
-            ./elan-init -y --default-toolchain none
-          fi
-          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
-      - name: Verify toolchain
-        run: |
-          lake --version
-          cat lean-toolchain
-      - name: Cache Lake build
-        uses: actions/cache@v4
-        with:
-          path: .lake
-          key: lake-${{ runner.os }}-${{ hashFiles('lake-manifest.json', 'lean-toolchain') }}
-          restore-keys: |
-            lake-${{ runner.os }}-
-      - name: Lake binary cache
-        run: lake exe cache get || true
-      - run: make lean
-      - name: Build CoverageTree explicitly (Codex P0 on PR #15 round-3)
-        run: lake build CollatzResearch.CoverageTree
+          use-github-cache: true
+          use-mathlib-cache: true

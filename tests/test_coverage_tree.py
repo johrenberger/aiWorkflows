@@ -32,10 +32,13 @@ from collatz_research.tree import (
     has_no_cycles,
     is_disjoint,
     leaf_id_non_empty,
+    lean_interval,
     leaves_consistent,
     reachable_leaves,
     sample_tree,
+    sat,
     to_dict,
+    well_formed,
 )
 
 # ---- Happy path ----
@@ -403,3 +406,88 @@ def test_descend_depth_2_depth_exhausted_at_second_internal():
     tree = CoverageTree(root=inner1, leaves=(leaf,), max_depth=1)
     # 7 % 4 = 3 -> inner2; descend from depth 0 internal = None
     assert descend(tree, 7) is None
+
+
+# ---- 07c-1 semantic leafProperty tests (mirrors Lean) ----
+# Each leaf declares a `(period, lo, hi)` tuple via its `leaf_property`
+# string `"<period>:<lo>-<hi>"`. The semantic predicate `Sat` and the
+# static property `WellFormed` are Python mirrors of the Lean
+# definitions in `CoverageTree.lean`.
+
+
+def test_lean_interval_happy():
+    """Parses '<period>:<lo>-<hi>' into (period, lo, hi)."""
+    leaf = CoverageLeaf(leaf_id="L1", leaf_property="3:0-2")
+    assert lean_interval(leaf) == (3, 0, 2)
+
+
+def test_lean_interval_garbage_returns_none():
+    """Malformed leaves return None (no separator)."""
+    leaf = CoverageLeaf(leaf_id="L1", leaf_property="garbage")
+    assert lean_interval(leaf) is None
+
+
+def test_lean_interval_no_colon_returns_none():
+    """Missing colon returns None."""
+    leaf = CoverageLeaf(leaf_id="L1", leaf_property="3-0-2")
+    assert lean_interval(leaf) is None
+
+
+def test_lean_interval_no_dash_returns_none():
+    """Missing dash in range returns None."""
+    leaf = CoverageLeaf(leaf_id="L1", leaf_property="3:02")
+    assert lean_interval(leaf) is None
+
+
+def test_lean_interval_invalid_nats():
+    """Non-numeric parts return None."""
+    leaf = CoverageLeaf(leaf_id="L1", leaf_property="abc:def-ghi")
+    assert lean_interval(leaf) is None
+
+
+def test_lean_interval_zero_period_parses():
+    """`0:0-2` parses as `(0, 0, 2)` (not well-formed, but parseable)."""
+    leaf = CoverageLeaf(leaf_id="L1", leaf_property="0:0-2")
+    assert lean_interval(leaf) == (0, 0, 2)
+
+
+def test_sat_in_interval():
+    """x is in interval iff x % period in [lo, hi]."""
+    leaf = CoverageLeaf(leaf_id="L1", leaf_property="3:1-2")
+    assert sat(leaf, 1)  # 1 % 3 = 1 in [1, 2]
+    assert sat(leaf, 2)  # 2 % 3 = 2 in [1, 2]
+    assert sat(leaf, 4)  # 4 % 3 = 1 in [1, 2]
+    assert sat(leaf, 5)  # 5 % 3 = 2 in [1, 2]
+    assert not sat(leaf, 0)  # 0 % 3 = 0 NOT in [1, 2]
+    assert not sat(leaf, 3)  # 3 % 3 = 0 NOT in [1, 2]
+
+
+def test_sat_garbage_returns_false():
+    """Unparseable leaves return False."""
+    leaf = CoverageLeaf(leaf_id="L1", leaf_property="garbage")
+    assert not sat(leaf, 0)
+    assert not sat(leaf, 5)
+
+
+def test_well_formed_happy():
+    """Valid interval (period > 0, lo <= hi) is well-formed."""
+    leaf = CoverageLeaf(leaf_id="L1", leaf_property="3:0-2")
+    assert well_formed(leaf)
+
+
+def test_well_formed_zero_period():
+    """period = 0 is not well-formed (parses but ill-formed)."""
+    leaf = CoverageLeaf(leaf_id="L1", leaf_property="0:0-2")
+    assert not well_formed(leaf)
+
+
+def test_well_formed_inverted_range():
+    """lo > hi is not well-formed."""
+    leaf = CoverageLeaf(leaf_id="L1", leaf_property="3:5-2")
+    assert not well_formed(leaf)
+
+
+def test_well_formed_garbage_returns_false():
+    """Unparseable leaves are not well-formed."""
+    leaf = CoverageLeaf(leaf_id="L1", leaf_property="garbage")
+    assert not well_formed(leaf)

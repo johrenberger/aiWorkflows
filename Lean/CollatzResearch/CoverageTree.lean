@@ -119,6 +119,36 @@ def HasAllResidues (m : Nat) (children : List (Nat × α)) : Prop :=
 def verified (t : CoverageTree) (l : CoverageLeaf) : Prop :=
   l ∈ t.leaves ∧ l.leafProperty ≠ "" ∧ l.leafId ≠ ""
 
+/-- Parse the leaf's declared interval: `"<period>:<lo>-<hi>"` →
+    `Option (Nat × Nat × Nat)`. Strict format; returns `none` on any
+    deviation. (Story 07c / round-5, 07c-1.) -/
+def leanInterval (l : CoverageLeaf) : Option (Nat × Nat × Nat) :=
+  match l.leafProperty.split (· = ':') with
+  | [periodStr, rangeStr] =>
+    match rangeStr.split (· = '-') with
+    | [loStr, hiStr] =>
+      match periodStr.toNat?, loStr.toNat?, hiStr.toNat? with
+      | some period, some lo, some hi => some (period, lo, hi)
+      | _, _, _ => none
+    | _ => none
+  | _ => none
+
+/-- Semantic predicate: `x` is in the leaf's declared interval.
+    The leaf declares a `(period, lo, hi)` tuple via `leanInterval`;
+    `x` is in the interval iff `x % period ∈ [lo, hi]`.
+    (Story 07c / round-5, 07c-1.) -/
+def Sat (t : CoverageTree) (x : Nat) (l : CoverageLeaf) : Prop :=
+  match leanInterval l with
+  | some (period, lo, hi) => lo ≤ x % period ∧ x % period ≤ hi
+  | none => False
+
+/-- Static property of a leaf: its declared interval is structurally
+    valid (`period > 0` and `lo ≤ hi`). (Story 07c / round-5, 07c-1.) -/
+def WellFormed (l : CoverageLeaf) : Prop :=
+  match leanInterval l with
+  | some (period, lo, hi) => period > 0 ∧ lo ≤ hi
+  | none => False
+
 /-- Structural completeness of a subtree (no `descend` in the definition). -/
 inductive IsCompleteAux (t : CoverageTree) : CoverageNode → Prop where
   | leafC : ∀ (l : CoverageLeaf),
@@ -195,5 +225,26 @@ example :
     descendFrom 2
       (.internal 4 [(3, .internal 2 [(1, .leaf { leafId := "L2", leafProperty := "P2" })])])
       7 = some { leafId := "L2", leafProperty := "P2" } := rfl
+
+-- 07c-1 regression tests (semantic leafProperty predicate).
+example : leanInterval { leafId := "L1", leafProperty := "3:0-2" } = some (3, 0, 2) := rfl
+example : leanInterval { leafId := "L1", leafProperty := "garbage" } = none := rfl
+example : leanInterval { leafId := "L1", leafProperty := "0:0-2" } = some (0, 0, 2) := rfl
+example : WellFormed { leafId := "L1", leafProperty := "3:0-2" } := by simp [WellFormed, leanInterval]
+example : ¬ WellFormed { leafId := "L1", leafProperty := "0:0-2" } := by simp [WellFormed, leanInterval]
+example : ¬ WellFormed { leafId := "L1", leafProperty := "3:5-2" } := by simp [WellFormed, leanInterval]
+example : ¬ WellFormed { leafId := "L1", leafProperty := "garbage" } := by simp [WellFormed, leanInterval]
+example : Sat
+    { root := .leaf { leafId := "L1", leafProperty := "3:1-2" },
+      leaves := [], maxDepth := 1 }
+    1 { leafId := "L1", leafProperty := "3:1-2" } := by simp [Sat, leanInterval]
+example : ¬ Sat
+    { root := .leaf { leafId := "L1", leafProperty := "3:1-2" },
+      leaves := [], maxDepth := 1 }
+    0 { leafId := "L1", leafProperty := "3:1-2" } := by simp [Sat, leanInterval]
+example : ¬ Sat
+    { root := .leaf { leafId := "L1", leafProperty := "garbage" },
+      leaves := [], maxDepth := 1 }
+    5 { leafId := "L1", leafProperty := "garbage" } := by simp [Sat, leanInterval]
 
 end CollatzResearch

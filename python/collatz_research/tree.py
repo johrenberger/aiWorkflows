@@ -374,6 +374,51 @@ def leaf_id_non_empty(tree: CoverageTree) -> bool:
     return all(leaf.leaf_id != "" for leaf in tree.leaves)
 
 
+# ---- 07c-1 semantic leafProperty predicate (mirrors Lean) ----
+
+
+def lean_interval(leaf: CoverageLeaf) -> tuple[int, int, int] | None:
+    """Parse `leaf.leaf_property` as `"<period>:<lo>-<hi>"`.
+
+    Returns `None` on any deviation (missing separators, non-numeric
+    parts, etc.). Mirrors Lean's `leanInterval` (Story 07c / round-5,
+    07c-1). Strict format.
+    """
+    try:
+        period_str, range_str = leaf.leaf_property.split(":", 1)
+        lo_str, hi_str = range_str.split("-", 1)
+        return (int(period_str), int(lo_str), int(hi_str))
+    except (ValueError, AttributeError):
+        return None
+
+
+def sat(leaf: CoverageLeaf, x: int) -> bool:
+    """Static predicate: `x` is in the leaf's declared interval.
+
+    A leaf declares a `(period, lo, hi)` tuple via `lean_interval`;
+    `x` is in the interval iff `x % period ∈ [lo, hi]`. Returns
+    `False` if the leaf's `leaf_property` doesn't parse. Mirrors
+    Lean's `Sat`.
+    """
+    interval = lean_interval(leaf)
+    if interval is None:
+        return False
+    period, lo, hi = interval
+    return lo <= x % period <= hi
+
+
+def well_formed(leaf: CoverageLeaf) -> bool:
+    """Static property of a leaf: its declared interval is structurally
+    valid (`period > 0` and `lo ≤ hi`). Mirrors Lean's `WellFormed`.
+    Returns `False` if the leaf's `leaf_property` doesn't parse.
+    """
+    interval = lean_interval(leaf)
+    if interval is None:
+        return False
+    period, lo, hi = interval
+    return period > 0 and lo <= hi
+
+
 # ---- Descend (mirrors Lean's leaf-first `descendFrom`) ----
 
 
