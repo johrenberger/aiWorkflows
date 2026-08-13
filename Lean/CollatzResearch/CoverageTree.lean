@@ -165,7 +165,7 @@ theorem coverage_tree_soundness (t : CoverageTree)
         ∃ l, l ∈ t.leaves ∧ verified t l ∧ descendFrom d n x = some l by
     exact h t.maxDepth t.root hv.1 hv.2 hic x hx
   intro d
-  induction d using Nat.strongInductionOn with
+  induction d using Nat.strong_induction_on with
   | _ d' ih =>
     intro n hd hvn hic x hx
     cases n with
