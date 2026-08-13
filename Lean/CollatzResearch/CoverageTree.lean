@@ -159,7 +159,6 @@ def satisfies (t : CoverageTree) (x : Nat) (l : CoverageLeaf) : Prop :=
 theorem coverage_tree_soundness (t : CoverageTree)
     (hv : ValidTree t) (hic : IsComplete t) (x : Nat) (hx : x > 0) :
     ∃ l, l ∈ t.leaves ∧ verified t l ∧ descend t x = some l := by
-  intro x hx
   suffices h : ∀ (d : Nat) (n : CoverageNode),
       d > 0 → ValidNode d n → IsCompleteAux t n →
       ∀ x, x > 0 →

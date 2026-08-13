@@ -2,7 +2,7 @@
 
 **Branch:** `story-07b-round-4-coverage-tree-elaboration` (from `b2cde0f`)
 **Milestone:** M4 Finite coverage (release-blocker for the formal soundness theorem)
-**Status:** work packet opened 2026-08-13, awaiting implementation
+**Status:** substantive elaboration landed (commit `ed80287`); CI green (Lean CI `31652436030`, Python CI `31652436022`); claim level demoted to `preparatory` per Codex re-review (review `4922136689` on PR #15, submitted 2026-08-12T23:55:53Z)
 **Owner:** Justin
 **Carry-over from:** PR #14 (round-3 closure, Codex request-changes, P0 + P1)
 
@@ -191,7 +191,18 @@ make python-ci                            # corpus + mutation tests green
   round-3 closure branch and remains open with Codex
   request-changes. Recommend closing without merge once round-4 lands.
 
-- **`coverage_tree_soundness` claim level.** Was `formally established`
-  in PR #14 (per charter's literal `no sorry` trigger); demoted to
-  `preparatory` by Codex P0. Round-4 restores `formally established`
-  with substantive content.
+- **`coverage_tree_soundness` claim level.** Demoted to `preparatory`
+  per Codex re-review (review `4922136689` on PR #15 commit `ed80287`,
+  submitted 2026-08-12T23:55:53Z). The substantive proof establishes
+  structural *reachability* of a nonempty leaf descriptor over positive
+  naturals: `rootDomain` is independent of `descend` (`n > 0`);
+  `IsCompleteAux` is a structural invariant
+  (`HasAllResidues` + verified leaves) with no `descend` in the
+  definition; the proof uses strong induction on remaining depth and
+  consumes both `ValidTree` and `IsComplete` hypotheses (no longer
+  a projection). The theorem does **not** formalize the declared
+  `leafProperty` for the reached input, nor relate the tree to
+  Collatz/Syracuse dynamics. Promoting back to `formally established`
+  requires (a) a semantic `leafProperty`-indexed predicate, and (b) a
+  proof that `descend` lands a witness satisfying it. M4 Finite
+  coverage stays open.
