@@ -1,96 +1,199 @@
 /-
-Coverage trees (Story 07, M4 Finite coverage).
+Coverage trees (Story 07b / round-4, M4 Finite coverage) — REVISED.
 
-A `CoverageTree` is a rooted tree whose internal nodes carry a residue
-partition and one child per residue class. Leaves carry a `leafId` and a
-`leafProperty`. The M4 soundness theorem states:
+After Codex re-review on commit a3f7127 (review 4922482533,
+submitted 2026-08-13T00:57:51Z) + CI run 31657397630:
 
-    A complete tree with all verified leaves implies every input in the
-    root domain is satisfied by at least one verified leaf.
+- **P0 (merge-blocking):** the proof used
+  `induction depth using Nat.rec generalizing n with` — but `n` is not
+  in scope at the induction site, so the parser raised
+  `unknown identifier 'n'` at line 140.
+  Codex's recommendation: use induction on an explicit `d : Nat` with
+  the helper shape `∀ d n, ValidNode d n → IsCompleteAux t n → ...
+  descendFrom d n ...`; base `d = 0` eliminates internal nodes via
+  `ValidNode` (since `ValidNode 0 (.internal _) = False`); successor
+  internal case invokes IH at `d` using child validity from
+  `ValidNode (d+1)`.
 
-This module is preparatory scaffolding from Story 07. The proof body
-for `coverage_tree_soundness` is admitted as `sorry`; closing it is the
-follow-up that does not block the M4 milestone.
+- **P1 (parser):** `section regression` keyword wasn't being parsed
+  correctly in this Lean version. Once the theorem is rewritten to a
+  complete syntactic proof, the `section` issue resolves; the
+  examples are now placed outside any `section` wrapper.
 
-Codex review P1 (PR #13): the prior `coverage_tree_soundness := sorry`
-proved only `True` (its conclusion) and used an unused `Prop`
-hypothesis — replacing `sorry` later would only prove `True`, not a
-coverage result. This revision defines structurally distinct placeholders
-(`rootDomain`, `verified`, `satisfies`, `IsComplete`) so the statement
-is non-trivial even with the proof body still admitted as `sorry`.
+This commit applies Codex's full recommendation:
 
-Claim level for this file: `preparatory` per the v2 github-pr-workflow
-skill (Story 07 lands with the data shape + a non-trivial soundness
-statement + named placeholders; the proof body is closed in a follow-up).
+1. **Helper without `depth > 0` precondition.** Drops the positive-
+   depth premise; the base case (`d = 0`) eliminates internal nodes
+   via `ValidNode 0 (.internal _) = False` and the leaf case uses
+   `descendFrom 0 (.leaf l) _ = some l` directly.
+2. **Dropped `generalizing n` from `Nat.rec`.** The motive is implicit;
+   `n` is introduced inside each case via `intro n hvn hic x hx`.
+3. **`cases n` (not `induction n`) on `CoverageNode`.** Plain
+   pattern matching avoids the nested-inductive elimination issue.
+4. **`False.elim hvn` in the base-case internal branch.** The
+   contradiction `ValidNode 0 (.internal _) = False` discharges the
+   goal via ex falso.
+5. **Removed `section regression` wrapper.** The regression examples
+   stand alone in the namespace.
+
+Claim level remains `preparatory` per the v2 github-pr-workflow
+skill (see ed80287 demotion rationale; promotion criteria still
+require a semantic leafProperty-indexed predicate + proof that
+descend lands a satisfying witness).
+
+Mirrored by Python `tree.py` regression test for the same depth
+cases (`tests/test_coverage_tree.py`).
 -/
 
 import Mathlib
 
 namespace CollatzResearch
 
-/-- A leaf in the coverage tree (Story 07 scaffold). -/
+/-- A leaf in the coverage tree. -/
 structure CoverageLeaf where
   leafId : String
   leafProperty : String
   deriving Repr
 
-/-- Full coverage tree (Story 07 scaffold). The internal-node data shape
-    (modulus, partition, children) is elaborated in the follow-up story. -/
+/-- A node: either a leaf or an internal node carrying a modulus and a
+    list of `(residue, child)` pairs (sorted by residue ascending). -/
+inductive CoverageNode : Type where
+  | leaf (l : CoverageLeaf)
+  | internal (modulus : Nat) (children : List (Nat × CoverageNode))
+  deriving Repr
+
+/-- A coverage tree: a root `CoverageNode` + the top-level descriptor list. -/
 structure CoverageTree where
+  root : CoverageNode
   leaves : List CoverageLeaf
   maxDepth : Nat
   deriving Repr
 
-/-- The root domain: the set of inputs the tree is built to cover.
-    Placeholder for the elaboration; concretized in the follow-up story
-    to a residue-class-aware subset of `Nat`. -/
-def rootDomain (_t : CoverageTree) : Set Nat := Set.univ
+/-- A partition is valid: residues are in `[0, m)`, distinct, sorted ascending. -/
+def ValidPartition (modulus : Nat) (children : List (Nat × α)) : Prop :=
+  (∀ p ∈ children, p.1 < modulus) ∧
+  children.Pairwise (fun a b => a.1 < b.1)
 
-/-- A leaf has been verified by the formal checker (placeholder).
-    Distinct from `satisfies`: the checker can sign off on a leaf
-    without yet witnessing an input satisfy it. Concretized in the
-    follow-up story to the formal verifier's notion of "this leaf's
-    property has been proved". -/
-def verified (l : CoverageLeaf) : Prop := l.leafProperty ≠ ""
+/-- A coverage node is well-formed at the given `depth`. A leaf is
+    always valid; an internal node requires positive modulus, a valid
+    partition, and all children valid at depth-1. -/
+def ValidNode : Nat → CoverageNode → Prop
+  | _, .leaf _ => True
+  | depth + 1, .internal m children =>
+    m > 0 ∧ ValidPartition m children ∧
+    (∀ c ∈ children, ValidNode depth c.2)
+  | 0, .internal _ _ => False
 
-/-- An input satisfies a leaf's property (placeholder). Distinct from
-    `verified`: an input can satisfy a leaf without the leaf having been
-    formally verified. Concretized in the follow-up story.
+/-- A coverage tree is well-formed: depth is positive and root is valid. -/
+def ValidTree (t : CoverageTree) : Prop :=
+  t.maxDepth > 0 ∧ ValidNode t.maxDepth t.root
 
-    The body here is `l.leafId ≠ ""` — structurally different from
-    `verified`'s body (`l.leafProperty ≠ ""`) — so that closing the
-    `sorry` below requires real work, not just `rfl`. -/
-def satisfies (_x : Nat) (l : CoverageLeaf) : Prop := l.leafId ≠ ""
+/-- Leaf-first descent: a leaf is always reachable (returns `some l`
+    regardless of remaining depth); depth only governs internal
+    recursion. At depth 0 on an internal node, returns `none` (depth
+    exhausted).
 
-/-- A coverage tree is complete: every input in its root domain has a
-    verified leaf. Placeholder; concretized in the follow-up story to a
-    definition that traces the partition cascade (for every
-    `x ∈ rootDomain t`, there is a residue-class chain from the root
-    to a leaf with `verified l`).
-    The binders `(x : Nat)` and `(l : CoverageLeaf)` are made explicit
-    so elaboration succeeds independent of the `Set α` polymorphism
-    in `rootDomain`. -/
-def IsComplete (t : CoverageTree) : Prop :=
-  ∀ (x : Nat), x ∈ rootDomain t → ∃ (l : CoverageLeaf), l ∈ t.leaves ∧ verified l
+    Mirrors Python `tree.descend` (Story 07b / round-4 regression). -/
+def descendFrom : Nat → CoverageNode → Nat → Option CoverageLeaf
+  | _, .leaf l, _ => some l
+  | 0, .internal _ _, _ => none
+  | depth + 1, .internal m children, x =>
+    let r := x % m
+    match children.lookup r with
+    | some child => descendFrom depth child x
+    | none => none
 
-/-- Soundness for `CoverageTree` (Story 07, M4 release-blocker at the
-    formal layer). A complete tree implies every input in the root
-    domain satisfies at least one verified leaf.
+/-- descend: walk down the tree from root. -/
+def descend (t : CoverageTree) (x : Nat) : Option CoverageLeaf :=
+  descendFrom t.maxDepth t.root x
 
-    The proof body is `sorry`; closing it requires:
+/-- The root domain: defined INDEPENDENTLY of `descend` (per Codex P0). -/
+def rootDomain : Nat → Prop := fun n => n > 0
 
-    1. Concretizing `IsComplete` to the partition-cascade story in Lean.
-    2. Proving the conclusion from `IsComplete t` — i.e., that an `x`
-       in the root domain, witnessed by some `verified l`, is also
-       witnessed by the conjunction `verified l ∧ satisfies x l`.
+/-- At an internal node, every residue in `[0, m)` has a child. -/
+def HasAllResidues (m : Nat) (children : List (Nat × α)) : Prop :=
+  m > 0 ∧ (∀ r, r < m → (children.lookup r).isSome)
 
-    The elaboration lives in the follow-up story; closing `sorry` here
-    is non-trivial (per Codex P1) because `verified` and `satisfies`
-    check different fields. -/
+/-- A verified leaf: it's in `t.leaves` and both `leafId` and
+    `leafProperty` are non-empty. -/
+def verified (t : CoverageTree) (l : CoverageLeaf) : Prop :=
+  l ∈ t.leaves ∧ l.leafProperty ≠ "" ∧ l.leafId ≠ ""
+
+/-- Structural completeness of a subtree (no `descend` in the definition). -/
+inductive IsCompleteAux (t : CoverageTree) : CoverageNode → Prop where
+  | leafC : ∀ (l : CoverageLeaf),
+    l ∈ t.leaves → verified t l →
+    IsCompleteAux t (.leaf l)
+  | internalC : ∀ (m : Nat) (children : List (Nat × CoverageNode)),
+    m > 0 →
+    HasAllResidues m children →
+    (∀ c ∈ children, IsCompleteAux t c.2) →
+    IsCompleteAux t (.internal m children)
+
+def IsComplete (t : CoverageTree) : Prop := IsCompleteAux t t.root
+
+/-- An input satisfies a leaf's property: `descend t x` returns `l`. -/
+def satisfies (t : CoverageTree) (x : Nat) (l : CoverageLeaf) : Prop :=
+  descend t x = some l
+
+/-- Soundness for `CoverageTree` (Story 07b / round-4). -/
 theorem coverage_tree_soundness (t : CoverageTree)
-    (hcomplete : IsComplete t) :
-    ∀ (x : Nat), x ∈ rootDomain t →
-      ∃ (l : CoverageLeaf), l ∈ t.leaves ∧ verified l ∧ satisfies x l := by
-  sorry
+    (hv : ValidTree t) (hic : IsComplete t) (x : Nat) (hx : x > 0) :
+    ∃ l, l ∈ t.leaves ∧ verified t l ∧ descend t x = some l := by
+  suffices h : ∀ (depth : Nat),
+      ∀ (n : CoverageNode), ValidNode depth n → IsCompleteAux t n →
+      ∀ x, x > 0 →
+        ∃ l, l ∈ t.leaves ∧ verified t l ∧ descendFrom depth n x = some l by
+    exact h t.maxDepth t.root hv.2 hic x hx
+  intro depth
+  induction depth using Nat.rec with
+  | zero =>
+    intro n hvn hic x hx
+    cases n with
+    | leaf l =>
+      cases hic with
+      | leafC _ hleaf hver => exact ⟨l, hleaf, hver, rfl⟩
+    | internal m children =>
+      exact False.elim hvn
+  | succ depth' ih =>
+    intro n hvn hic x hx
+    cases n with
+    | leaf l =>
+      cases hic with
+      | leafC _ hleaf hver => exact ⟨l, hleaf, hver, rfl⟩
+    | internal m children =>
+      cases hic with
+      | internalC _ _ hm halls hall =>
+        have hx_mod : x % m < m := Nat.mod_lt x hm
+        have hlookup : (children.lookup (x % m)).isSome := halls.2 (x % m) hx_mod
+        obtain ⟨child, hchild_lookup⟩ := Option.isSome_iff_exists.mp hlookup
+        obtain ⟨before, after, hchildren, _⟩ :=
+          List.lookup_eq_some_iff.mp hchild_lookup
+        have hpair_mem : (x % m, child) ∈ children := by
+          rw [hchildren]
+          simp
+        obtain ⟨_, _, hvn_rest⟩ := hvn
+        have hchild_vn : ValidNode depth' child := by
+          exact hvn_rest (x % m, child) hpair_mem
+        have hchild_ic : IsCompleteAux t child := by
+          exact hall (x % m, child) hpair_mem
+        have hresult := ih child hchild_vn hchild_ic x hx
+        obtain ⟨l, hl, hv', hdesc_child⟩ := hresult
+        refine ⟨l, hl, hv', ?_⟩
+        simpa [descendFrom, hchild_lookup] using hdesc_child
+
+-- Depth-0/1/2 regression examples (per Codex 4922430978).
+example : descendFrom 0 (.leaf { leafId := "L0", leafProperty := "P0" }) 5 = some { leafId := "L0", leafProperty := "P0" } := rfl
+
+example : descendFrom 0 (.internal 4 [(1, .leaf { leafId := "L0", leafProperty := "P0" })]) 5 = none := rfl
+
+example : descendFrom 1 (.internal 4 [(1, .leaf { leafId := "L1", leafProperty := "P1" })]) 1 = some { leafId := "L1", leafProperty := "P1" } := rfl
+
+example : descendFrom 1 (.internal 4 [(1, .leaf { leafId := "L1", leafProperty := "P1" })]) 2 = none := rfl
+
+example :
+    descendFrom 2
+      (.internal 4 [(3, .internal 2 [(1, .leaf { leafId := "L2", leafProperty := "P2" })])])
+      7 = some { leafId := "L2", leafProperty := "P2" } := rfl
 
 end CollatzResearch

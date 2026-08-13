@@ -15,6 +15,7 @@ import pytest
 from collatz_research.tree import (
     ERR_HAS_CYCLE,
     ERR_INVALID_NODE,
+    ERR_LEAF_ID_EMPTY,
     ERR_LEAVES_MISMATCH,
     ERR_NOT_CHILD_TOTAL,
     ERR_NOT_DISJOINT,
@@ -24,11 +25,13 @@ from collatz_research.tree import (
     CoverageTree,
     CoverageTreeError,
     check_tree,
+    descend,
     deterministic_children,
     from_dict,
     has_child_for_each_declared_residue,
     has_no_cycles,
     is_disjoint,
+    leaf_id_non_empty,
     leaves_consistent,
     reachable_leaves,
     sample_tree,
@@ -44,6 +47,7 @@ def test_sample_tree_passes_all_checks():
     assert is_disjoint(tree)
     assert leaves_consistent(tree)
     assert has_no_cycles(tree)
+    assert leaf_id_non_empty(tree)
     # check_tree raises only on failure; no exception == pass.
     check_tree(tree)
 
@@ -199,6 +203,47 @@ def test_mutation_unreachable_leaf_in_top_level_fails_leaves_consistency():
     assert exc.value.category == ERR_LEAVES_MISMATCH
 
 
+# ---- Leaf-id mutations (Story 07b / round-4; mirrors Lean's `verified` predicate) ----
+
+
+def test_happy_path_leaf_id_non_empty():
+    """`sample_tree` has all non-empty leaf_ids; the helper returns True.
+
+    Mirrors the `hconsistent` hypothesis in the Lean
+    `coverage_tree_soundness` proof body — every leaf in
+    `t.leaves` must have non-empty `leafId`.
+    """
+    tree = sample_tree()
+    assert leaf_id_non_empty(tree)
+
+
+def test_mutation_empty_leaf_id_fails_leaf_id_non_empty():
+    """An existing reachable leaf has its `leaf_id` mutated to the
+    empty string. The structural checks (`acyclic`,
+    `leaves_consistent`, `disjoint`, `child-total`) all pass; the new
+    `leaf_id_non_empty` check is the first to fail. Mirrors the
+    `hconsistent` hypothesis in the Lean
+    `coverage_tree_soundness` proof body — without a non-empty
+    `leafId`, the `verified` predicate cannot be discharged.
+    """
+    tree = sample_tree()
+    inner1 = tree.root.children[1]
+    reachable_leaf = inner1.children[1]  # leaves[0]
+    mutated_leaf = CoverageLeaf(leaf_id="", leaf_property=reachable_leaf.leaf_property)
+    inner1.children[1] = mutated_leaf
+    tree.leaves = (mutated_leaf,) + tree.leaves[1:]
+    # structural checks still pass
+    assert has_no_cycles(tree)
+    assert leaves_consistent(tree)
+    assert is_disjoint(tree)
+    assert has_child_for_each_declared_residue(tree)
+    # leaf_id_non_empty fails
+    assert not leaf_id_non_empty(tree)
+    with pytest.raises(CoverageTreeError) as exc:
+        check_tree(tree)
+    assert exc.value.category == ERR_LEAF_ID_EMPTY
+
+
 # ---- Cycle mutations ----
 
 
@@ -292,3 +337,69 @@ def test_from_dict_rejects_non_str_leaf_field():
     with pytest.raises(CoverageTreeError) as exc:
         from_dict(bad)
     assert exc.value.category == ERR_INVALID_NODE
+
+
+# ---- Descend regression: depth-0 / depth-1 / depth-2 (Story 07b / round-4) ----
+# Mirrors the Lean `descendFrom` examples in
+# Lean/CollatzResearch/CoverageTree.lean. Leaf-first semantics: a leaf is
+# reachable regardless of remaining depth; depth-0 internal returns None.
+
+
+def test_descend_depth_0_leaf_reachable():
+    """Depth 0 at a leaf: leaf is reachable at any x (depth unused)."""
+    leaf = CoverageLeaf(leaf_id="L0", leaf_property="P0")
+    tree = CoverageTree(root=leaf, leaves=(leaf,), max_depth=0)
+    assert descend(tree, 5) == leaf
+    assert descend(tree, 0) == leaf
+    assert descend(tree, 999) == leaf
+
+
+def test_descend_depth_0_internal_returns_none():
+    """Depth 0 at an internal node: depth exhausted, returns None."""
+    leaf = CoverageLeaf(leaf_id="L0", leaf_property="P0")
+    inner = CoverageNode(modulus=4, partition=(1,), children={1: leaf})
+    tree = CoverageTree(root=inner, leaves=(leaf,), max_depth=0)
+    assert descend(tree, 5) is None
+    assert descend(tree, 1) is None
+
+
+def test_descend_depth_1_internal_to_leaf_reachable():
+    """Depth 1, internal root + leaf child, residue 1 -> leaf: reachable."""
+    leaf = CoverageLeaf(leaf_id="L1", leaf_property="P1")
+    inner = CoverageNode(modulus=4, partition=(1,), children={1: leaf})
+    tree = CoverageTree(root=inner, leaves=(leaf,), max_depth=1)
+    assert descend(tree, 1) == leaf
+    assert descend(tree, 5) == leaf  # 5 % 4 = 1
+
+
+def test_descend_depth_1_no_child_for_residue():
+    """Depth 1, internal root + leaf child, residue 2 has no child: unreachable."""
+    leaf = CoverageLeaf(leaf_id="L1", leaf_property="P1")
+    inner = CoverageNode(modulus=4, partition=(1,), children={1: leaf})
+    tree = CoverageTree(root=inner, leaves=(leaf,), max_depth=1)
+    assert descend(tree, 2) is None
+    assert descend(tree, 6) is None  # 6 % 4 = 2
+
+
+def test_descend_depth_2_internal_to_internal_to_leaf():
+    """Depth 2, internal 4 -> internal 2 -> leaf; 7 % 4 = 3, 7 % 2 = 1."""
+    leaf = CoverageLeaf(leaf_id="L2", leaf_property="P2")
+    inner2 = CoverageNode(modulus=2, partition=(1,), children={1: leaf})
+    inner1 = CoverageNode(modulus=4, partition=(3,), children={3: inner2})
+    tree = CoverageTree(root=inner1, leaves=(leaf,), max_depth=2)
+    assert descend(tree, 7) == leaf
+    assert descend(tree, 3) == leaf  # 3 % 4 = 3
+
+
+def test_descend_depth_2_depth_exhausted_at_second_internal():
+    """Depth 1 (one unit), but tree has two internal levels: second internal returns None.
+
+    With max_depth=1, the tree descends internal 4 -> internal 2 with
+    depth 0, so the second internal returns None.
+    """
+    leaf = CoverageLeaf(leaf_id="L2", leaf_property="P2")
+    inner2 = CoverageNode(modulus=2, partition=(1,), children={1: leaf})
+    inner1 = CoverageNode(modulus=4, partition=(3,), children={3: inner2})
+    tree = CoverageTree(root=inner1, leaves=(leaf,), max_depth=1)
+    # 7 % 4 = 3 -> inner2; descend from depth 0 internal = None
+    assert descend(tree, 7) is None

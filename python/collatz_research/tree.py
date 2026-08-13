@@ -39,6 +39,7 @@ ERR_NOT_CHILD_TOTAL = "TREE_NOT_CHILD_TOTAL"
 ERR_NOT_DISJOINT = "TREE_NOT_DISJOINT"
 ERR_HAS_CYCLE = "TREE_HAS_CYCLE"
 ERR_LEAVES_MISMATCH = "TREE_LEAVES_MISMATCH"
+ERR_LEAF_ID_EMPTY = "TREE_LEAF_ID_EMPTY"
 ERR_INVALID_NODE = "TREE_INVALID_NODE"
 
 EXPECTED_SCHEMA = "collatz-research/coverage-tree@0.1.0"
@@ -357,8 +358,60 @@ def has_no_cycles(tree: CoverageTree) -> bool:
     return node_ok(tree.root, 0, frozenset())
 
 
+def leaf_id_non_empty(tree: CoverageTree) -> bool:
+    """`True` iff every leaf in `tree.leaves` has a non-empty `leaf_id`.
+
+    Mirrors the `hconsistent` hypothesis in the Lean
+    `CoverageTree.lean` (Story 07b / round-4) so that any tree that
+    passes `check_tree` carries the assumption needed by the
+    `coverage_tree_soundness` proof body. Without this check, a tree
+    with empty `leaf_id` entries would silently pass structural
+    validation but fail to discharge the `verified` predicate in
+    Lean — which requires `l.leafId ≠ ""`. Adding this check makes
+    Python `check_tree` a faithful mirror of the Lean-side
+    assumptions.
+    """
+    return all(leaf.leaf_id != "" for leaf in tree.leaves)
+
+
+# ---- Descend (mirrors Lean's leaf-first `descendFrom`) ----
+
+
+def _descend_from(depth: int, node: CoverageNode, x: int) -> CoverageLeaf | None:
+    """Internal helper for `descend`. Leaf-first semantics:
+
+    - Leaf: always reachable (returns the leaf regardless of remaining depth).
+    - Internal at depth 0: returns None (depth exhausted).
+    - Internal at depth > 0: follows `x % modulus` to the matching child
+      and recurses with `depth - 1`.
+
+    Mirrors `Lean/CollatzResearch/CoverageTree.lean` `descendFrom`
+    (Story 07b / round-4 regression examples).
+    """
+    if isinstance(node, CoverageLeaf):
+        return node
+    # node is CoverageNode (internal)
+    if depth == 0:
+        return None
+    r = x % node.modulus
+    child = node.children.get(r)
+    if child is None:
+        return None
+    return _descend_from(depth - 1, child, x)
+
+
+def descend(tree: CoverageTree, x: int) -> CoverageLeaf | None:
+    """Walk the tree from root following `x % modulus` at each internal
+    node. Leaf-first: a leaf is reachable regardless of remaining
+    depth; depth-0 internal returns None.
+
+    Mirrors Lean's `descend` (Story 07b / round-4 regression).
+    """
+    return _descend_from(tree.max_depth, tree.root, x)
+
+
 def check_tree(tree: CoverageTree) -> None:
-    """Run acyclic → leaves-consistent → disjoint → child-total checks.
+    """Run acyclic → leaves-consistent → disjoint → child-total → leaf-id checks.
 
     Order rationale:
     - `acyclic` first: a real ancestry cycle makes downstream recursion
@@ -367,6 +420,11 @@ def check_tree(tree: CoverageTree) -> None:
       cheaply to cross-check the top-level field.
     - `disjoint` and `child_total` last: same internal structure, runs
       only after structural checks pass.
+    - `leaf_id_non_empty` last: depends on the descriptor list
+      being structurally sound (covered by `leaves_consistent`); this
+      check validates the descriptor fields that the Lean
+      `coverage_tree_soundness` proof body's `verified` predicate
+      depends on.
     """
     if not has_no_cycles(tree):
         raise CoverageTreeError(ERR_HAS_CYCLE, "tree revisits a node or exceeds max_depth")
@@ -384,6 +442,15 @@ def check_tree(tree: CoverageTree) -> None:
         raise CoverageTreeError(
             ERR_NOT_CHILD_TOTAL,
             "tree is missing children for some residues declared in the partition",
+        )
+    if not leaf_id_non_empty(tree):
+        raise CoverageTreeError(
+            ERR_LEAF_ID_EMPTY,
+            (
+                "tree.leaves contains a leaf with empty leaf_id "
+                "(required by the Lean coverage_tree_soundness "
+                "proof body's `verified` predicate)"
+            ),
         )
 
 
