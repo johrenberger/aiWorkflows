@@ -181,23 +181,16 @@ theorem coverage_tree_soundness (t : CoverageTree)
         obtain ⟨l, hl, hv', hdesc_child⟩ := hresult
         refine ⟨l, hl, hv', ?_⟩
         simpa [descendFrom, hchild_lookup] using hdesc_child
-  done
 
-/-- Depth-0/1/2 regression examples (per Codex 4922430978). -/
-
-/-- Depth 0: leaf is reachable at any x. -/
+-- Depth-0/1/2 regression examples (per Codex 4922430978).
 example : descendFrom 0 (.leaf { leafId := "L0", leafProperty := "P0" }) 5 = some { leafId := "L0", leafProperty := "P0" } := rfl
 
-/-- Depth 0 at an internal node: depth exhausted, returns `none`. -/
 example : descendFrom 0 (.internal 4 [(1, .leaf { leafId := "L0", leafProperty := "P0" })]) 5 = none := rfl
 
-/-- Depth 1, internal root + leaf child, residue 1 → leaf: reachable. -/
 example : descendFrom 1 (.internal 4 [(1, .leaf { leafId := "L1", leafProperty := "P1" })]) 1 = some { leafId := "L1", leafProperty := "P1" } := rfl
 
-/-- Depth 1, internal root + leaf child, residue 2 → no child: unreachable. -/
 example : descendFrom 1 (.internal 4 [(1, .leaf { leafId := "L1", leafProperty := "P1" })]) 2 = none := rfl
 
-/-- Depth 2, internal 4 → internal 2 → leaf; 7 % 4 = 3, 7 % 2 = 1. -/
 example :
     descendFrom 2
       (.internal 4 [(3, .internal 2 [(1, .leaf { leafId := "L2", leafProperty := "P2" })])])
