@@ -139,8 +139,8 @@ theorem coverage_tree_soundness (t : CoverageTree)
   intro depth hd_pos
   induction depth using Nat.rec generalizing n with
   | zero =>
-    -- depth = 0, contradicts hd_pos
-    cases depth
+    -- depth = 0 contradicts `hd_pos : depth > 0`. `omega` closes the goal.
+    omega
   | succ depth' ih =>
     intro n hvn hic x hx
     cases n with
