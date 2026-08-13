@@ -25,6 +25,7 @@ from collatz_research.tree import (
     CoverageTree,
     CoverageTreeError,
     check_tree,
+    descend,
     deterministic_children,
     from_dict,
     has_child_for_each_declared_residue,
@@ -336,3 +337,69 @@ def test_from_dict_rejects_non_str_leaf_field():
     with pytest.raises(CoverageTreeError) as exc:
         from_dict(bad)
     assert exc.value.category == ERR_INVALID_NODE
+
+
+# ---- Descend regression: depth-0 / depth-1 / depth-2 (Story 07b / round-4) ----
+# Mirrors the Lean `descendFrom` examples in
+# Lean/CollatzResearch/CoverageTree.lean. Leaf-first semantics: a leaf is
+# reachable regardless of remaining depth; depth-0 internal returns None.
+
+
+def test_descend_depth_0_leaf_reachable():
+    """Depth 0 at a leaf: leaf is reachable at any x (depth unused)."""
+    leaf = CoverageLeaf(leaf_id="L0", leaf_property="P0")
+    tree = CoverageTree(root=leaf, leaves=(leaf,), max_depth=0)
+    assert descend(tree, 5) == leaf
+    assert descend(tree, 0) == leaf
+    assert descend(tree, 999) == leaf
+
+
+def test_descend_depth_0_internal_returns_none():
+    """Depth 0 at an internal node: depth exhausted, returns None."""
+    leaf = CoverageLeaf(leaf_id="L0", leaf_property="P0")
+    inner = CoverageNode(modulus=4, partition=(1,), children={1: leaf})
+    tree = CoverageTree(root=inner, leaves=(leaf,), max_depth=0)
+    assert descend(tree, 5) is None
+    assert descend(tree, 1) is None
+
+
+def test_descend_depth_1_internal_to_leaf_reachable():
+    """Depth 1, internal root + leaf child, residue 1 -> leaf: reachable."""
+    leaf = CoverageLeaf(leaf_id="L1", leaf_property="P1")
+    inner = CoverageNode(modulus=4, partition=(1,), children={1: leaf})
+    tree = CoverageTree(root=inner, leaves=(leaf,), max_depth=1)
+    assert descend(tree, 1) == leaf
+    assert descend(tree, 5) == leaf  # 5 % 4 = 1
+
+
+def test_descend_depth_1_no_child_for_residue():
+    """Depth 1, internal root + leaf child, residue 2 has no child: unreachable."""
+    leaf = CoverageLeaf(leaf_id="L1", leaf_property="P1")
+    inner = CoverageNode(modulus=4, partition=(1,), children={1: leaf})
+    tree = CoverageTree(root=inner, leaves=(leaf,), max_depth=1)
+    assert descend(tree, 2) is None
+    assert descend(tree, 6) is None  # 6 % 4 = 2
+
+
+def test_descend_depth_2_internal_to_internal_to_leaf():
+    """Depth 2, internal 4 -> internal 2 -> leaf; 7 % 4 = 3, 7 % 2 = 1."""
+    leaf = CoverageLeaf(leaf_id="L2", leaf_property="P2")
+    inner2 = CoverageNode(modulus=2, partition=(1,), children={1: leaf})
+    inner1 = CoverageNode(modulus=4, partition=(3,), children={3: inner2})
+    tree = CoverageTree(root=inner1, leaves=(leaf,), max_depth=2)
+    assert descend(tree, 7) == leaf
+    assert descend(tree, 3) == leaf  # 3 % 4 = 3
+
+
+def test_descend_depth_2_depth_exhausted_at_second_internal():
+    """Depth 1 (one unit), but tree has two internal levels: second internal returns None.
+
+    With max_depth=1, the tree descends internal 4 -> internal 2 with
+    depth 0, so the second internal returns None.
+    """
+    leaf = CoverageLeaf(leaf_id="L2", leaf_property="P2")
+    inner2 = CoverageNode(modulus=2, partition=(1,), children={1: leaf})
+    inner1 = CoverageNode(modulus=4, partition=(3,), children={3: inner2})
+    tree = CoverageTree(root=inner1, leaves=(leaf,), max_depth=1)
+    # 7 % 4 = 3 -> inner2; descend from depth 0 internal = None
+    assert descend(tree, 7) is None

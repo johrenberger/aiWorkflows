@@ -374,6 +374,42 @@ def leaf_id_non_empty(tree: CoverageTree) -> bool:
     return all(leaf.leaf_id != "" for leaf in tree.leaves)
 
 
+# ---- Descend (mirrors Lean's leaf-first `descendFrom`) ----
+
+
+def _descend_from(depth: int, node: CoverageNode, x: int) -> CoverageLeaf | None:
+    """Internal helper for `descend`. Leaf-first semantics:
+
+    - Leaf: always reachable (returns the leaf regardless of remaining depth).
+    - Internal at depth 0: returns None (depth exhausted).
+    - Internal at depth > 0: follows `x % modulus` to the matching child
+      and recurses with `depth - 1`.
+
+    Mirrors `Lean/CollatzResearch/CoverageTree.lean` `descendFrom`
+    (Story 07b / round-4 regression examples).
+    """
+    if isinstance(node, CoverageLeaf):
+        return node
+    # node is CoverageNode (internal)
+    if depth == 0:
+        return None
+    r = x % node.modulus
+    child = node.children.get(r)
+    if child is None:
+        return None
+    return _descend_from(depth - 1, child, x)
+
+
+def descend(tree: CoverageTree, x: int) -> CoverageLeaf | None:
+    """Walk the tree from root following `x % modulus` at each internal
+    node. Leaf-first: a leaf is reachable regardless of remaining
+    depth; depth-0 internal returns None.
+
+    Mirrors Lean's `descend` (Story 07b / round-4 regression).
+    """
+    return _descend_from(tree.max_depth, tree.root, x)
+
+
 def check_tree(tree: CoverageTree) -> None:
     """Run acyclic → leaves-consistent → disjoint → child-total → leaf-id checks.
 
