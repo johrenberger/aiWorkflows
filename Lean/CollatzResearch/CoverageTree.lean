@@ -180,8 +180,8 @@ theorem coverage_tree_soundness (t : CoverageTree)
         have hresult := ih child hchild_vn hchild_ic x hx
         obtain ⟨l, hl, hv', hdesc_child⟩ := hresult
         refine ⟨l, hl, hv', ?_⟩
-        simp [descendFrom, hchild_lookup]
-        exact hdesc_child
+        simpa [descendFrom, hchild_lookup] using hdesc_child
+  done
 
 /-- Depth-0/1/2 regression examples (per Codex 4922430978). -/
 
