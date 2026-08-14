@@ -437,6 +437,46 @@ def sat(leaf: CoverageLeaf, x: int) -> bool:
     return lo <= x % period <= hi
 
 
+def accelerated_orbit(n: int, k: int) -> int:
+    """Python mirror of Lean `accelerated_orbit`.
+
+    `accelerated_orbit n 0 = n`;
+    `accelerated_orbit n (k+1) = acceleratedStep (accelerated_orbit n k)`.
+    Mirrors the Lean definition in `CoverageTree.lean` over natural inputs.
+    Single step uses `acceleratedStep n = (3n+1)/2^ν₂(3n+1)`.
+    """
+    if n < 0:
+        raise ValueError("n must be a natural number")
+    if k < 0:
+        raise ValueError("k must be a natural number")
+    if k == 0:
+        return n
+    prev = accelerated_orbit(n, k - 1)
+    val = 3 * prev + 1
+    while val % 2 == 0:
+        val //= 2
+    return val
+
+
+def reaches_one_within(n: int, bound: int) -> bool:
+    """Bounded, untrusted exploration for reaching one.
+
+    Lean's `ReachesOne n := ∃ k, accelerated_orbit n k = 1` is unbounded.
+    This helper checks only whether a witness appears within the explicit
+    step bound; `False` is not mathematical negative evidence.
+    """
+    if n < 0:
+        raise ValueError("n must be a natural number")
+    if bound < 0:
+        raise ValueError("bound must be a natural number")
+    cur = n
+    for _ in range(bound + 1):
+        if cur == 1:
+            return True
+        cur = accelerated_orbit(cur, 1)
+    return False
+
+
 def well_formed(leaf: CoverageLeaf) -> bool:
     """Static property of a leaf: its declared interval is structurally
     valid. The interval is a residue range modulo `period`: we need
