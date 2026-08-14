@@ -374,6 +374,83 @@ def leaf_id_non_empty(tree: CoverageTree) -> bool:
     return all(leaf.leaf_id != "" for leaf in tree.leaves)
 
 
+# ---- 07c-1 semantic leafProperty predicate (mirrors Lean) ----
+
+
+def lean_interval(leaf: CoverageLeaf) -> tuple[int, int, int] | None:
+    """Parse `leaf.leaf_property` as `"<period>:<lo>-<hi>"`.
+
+    Returns `None` on any deviation (missing separators, non-numeric
+    parts, etc.). Mirrors Lean's `leanInterval` (Story 07c / round-5,
+    07c-1). Strict unsigned-decimal parser: rejects negative numbers
+    (e.g. `"-1"`), leading signs, decimals, and empty parts. Mirrors
+    Lean `String.toNat?` semantics.
+    """
+    try:
+        s = leaf.leaf_property
+    except AttributeError:
+        return None
+    parts = s.split(":", 1)
+    if len(parts) != 2:
+        return None
+    period_str, range_str = parts
+    if not period_str or not range_str:
+        return None
+    lo_hi = range_str.split("-", 1)
+    if len(lo_hi) != 2:
+        return None
+    lo_str, hi_str = lo_hi
+    if not lo_str or not hi_str:
+        return None
+    # Strict ASCII digits only. `str.isdigit()` accepts Unicode decimal
+    # characters (e.g. Arabic-Indic ٠١٢٣, full-width ０１２３) that Lean
+    # `String.toNat?` rejects, so this would diverge from Lean semantics.
+    ascii_digits = set("0123456789")
+    if not (
+        period_str
+        and all(c in ascii_digits for c in period_str)
+        and lo_str
+        and all(c in ascii_digits for c in lo_str)
+        and hi_str
+        and all(c in ascii_digits for c in hi_str)
+    ):
+        return None
+    return (int(period_str), int(lo_str), int(hi_str))
+
+
+def sat(leaf: CoverageLeaf, x: int) -> bool:
+    """Static predicate: `x` is in the leaf's declared interval.
+
+    A leaf declares a `(period, lo, hi)` tuple via `lean_interval`;
+    `x` is in the interval iff `x % period ∈ [lo, hi]`. Returns
+    `False` if the leaf's `leaf_property` doesn't parse. Mirrors
+    Lean's `Sat`. For `period = 0`, mirrors Lean `Nat.mod n 0 = n`,
+    i.e. `lo ≤ x ∧ x ≤ hi` (avoids Python's `ZeroDivisionError`).
+    """
+    interval = lean_interval(leaf)
+    if interval is None:
+        return False
+    period, lo, hi = interval
+    if period == 0:
+        # Lean: Nat.mod n 0 = n by convention. Mirror that.
+        return lo <= x <= hi
+    return lo <= x % period <= hi
+
+
+def well_formed(leaf: CoverageLeaf) -> bool:
+    """Static property of a leaf: its declared interval is structurally
+    valid. The interval is a residue range modulo `period`: we need
+    `period > 0`, `lo ≤ hi`, and `hi < period` (which also forces
+    `lo < period`). Mirrors Lean's `WellFormed`. Returns `False` if
+    the leaf's `leaf_property` doesn't parse.
+    """
+    interval = lean_interval(leaf)
+    if interval is None:
+        return False
+    period, lo, hi = interval
+    return period > 0 and lo <= hi and hi < period
+
+
 # ---- Descend (mirrors Lean's leaf-first `descendFrom`) ----
 
 
