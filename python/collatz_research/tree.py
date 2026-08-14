@@ -382,14 +382,29 @@ def lean_interval(leaf: CoverageLeaf) -> tuple[int, int, int] | None:
 
     Returns `None` on any deviation (missing separators, non-numeric
     parts, etc.). Mirrors Lean's `leanInterval` (Story 07c / round-5,
-    07c-1). Strict format.
+    07c-1). Strict unsigned-decimal parser: rejects negative numbers
+    (e.g. `"-1"`), leading signs, decimals, and empty parts. Mirrors
+    Lean `String.toNat?` semantics.
     """
     try:
-        period_str, range_str = leaf.leaf_property.split(":", 1)
-        lo_str, hi_str = range_str.split("-", 1)
-        return (int(period_str), int(lo_str), int(hi_str))
-    except (ValueError, AttributeError):
+        s = leaf.leaf_property
+    except AttributeError:
         return None
+    parts = s.split(":", 1)
+    if len(parts) != 2:
+        return None
+    period_str, range_str = parts
+    if not period_str or not range_str:
+        return None
+    lo_hi = range_str.split("-", 1)
+    if len(lo_hi) != 2:
+        return None
+    lo_str, hi_str = lo_hi
+    if not lo_str or not hi_str:
+        return None
+    if not (period_str.isdigit() and lo_str.isdigit() and hi_str.isdigit()):
+        return None
+    return (int(period_str), int(lo_str), int(hi_str))
 
 
 def sat(leaf: CoverageLeaf, x: int) -> bool:
@@ -398,12 +413,16 @@ def sat(leaf: CoverageLeaf, x: int) -> bool:
     A leaf declares a `(period, lo, hi)` tuple via `lean_interval`;
     `x` is in the interval iff `x % period ∈ [lo, hi]`. Returns
     `False` if the leaf's `leaf_property` doesn't parse. Mirrors
-    Lean's `Sat`.
+    Lean's `Sat`. For `period = 0`, mirrors Lean `Nat.mod n 0 = n`,
+    i.e. `lo ≤ x ∧ x ≤ hi` (avoids Python's `ZeroDivisionError`).
     """
     interval = lean_interval(leaf)
     if interval is None:
         return False
     period, lo, hi = interval
+    if period == 0:
+        # Lean: Nat.mod n 0 = n by convention. Mirror that.
+        return lo <= x <= hi
     return lo <= x % period <= hi
 
 

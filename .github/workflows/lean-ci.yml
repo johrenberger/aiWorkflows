@@ -2,9 +2,19 @@ name: Lean CI
 
 on:
   pull_request:
-    branches: [main]
+    branches:
+      - main
+      - agent/bootstrap-research-monorepo
+    paths:
+      - 'lean-toolchain'
+      - 'lakefile.toml'
+      - 'lake-manifest.json'
+      - 'Lean/**'
+      - '.github/workflows/lean-ci.yml'
   push:
-    branches: [main]
+    branches:
+      - main
+      - agent/bootstrap-research-monorepo
   workflow_dispatch:
 
 concurrency:
@@ -24,3 +34,4 @@ jobs:
         with:
           use-github-cache: true
           use-mathlib-cache: true
+          command: lake build CollatzResearch.CoverageTree
