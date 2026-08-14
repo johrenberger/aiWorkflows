@@ -394,6 +394,41 @@ def test_descend_depth_2_internal_to_internal_to_leaf():
     assert descend(tree, 3) == leaf  # 3 % 4 = 3
 
 
+def test_lean_interval_unicode_digits_rejected():
+    """Non-ASCII decimal digits are rejected (Lean's `toNat?` only ASCII).
+
+    `str.isdigit()` accepts Unicode decimal characters (e.g. Arabic-Indic
+    ٠١٢٣, full-width ０１２３) that Lean's `String.toNat?` rejects, so
+    the parser must use a strict ASCII 0-9 check to be a faithful mirror.
+    """
+    # Arabic-Indic digits
+    leaf = CoverageLeaf(leaf_id="L1", leaf_property="٣:٠-٢")
+    assert lean_interval(leaf) is None
+    # Full-width digits
+    leaf = CoverageLeaf(leaf_id="L1", leaf_property="３:０-２")
+    assert lean_interval(leaf) is None
+    # Mixed ASCII + full-width
+    leaf = CoverageLeaf(leaf_id="L1", leaf_property="3:０-２")
+    assert lean_interval(leaf) is None
+
+
+def test_well_formed_hi_greater_than_period():
+    """`hi >= period` is not well-formed (interval must be strict subset).
+
+    Otherwise `Sat` becomes trivially true for every residue, e.g.
+    `3:0-100` would satisfy all `x` (since `x % 3 ∈ [0, 100]` for any
+    `x % 3 ∈ {0, 1, 2}`).
+    """
+    leaf = CoverageLeaf(leaf_id="L1", leaf_property="3:0-100")
+    assert not well_formed(leaf)
+
+
+def test_well_formed_hi_equal_to_period():
+    """`hi == period` is also not well-formed (interval must be strict subset)."""
+    leaf = CoverageLeaf(leaf_id="L1", leaf_property="3:0-3")
+    assert not well_formed(leaf)
+
+
 def test_descend_depth_2_depth_exhausted_at_second_internal():
     """Depth 1 (one unit), but tree has two internal levels: second internal returns None.
 

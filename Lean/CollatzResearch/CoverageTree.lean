@@ -143,10 +143,13 @@ def Sat (t : CoverageTree) (x : Nat) (l : CoverageLeaf) : Prop :=
   | none => False
 
 /-- Static property of a leaf: its declared interval is structurally
-    valid (`period > 0` and `lo ≤ hi`). (Story 07c / round-5, 07c-1.) -/
+    valid. The interval is a residue range modulo `period`: we need
+    `period > 0`, `lo ≤ hi`, and `hi < period` (which also forces
+    `lo < period`). Without `hi < period`, e.g. `3:0-100` would make
+    `Sat` trivially true for every residue. (Story 07c / round-5, 07c-1.) -/
 def WellFormed (l : CoverageLeaf) : Prop :=
   match leanInterval l with
-  | some (period, lo, hi) => period > 0 ∧ lo ≤ hi
+  | some (period, lo, hi) => period > 0 ∧ lo ≤ hi ∧ hi < period
   | none => False
 
 /-- Structural completeness of a subtree (no `descend` in the definition). -/

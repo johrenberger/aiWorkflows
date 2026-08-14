@@ -402,7 +402,18 @@ def lean_interval(leaf: CoverageLeaf) -> tuple[int, int, int] | None:
     lo_str, hi_str = lo_hi
     if not lo_str or not hi_str:
         return None
-    if not (period_str.isdigit() and lo_str.isdigit() and hi_str.isdigit()):
+    # Strict ASCII digits only. `str.isdigit()` accepts Unicode decimal
+    # characters (e.g. Arabic-Indic ٠١٢٣, full-width ０１２３) that Lean
+    # `String.toNat?` rejects, so this would diverge from Lean semantics.
+    ascii_digits = set("0123456789")
+    if not (
+        period_str
+        and all(c in ascii_digits for c in period_str)
+        and lo_str
+        and all(c in ascii_digits for c in lo_str)
+        and hi_str
+        and all(c in ascii_digits for c in hi_str)
+    ):
         return None
     return (int(period_str), int(lo_str), int(hi_str))
 
@@ -428,14 +439,16 @@ def sat(leaf: CoverageLeaf, x: int) -> bool:
 
 def well_formed(leaf: CoverageLeaf) -> bool:
     """Static property of a leaf: its declared interval is structurally
-    valid (`period > 0` and `lo ≤ hi`). Mirrors Lean's `WellFormed`.
-    Returns `False` if the leaf's `leaf_property` doesn't parse.
+    valid. The interval is a residue range modulo `period`: we need
+    `period > 0`, `lo ≤ hi`, and `hi < period` (which also forces
+    `lo < period`). Mirrors Lean's `WellFormed`. Returns `False` if
+    the leaf's `leaf_property` doesn't parse.
     """
     interval = lean_interval(leaf)
     if interval is None:
         return False
     period, lo, hi = interval
-    return period > 0 and lo <= hi
+    return period > 0 and lo <= hi and hi < period
 
 
 # ---- Descend (mirrors Lean's leaf-first `descendFrom`) ----
