@@ -475,8 +475,6 @@ def test_well_formed_happy():
     assert well_formed(leaf)
 
 
-
-
 def test_lean_interval_negative_period_rejected():
     """Negative period is rejected (Lean's String.toNat? returns none).
 
@@ -516,7 +514,7 @@ def test_sat_zero_period_no_crash_and_mirrors_lean():
     """
     leaf = CoverageLeaf(leaf_id="L1", leaf_property="0:5-7")
     assert sat(leaf, 4) is False  # 4 < 5
-    assert sat(leaf, 5) is True   # 5 in [5, 7]
+    assert sat(leaf, 5) is True  # 5 in [5, 7]
     assert sat(leaf, 6) is True
     assert sat(leaf, 7) is True
     assert sat(leaf, 8) is False  # 8 > 7
@@ -531,12 +529,11 @@ def test_sat_negative_period_returns_false():
     assert sat(leaf, 5) is False
 
 
-
-
 def test_well_formed_negative_period():
     """Period from invalid leaf is None, so well_formed returns False."""
     leaf = CoverageLeaf(leaf_id="L1", leaf_property="-1:0-2")
     assert well_formed(leaf) is False
+
 
 def test_well_formed_zero_period():
     """period = 0 is not well-formed (parses but ill-formed)."""
