@@ -24,6 +24,7 @@ from collatz_research.tree import (
     CoverageNode,
     CoverageTree,
     CoverageTreeError,
+    accelerated_orbit,
     check_tree,
     descend,
     deterministic_children,
@@ -35,6 +36,7 @@ from collatz_research.tree import (
     lean_interval,
     leaves_consistent,
     reachable_leaves,
+    reaches_one_within,
     sample_tree,
     sat,
     to_dict,
@@ -586,3 +588,58 @@ def test_well_formed_garbage_returns_false():
     """Unparseable leaves are not well-formed."""
     leaf = CoverageLeaf(leaf_id="L1", leaf_property="garbage")
     assert not well_formed(leaf)
+
+
+# ---- 07c-2 dynamics connection tests ----
+
+
+def test_accelerated_orbit_base():
+    """`accelerated_orbit n 0 = n`."""
+    assert accelerated_orbit(5, 0) == 5
+    assert accelerated_orbit(1, 0) == 1
+    assert accelerated_orbit(0, 0) == 0
+
+
+def test_accelerated_orbit_one_step():
+    """`accelerated_orbit n 1 = acceleratedStep n` (Lean's formula).
+
+    `acceleratedStep n = (3n+1) / 2^ν₂(3n+1)`:
+    - 5 (odd): (16)/2^4 = 1 (ν₂(16)=4)
+    - 8 (even): (25)/2^0 = 25 (3*8+1=25 is odd)
+    - 1 (odd): (4)/2^2 = 1 (fixed point)
+    """
+    assert accelerated_orbit(5, 1) == 1
+    assert accelerated_orbit(8, 1) == 25
+    assert accelerated_orbit(1, 1) == 1
+    assert accelerated_orbit(0, 1) == 1
+
+
+def test_accelerated_orbit_rejects_negative_inputs():
+    """The Python mirror models Lean `Nat` inputs only."""
+    with pytest.raises(ValueError):
+        accelerated_orbit(-1, 1)
+    with pytest.raises(ValueError):
+        accelerated_orbit(1, -1)
+
+
+def test_reaches_one_within_basic():
+    """Known witnesses inside an explicit bounded search."""
+    assert reaches_one_within(1, 0) is True  # already at 1
+    assert reaches_one_within(5, 1) is True  # 5 -> 1
+    assert reaches_one_within(3, 2) is True  # 3 -> 5 -> 1
+    assert reaches_one_within(2, 6) is True  # 2 -> 7 -> 11 -> 17 -> 13 -> 5 -> 1
+    assert reaches_one_within(0, 1) is True  # mirrors Lean: acceleratedStep 0 = 1
+
+
+def test_reaches_one_within_boundary_is_not_negative_evidence():
+    """False means no witness was found within the bound, not non-convergence."""
+    assert reaches_one_within(2, 5) is False
+    assert reaches_one_within(2, 6) is True
+    assert reaches_one_within(0, 0) is False
+
+
+def test_reaches_one_within_rejects_invalid_inputs():
+    with pytest.raises(ValueError):
+        reaches_one_within(-1, 10)
+    with pytest.raises(ValueError):
+        reaches_one_within(1, -1)

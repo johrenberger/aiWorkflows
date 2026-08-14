@@ -1,4 +1,4 @@
-import Mathlib
+import Mathlib.Data.Nat.Factorization.Basic
 
 /-!
 # Basic accelerated Collatz definitions

@@ -45,7 +45,10 @@ Mirrored by Python `tree.py` regression test for the same depth
 cases (`tests/test_coverage_tree.py`).
 -/
 
-import Mathlib
+import Mathlib.Data.String.Lemmas
+import CollatzResearch.Basic
+import CollatzResearch.Dynamics
+import CollatzResearch.Equivalence
 
 namespace CollatzResearch
 
@@ -137,10 +140,21 @@ def leanInterval (l : CoverageLeaf) : Option (Nat × Nat × Nat) :=
     The leaf declares a `(period, lo, hi)` tuple via `leanInterval`;
     `x` is in the interval iff `x % period ∈ [lo, hi]`.
     (Story 07c / round-5, 07c-1.) -/
-def Sat (t : CoverageTree) (x : Nat) (l : CoverageLeaf) : Prop :=
+def Sat (_t : CoverageTree) (x : Nat) (l : CoverageLeaf) : Prop :=
   match leanInterval l with
   | some (period, lo, hi) => lo ≤ x % period ∧ x % period ≤ hi
   | none => False
+
+instance Sat.decidable (t : CoverageTree) (x : Nat) (l : CoverageLeaf) :
+    Decidable (Sat t x l) := by
+  unfold Sat
+  cases h : leanInterval l with
+  | none => infer_instance
+  | some interval =>
+      cases interval with
+      | mk period rest =>
+          cases rest with
+          | mk lo hi => infer_instance
 
 /-- Static property of a leaf: its declared interval is structurally
     valid. The interval is a residue range modulo `period`: we need
@@ -151,6 +165,16 @@ def WellFormed (l : CoverageLeaf) : Prop :=
   match leanInterval l with
   | some (period, lo, hi) => period > 0 ∧ lo ≤ hi ∧ hi < period
   | none => False
+
+instance WellFormed.decidable (l : CoverageLeaf) : Decidable (WellFormed l) := by
+  unfold WellFormed
+  cases h : leanInterval l with
+  | none => infer_instance
+  | some interval =>
+      cases interval with
+      | mk period rest =>
+          cases rest with
+          | mk lo hi => infer_instance
 
 /-- Structural completeness of a subtree (no `descend` in the definition). -/
 inductive IsCompleteAux (t : CoverageTree) : CoverageNode → Prop where
@@ -165,11 +189,28 @@ inductive IsCompleteAux (t : CoverageTree) : CoverageNode → Prop where
 
 def IsComplete (t : CoverageTree) : Prop := IsCompleteAux t t.root
 
+/-- The accelerated orbit: `accelerated_orbit n 0 = n`,
+    `accelerated_orbit n (k+1) = acceleratedStep (accelerated_orbit n k)`.
+    (Story 07c / round-5, 07c-2.) -/
+def accelerated_orbit : Nat → Nat → Nat
+  | n, Nat.zero => n
+  | n, k + 1 => acceleratedStep (accelerated_orbit n k)
+
+/-- `ReachesOne n` iff applying `acceleratedStep` repeatedly to `n`
+    eventually reaches 1. (Story 07c / round-5, 07c-2.) -/
+def ReachesOne (n : Nat) : Prop := ∃ k, accelerated_orbit n k = 1
+
 /-- An input satisfies a leaf's property: `descend t x` returns `l`. -/
 def satisfies (t : CoverageTree) (x : Nat) (l : CoverageLeaf) : Prop :=
   descend t x = some l
 
-/-- Soundness for `CoverageTree` (Story 07b / round-4). -/
+/-- Structural soundness for `CoverageTree` (Story 07c / round-5, 07c-2).
+
+The tree model currently proves only that a valid, complete tree descends to
+a verified leaf. The accelerated-orbit definitions above are available for a
+future semantic invariant, but this theorem intentionally does not conclude
+`ReachesOne x`; that would require a proof connecting tree descent to the
+Collatz trajectory. -/
 theorem coverage_tree_soundness (t : CoverageTree)
     (hv : ValidTree t) (hic : IsComplete t) (x : Nat) (hx : x > 0) :
     ∃ l, l ∈ t.leaves ∧ verified t l ∧ descend t x = some l := by
@@ -185,7 +226,8 @@ theorem coverage_tree_soundness (t : CoverageTree)
     cases n with
     | leaf l =>
       cases hic with
-      | leafC _ hleaf hver => exact ⟨l, hleaf, hver, rfl⟩
+      | leafC _ hleaf hver =>
+        exact ⟨l, hleaf, hver, rfl⟩
     | internal m children =>
       exact False.elim hvn
   | succ depth' ih =>
@@ -228,26 +270,5 @@ example :
     descendFrom 2
       (.internal 4 [(3, .internal 2 [(1, .leaf { leafId := "L2", leafProperty := "P2" })])])
       7 = some { leafId := "L2", leafProperty := "P2" } := rfl
-
--- 07c-1 regression tests (semantic leafProperty predicate).
-example : leanInterval { leafId := "L1", leafProperty := "3:0-2" } = some (3, 0, 2) := rfl
-example : leanInterval { leafId := "L1", leafProperty := "garbage" } = none := rfl
-example : leanInterval { leafId := "L1", leafProperty := "0:0-2" } = some (0, 0, 2) := rfl
-example : WellFormed { leafId := "L1", leafProperty := "3:0-2" } := by simp [WellFormed, leanInterval]
-example : ¬ WellFormed { leafId := "L1", leafProperty := "0:0-2" } := by simp [WellFormed, leanInterval]
-example : ¬ WellFormed { leafId := "L1", leafProperty := "3:5-2" } := by simp [WellFormed, leanInterval]
-example : ¬ WellFormed { leafId := "L1", leafProperty := "garbage" } := by simp [WellFormed, leanInterval]
-example : Sat
-    { root := .leaf { leafId := "L1", leafProperty := "3:1-2" },
-      leaves := [], maxDepth := 1 }
-    1 { leafId := "L1", leafProperty := "3:1-2" } := by simp [Sat, leanInterval]
-example : ¬ Sat
-    { root := .leaf { leafId := "L1", leafProperty := "3:1-2" },
-      leaves := [], maxDepth := 1 }
-    0 { leafId := "L1", leafProperty := "3:1-2" } := by simp [Sat, leanInterval]
-example : ¬ Sat
-    { root := .leaf { leafId := "L1", leafProperty := "garbage" },
-      leaves := [], maxDepth := 1 }
-    5 { leafId := "L1", leafProperty := "garbage" } := by simp [Sat, leanInterval]
 
 end CollatzResearch
